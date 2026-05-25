@@ -70,7 +70,6 @@ const NAVIGATION_DATA = {
       id: 'case-studies',
       title: 'Case studies',
       indexHref: 'case-studies/index.html',
-      collapseDefault: true,
       items: [
         ...nest(CASE_STUDIES),
       ],
@@ -79,7 +78,6 @@ const NAVIGATION_DATA = {
       id: 'references',
       title: 'References',
       indexHref: 'references/index.html',
-      collapseDefault: true,
       items: [
         { title: 'Contributing', href: 'getting-started/contributing.html' },
       ],
