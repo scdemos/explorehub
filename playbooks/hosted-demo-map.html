@@ -37,25 +37,11 @@
       </div>
     </header>
 
-    <div class="pattern-tier-diagram" role="list">
-      <div class="pattern-tier" role="listitem">
-        <strong>1. Demo Site - Library (here)</strong>
-        What the hosted demo shows + how to adopt it in one glance.
-      </div>
-      <div class="pattern-tier" role="listitem">
-        <strong>2. Playbook chapter</strong>
-        Adoption guide with architecture, snippets, and adapt steps.
-      </div>
-      <div class="pattern-tier" role="listitem">
-        <strong>3. Live demo script</strong>
-        <code>demo.bbird.live/demo-docs/…</code> — customer-facing walkthrough, not production docs.
-      </div>
-    </div>
-
-    <section id="experience-patterns" class="category-section">
+    <section id="experience-patterns" class="category-section category-section-patterns">
       <h2>Experience patterns</h2>
       <p class="category-description">Cross-cutting visitor experiences — auth, discovery, decisioning.</p>
 
+      <div class="pattern-list pattern-list-2col">
       <article class="pattern-entry" id="gated-content">
         <h3>Gated content &amp; member-only sections</h3>
         <p class="pattern-summary">The hosted demo shows member-only slices of a public marketing site — no AEM session store.</p>
@@ -104,12 +90,14 @@
           <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-use-deliver-personalized-experiences" target="_blank" rel="noopener">Target demo</a>
         </nav>
       </article>
+      </div>
     </section>
 
-    <section id="dynamic-content" class="category-section">
+    <section id="dynamic-content" class="category-section category-section-patterns">
       <h2>Dynamic content &amp; workers</h2>
       <p class="category-description">JSON-driven pages, feeds, runtime UI, and embeddable surfaces.</p>
 
+      <div class="pattern-list pattern-list-2col">
       <article class="pattern-entry" id="json2html">
         <h3>JSON → dynamic HTML (events, articles)</h3>
         <p class="pattern-summary">One JSON source becomes many list and detail URLs — templates, not hand-authored pages per item.</p>
@@ -179,11 +167,13 @@
           <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/articles" target="_blank" rel="noopener">Articles</a>
         </nav>
       </article>
+      </div>
     </section>
 
-    <section id="forms-workflows" class="category-section">
+    <section id="forms-workflows" class="category-section category-section-patterns">
       <h2>Forms &amp; workflows</h2>
 
+      <div class="pattern-list">
       <article class="pattern-entry" id="forms">
         <h3>Worker-backed forms</h3>
         <p class="pattern-summary">Author forms in DA; secrets stay in a worker — not in the browser.</p>
@@ -196,12 +186,14 @@
           <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-forms" target="_blank" rel="noopener">Live demo</a>
         </nav>
       </article>
+      </div>
     </section>
 
-    <section id="authoring-da" class="category-section">
+    <section id="authoring-da" class="category-section category-section-patterns">
       <h2>Authoring &amp; DA</h2>
       <p class="category-description">Authoring affordances and site operations — many are DA-product flows; code adoption is lighter.</p>
 
+      <div class="pattern-list pattern-list-2col">
       <article class="pattern-entry" id="clone">
         <h3>Repoless site cloning (CloneIt)</h3>
         <p class="pattern-summary">Spin up a new DA site from a baseline without forking the GitHub repo.</p>
@@ -250,11 +242,13 @@
           <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-use-media-library" target="_blank" rel="noopener">Media Library</a>
         </nav>
       </article>
+      </div>
     </section>
 
-    <section id="commerce-interactive" class="category-section">
+    <section id="commerce-interactive" class="category-section category-section-patterns">
       <h2>Commerce &amp; interactive</h2>
 
+      <div class="pattern-list pattern-list-2col">
       <article class="pattern-entry" id="commerce">
         <h3>Edge Commerce (catalog &amp; PDPs)</h3>
         <p class="pattern-summary">Commerce data in the bus; catalog and PDP rendering stay in EDS templates.</p>
@@ -278,11 +272,13 @@
           <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/tools" target="_blank" rel="noopener">Live demo</a>
         </nav>
       </article>
+      </div>
     </section>
 
-    <section id="ai-modernization" class="category-section">
+    <section id="ai-modernization" class="category-section category-section-patterns">
       <h2>AI &amp; modernization</h2>
 
+      <div class="pattern-list">
       <article class="pattern-entry" id="xmod">
         <h3>Experience modernization (theme reskin)</h3>
         <p class="pattern-summary">Same blocks and repo, new DA content — a new vertical without a new GitHub project.</p>
@@ -293,6 +289,7 @@
           <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-reskin-using-xmod" target="_blank" rel="noopener">Live demo</a>
         </nav>
       </article>
+      </div>
     </section>
 
     <section class="category-section">
@@ -310,16 +307,59 @@
   <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
   <script src="../scripts/navigation.js"></script>
   <script>
-    document.querySelectorAll('.pattern-entry').forEach((entry) => {
-      const playbook = entry.querySelector('a.pattern-btn-playbook');
-      if (!playbook) return;
-      const link = document.createElement('a');
-      link.className = 'pattern-card-link';
-      link.href = playbook.href;
-      link.setAttribute('aria-label', `Open playbook: ${entry.querySelector('h3')?.textContent?.trim() || 'chapter'}`);
-      entry.classList.add('is-clickable');
-      entry.prepend(link);
-    });
+    function enhancePatternEntries() {
+      const labelMap = {
+        'how it works': 'How',
+        'what you copy': 'Copy',
+      };
+
+      document.querySelectorAll('.pattern-entry').forEach((entry) => {
+        if (entry.dataset.enhanced === 'true') return;
+        const h3 = entry.querySelector(':scope > h3');
+        const summary = entry.querySelector(':scope > .pattern-summary');
+        const bodies = [...entry.querySelectorAll(':scope > .pattern-body')];
+        const actions = entry.querySelector(':scope > .pattern-actions');
+        if (!h3 || !summary || !actions) return;
+
+        const head = document.createElement('header');
+        head.className = 'pattern-entry-head';
+        head.append(h3, summary, actions);
+
+        if (bodies.length) {
+          const notes = document.createElement('dl');
+          notes.className = 'pattern-notes';
+
+          bodies.forEach((body) => {
+            const kicker = body.querySelector('.pattern-kicker');
+            const rawLabel = kicker?.textContent?.trim().toLowerCase() || '';
+            const label = labelMap[rawLabel] || kicker?.textContent?.trim() || 'Note';
+            if (kicker) kicker.remove();
+
+            const row = document.createElement('div');
+            const dt = document.createElement('dt');
+            dt.textContent = label;
+            const dd = document.createElement('dd');
+            dd.innerHTML = body.innerHTML.trim();
+            row.append(dt, dd);
+            notes.append(row);
+            body.remove();
+          });
+
+          const more = document.createElement('details');
+          more.className = 'pattern-more';
+          const toggle = document.createElement('summary');
+          toggle.textContent = 'Adoption notes';
+          more.append(toggle, notes);
+          entry.append(head, more);
+        } else {
+          entry.append(head);
+        }
+
+        entry.dataset.enhanced = 'true';
+      });
+    }
+
+    enhancePatternEntries();
   </script>
 </body>
 </html>
