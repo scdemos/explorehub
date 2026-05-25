@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Build an N8N Form Block | AEM Edge Delivery Developer Guides</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">N8N Form Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build an N8N Form Block</h1>
+      <p class="subtitle">A configurable form block that POSTs to any n8n webhook (or any URL-encoded HTTP endpoint), with optional Bearer auth.</p>
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Forms</span>
+        <span class="tag">Workflow Integration</span>
+        <span class="tag">Bearer Auth</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>The <code>n8n-form</code> block reads its entire configuration — webhook URL, copy, fields — from the block's table cells. Authors can build a sign-up, lead-capture, or RSVP form that submits to <a href="https://n8n.io" target="_blank">n8n</a> (or any endpoint that accepts <code>application/x-www-form-urlencoded</code>) without writing code.</p>
+
+      <p><strong>Behaviors shipped in <code>scdemos/demo</code>:</strong></p>
+      <ul>
+        <li>Block-content-driven config: webhook URL, title, description, success title/message, fields.</li>
+        <li>5-column field rows: <code>Label | Name | Type | Required | Placeholder</code>.</li>
+        <li>HTML5 validation; first invalid field is focused and scrolled into view.</li>
+        <li>Allowed input types are restricted to <code>text, email, tel, number, url</code> for safety.</li>
+        <li>Default fields (Name + Email) when no field rows are configured.</li>
+        <li>Optional <code>Bearer</code> token via <code>data-bearer-token</code> attribute or <code>window.n8nFormBearerToken</code>; appended as an <code>Authorization</code> header.</li>
+        <li>A <code>timestamp</code> (ISO string) is appended to every payload.</li>
+      </ul>
+
+      <div class="links">
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/n8n-form/n8n-form.js" class="btn btn-secondary" target="_blank">n8n-form.js on GitHub</a>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/n8n-form/n8n-form.css" class="btn btn-secondary" target="_blank">n8n-form.css on GitHub</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Authoring Structure</h2>
+      <p>The block table has fixed-position rows for config, then variable field rows:</p>
+
+      <table class="authoring-table">
+        <thead>
+          <tr><th>n8n-form</th><th></th><th></th><th></th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="5">https://your-n8n.example.com/webhook/abc123</td></tr>
+          <tr><td colspan="5">Join our newsletter</td></tr>
+          <tr><td colspan="5">Get monthly tips delivered to your inbox.</td></tr>
+          <tr><td colspan="5">Welcome aboard!</td></tr>
+          <tr><td colspan="5">We'll be in touch shortly.</td></tr>
+          <tr><td>Full name</td><td>name</td><td>text</td><td>yes</td><td>Jane Doe</td></tr>
+          <tr><td>Email</td><td>email</td><td>email</td><td>yes</td><td>jane@example.com</td></tr>
+          <tr><td>Phone</td><td>phone</td><td>tel</td><td>no</td><td>+1 555-0100</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Row positions (after the block-name row):</strong></p>
+      <ol>
+        <li>Webhook URL (required)</li>
+        <li>Form title — single cell (optional, defaults to "Sign up")</li>
+        <li>Form description — single cell (optional)</li>
+        <li>Thank-you title — single cell (optional, defaults to "Thank you!")</li>
+        <li>Thank-you message — single cell (optional)</li>
+        <li><strong>First row with 2+ cells</strong> begins the field rows. All single-cell rows before that are taken in order: description, success title, success message.</li>
+      </ol>
+
+      <p>Field row columns: <code>Label | Name | Type | Required | Placeholder</code>. Type is restricted to <code>text, email, tel, number, url</code>; anything else falls back to <code>text</code>. Required accepts <code>yes</code>, <code>true</code>, or <code>1</code> — anything else is optional.</p>
+
+      <div class="info-box">
+        <strong>Bearer token (optional):</strong> set <code>data-bearer-token</code> on the block element, or assign <code>window.n8nFormBearerToken</code> before decoration. The token is sent as <code>Authorization: Bearer &lt;token&gt;</code>.
+      </div>
+    </section>
+
+    <section>
+      <h2>Implementation</h2>
+      <p>Three responsibilities live in <code>blocks/n8n-form/n8n-form.js</code>:</p>
+      <ol>
+        <li><code>extractConfig(block)</code> — parses the table cells into a config object.</li>
+        <li><code>createForm(config)</code> — builds the <code>&lt;form&gt;</code> DOM.</li>
+        <li><code>handleSubmit(form, submitUrl, successText, bearerToken)</code> — validates, POSTs, and swaps the form for a success message.</li>
+      </ol>
+
+      <h3>Config extraction</h3>
+      <pre><code class="language-javascript">function extractConfig(block) {
+  const rows = [...block.children];
+  const blockName = block.dataset.blockName || [...block.classList].find((c) => c !== 'block') || block.classList[0];
+  const firstRowFirstCell = rows[0]?.children[0]?.textContent?.trim() ?? '';
+  const skipNameRow = blockName && firstRowFirstCell === blockName;
+  const dataRows = skipNameRow ? rows.slice(1) : rows;
+
+  const config = {
+    submitUrl: '',
+    title: 'Sign up',
+    description: '',
+    successTitle: '',
+    successMessage: '',
+    fields: [],
+    bearerToken: '',
+  };
+
+  if (dataRows.length > 0) config.submitUrl = dataRows[0].children[0]?.textContent?.trim() ?? '';
+  if (dataRows.length > 1) config.title = dataRows[1].children[0]?.textContent?.trim() || config.title;
+
+  // Single-cell rows (description, successTitle, successMessage) until the first multi-cell row
+  let fieldStartIndex = dataRows.length;
+  for (let i = 2; i < dataRows.length; i += 1) {
+    if ((dataRows[i].children?.length ?? 0) >= 2) { fieldStartIndex = i; break; }
+  }
+  let optIndex = 0;
+  for (let i = 2; i < fieldStartIndex; i += 1) {
+    const val = dataRows[i].children[0]?.textContent?.trim() || '';
+    if (optIndex === 0) config.description = val;
+    else if (optIndex === 1) config.successTitle = val;
+    else if (optIndex === 2) config.successMessage = val;
+    optIndex += 1;
+  }
+
+  for (let i = fieldStartIndex; i < dataRows.length; i += 1) {
+    const cells = [...dataRows[i].children].map((cell) => cell.textContent.trim());
+    const field = parseFieldRow(cells, config.fields.length);
+    if (field) config.fields.push(field);
+  }
+
+  if (config.fields.length === 0) config.fields = DEFAULT_FIELDS; // Name + Email
+
+  config.bearerToken = block.dataset.bearerToken
+    || block.getAttribute('data-bearer-token')
+    || (typeof window !== 'undefined' && window.n8nFormBearerToken)
+    || '';
+  return config;
+}</code></pre>
+
+      <h3>Field-row parser</h3>
+      <pre><code class="language-javascript">const ALLOWED_TYPES = ['text', 'email', 'tel', 'number', 'url'];
+
+function safeName(value, fallbackIndex = 0) {
+  if (!value || typeof value !== 'string') return `field${fallbackIndex}`;
+  const sanitized = value.trim().replace(/[^a-zA-Z0-9_-]/g, '_').replace(/^_+|_+$/g, '');
+  return sanitized || `field${fallbackIndex}`;
+}
+
+function parseFieldRow(cells, index) {
+  const label = cells[0]?.trim();
+  const nameRaw = cells[1]?.trim();
+  if (!label && !nameRaw) return null;
+  const name = safeName(nameRaw || label?.toLowerCase().replace(/\s+/g, '_'), index);
+  const typeRaw = (cells[2]?.trim() || 'text').toLowerCase();
+  const type = ALLOWED_TYPES.includes(typeRaw) ? typeRaw : 'text';
+  const requiredStr = (cells[3]?.trim() || 'yes').toLowerCase();
+  const required = requiredStr === 'yes' || requiredStr === 'true' || requiredStr === '1';
+  const placeholder = cells[4]?.trim() || '';
+  return { label: label || name, name, type, required, placeholder };
+}</code></pre>
+
+      <h3>Submission with optional Bearer auth</h3>
+      <pre><code class="language-javascript">async function handleSubmit(form, submitUrl, successText = {}, bearerToken = null) {
+  if (form.getAttribute('data-submitting') === 'true') return;
+  const submitButton = form.querySelector('button[type="submit"]');
+  const successTitle = successText.title || 'Thank you!';
+  const successMessage = successText.message || "We've received your information and will be in touch soon.";
+
+  try {
+    form.setAttribute('data-submitting', 'true');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Submitting...';
+
+    const payload = generatePayload(form);
+    const formData = new URLSearchParams();
+    Object.entries(payload).forEach(([key, value]) => formData.append(key, value || ''));
+
+    const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    if (bearerToken && bearerToken.trim()) {
+      headers.Authorization = `Bearer ${bearerToken.trim()}`;
+    }
+
+    const response = await fetch(submitUrl, { method: 'POST', body: formData, headers });
+    if (!response.ok) throw new Error(`Submission failed: ${response.status}`);
+
+    form.innerHTML = `
+      <div class="success-message">
+        <h3>${successTitle.replace(/</g, '&lt;')}</h3>
+        <p>${successMessage.replace(/</g, '&lt;')}</p>
+      </div>`;
+  } catch (err) {
+    // Append a .error-message above the form, re-enable submit button
+  }
+}
+
+function generatePayload(form) {
+  const payload = {};
+  Array.from(new FormData(form).entries()).forEach(([k, v]) => { payload[k] = v; });
+  payload.timestamp = new Date().toISOString();
+  return payload;
+}</code></pre>
+
+      <h3>Decorate</h3>
+      <pre><code class="language-javascript">export default async function decorate(block) {
+  const config = extractConfig(block);
+  if (!config.submitUrl) {
+    block.innerHTML = '<p class="error-message">Error: Webhook URL is required.</p>';
+    return;
+  }
+  const form = createForm(config);
+  block.replaceChildren(form);
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (form.checkValidity()) {
+      handleSubmit(form, config.submitUrl,
+        { title: config.successTitle, message: config.successMessage },
+        config.bearerToken);
+    } else {
+      const firstInvalid = form.querySelector(':invalid:not(fieldset)');
+      if (firstInvalid) {
+        firstInvalid.focus();
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  });
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>How It Works</h2>
+      <pre class="mermaid">
+sequenceDiagram
+  participant Author
+  participant Block as n8n-form block
+  participant Decorate as decorate()
+  participant Browser
+  participant N8N as n8n webhook
+
+  Author->>Block: 5+ rows of config + fields
+  Decorate->>Block: extractConfig()
+  Decorate->>Browser: render form DOM
+  Browser->>Browser: HTML5 validation on submit
+  Browser->>N8N: POST application/x-www-form-urlencoded<br/>+ optional Authorization: Bearer
+  N8N-->>Browser: 200
+  Browser->>Block: replace with success-message
+      </pre>
+
+      <h3>Notes &amp; Gotchas</h3>
+      <ul>
+        <li>The body is URL-encoded, not JSON. n8n's <em>Form Trigger</em> and <em>Webhook</em> nodes both accept this; if your endpoint expects JSON, change the <code>Content-Type</code> and <code>JSON.stringify(payload)</code>.</li>
+        <li>Single-cell description/success rows are positional. If you skip "description" but provide "success title", you still need an empty single-cell row in slot 3.</li>
+        <li>The <code>name</code> column is sanitized to <code>[a-zA-Z0-9_-]</code>. Avoid spaces or punctuation in this cell — they'll be replaced with underscores.</li>
+        <li>The Bearer token is <strong>read at decoration time</strong> from <code>data-bearer-token</code> or <code>window.n8nFormBearerToken</code>. Don't hardcode it in authored content; inject it from a server-side template, an authenticated worker, or a one-time fetch in <code>scripts/delayed.js</code>.</li>
+        <li>The block adds a <code>timestamp</code> (<code>new Date().toISOString()</code>) to every payload — your downstream workflow doesn't need to add one.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Testing</h2>
+      <table>
+        <thead><tr><th>Test Case</th><th>Expected Result</th></tr></thead>
+        <tbody>
+          <tr><td>No webhook URL</td><td>Block renders <code>Error: Webhook URL is required.</code></td></tr>
+          <tr><td>Submit with empty required field</td><td>HTML5 validation message; first invalid field focused and scrolled into view</td></tr>
+          <tr><td>Submit succeeds (200)</td><td>Form replaced with <code>.success-message</code> using configured success title/message</td></tr>
+          <tr><td>Submit fails (5xx)</td><td><code>.error-message</code> appended above form; submit re-enabled</td></tr>
+          <tr><td>Field with type <code>color</code></td><td>Falls back to <code>text</code> (allow-list)</td></tr>
+          <tr><td>Field with no fields configured</td><td>Defaults to Name + Email, both required</td></tr>
+          <tr><td>Bearer token set</td><td>Network request includes <code>Authorization: Bearer ...</code></td></tr>
+          <tr><td>Double-click submit</td><td>Second click ignored (<code>data-submitting</code> guard)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Customization Ideas</h2>
+      <ul>
+        <li><strong>JSON body</strong> — change <code>Content-Type</code> to <code>application/json</code> and <code>JSON.stringify(payload)</code>; useful for n8n <em>HTTP Request</em> nodes that expect structured input.</li>
+        <li><strong>Honeypot field</strong> — add a hidden input named <code>website</code>; reject the submission if it has any value.</li>
+        <li><strong>Cloudflare Turnstile</strong> — render the widget into the form, add the token to the payload, verify in your worker (similar pattern to <code>workers/contact_us</code>).</li>
+        <li><strong>Multi-step</strong> — split fields into <code>&lt;fieldset&gt;</code>s and add a Next button; reuse <code>handleSubmit</code> on the final step.</li>
+        <li><strong>Worker proxy</strong> — instead of calling n8n directly, POST to a worker like <a href="https://github.com/scdemos/demo/blob/main/workers/contact_us/index.js" target="_blank"><code>workers/contact_us</code></a> that hides the secret and forwards to n8n.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Resources</h2>
+      <ul>
+        <li><a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.formtrigger/" target="_blank">n8n Form Trigger documentation</a></li>
+        <li><a href="how-to-forms.html">Form Block (the bigger JSON-driven cousin)</a></li>
+        <li><a href="https://github.com/scdemos/demo/blob/main/workers/contact_us/index.js" target="_blank">Worker-backed forms pattern (contact_us)</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

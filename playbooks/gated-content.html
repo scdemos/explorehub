@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Gated content | EDS Reference Playbook</title>
+  <meta name="description" content="Cloudflare Access + CDN HTML rewriting + author preview toggle. Member-only sections, blocks, and pages on AEM Edge Delivery.">
+
+  <meta property="og:title" content="Gated content | EDS Reference Playbook">
+  <meta property="og:description" content="Cloudflare Access + CDN HTML rewriting + author preview toggle. Member-only sections, blocks, and pages on AEM Edge Delivery.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="../assets/screenshots/gated-content.png">
+  <meta name="twitter:image" content="../assets/screenshots/gated-content.png">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css">
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Playbooks &amp; Recipes</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Gated content</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-playbook">Playbook</span>
+      <h1>Gated content</h1>
+      <p class="subtitle">Member-only sections, blocks, and pages on EDS — without owning a session store. Cloudflare Access does the auth, the CDN worker rewrites the HTML, and an author-only toggle lets editors preview either state.</p>
+      <div class="metadata">
+        <span class="tag">Auth</span>
+        <span class="tag">Workers</span>
+        <span class="tag">CDN</span>
+        <span class="tag">Cloudflare Access</span>
+      </div>
+    </header>
+
+    <section id="problem" class="chapter-section">
+      <h2>Problem</h2>
+      <p>You need parts of a public site to be visible only to authenticated users — paywalled articles, partner portals, members-only sections inside a marketing page. EDS has no concept of a session, and the project doesn't justify a full identity provider in front of every page. You also need authors to <em>preview</em> the gated and ungated views without logging in and out.</p>
+    </section>
+
+    <section id="live-example" class="chapter-section">
+      <h2>Live example</h2>
+      <p>Demo gated routes on the <code>scdemos/demo</code> site:</p>
+      <p>
+        <a class="btn btn-primary" target="_blank" href="https://demo.bbird.live/learn/budgeting/free-vs-premium-tools">View a gated page (anonymous)</a>
+        <a class="btn btn-secondary" target="_blank" href="https://demo.bbird.live/learn/budgeting/free-vs-premium-tools?auth=true">Preview as authenticated (author env)</a>
+      </p>
+      <p>The auth toggle (rust handle on the right edge) is the author-only preview switch. In production it's invisible — only Cloudflare Access changes the audience.</p>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>High-level architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Author["Author marks
+  meta gated=true +
+  section View=logged-in/out"]
+  --> EDS["EDS preview/publish"]
+  --> Worker["CDN Worker
+  workers/cdn"]
+  Browser["Public site"]
+  --> CFA{"Cloudflare Access
+  cookie?"}
+  CFA -->|yes| Worker
+  CFA -->|no| Worker
+  Worker --> Gate["applyGatingIfNeeded
+  rewrites HTML by audience"]
+  Gate --> Browser
+      </pre>
+      <p>Three layers: <strong>authoring</strong> (page meta + section metadata), <strong>auth</strong> (Cloudflare Access in front of <em>some</em> routes), <strong>CDN rewrite</strong> (a Cloudflare Worker that strips gated sections per the auth state). A separate <code>scripts/utils/gated-content.js</code> mirrors the same rewrite client-side so authors can preview both views in <code>aem.page</code>.</p>
+    </section>
+
+    <section id="snippets" class="chapter-section">
+      <h2>Code snippets</h2>
+      <p>The page is gated when <code>&lt;meta name="gated" content="true"&gt;</code> is present. Sections opt into a specific audience via <code>data-view</code> or section-metadata <code>view</code>: <code>logged-in</code> or <code>logged-out</code>.</p>
+
+      <h3>1. CDN worker rewrites HTML by audience</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>workers/cdn/handlers/gating.js</code></span>
+          <a href="https://github.com/scdemos/demo/blob/main/workers/cdn/handlers/gating.js" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">const GATED_META = /&lt;meta[^&gt;]+name=["']gated["'][^&gt;]*content=["']true["']/i;
+
+function transformGatedHtml(html, loggedIn) {
+  const $ = load(html);
+  const removeEls = new Set();
+  $('main &gt; div').each((_, el) =&gt; {
+    const aud = audience($, $(el));
+    if (aud) {
+      const drop = (loggedIn &amp;&amp; aud === 'logged-out') || (!loggedIn &amp;&amp; aud === 'logged-in');
+      if (drop) removeEls.add(el);
+    }
+    if (!removeEls.has(el)) {
+      // Block-level: strip .logged-in / .logged-out blocks per state
+      if (loggedIn) $(el).find('[class*="logged-out"]').remove();
+      else $(el).find('[class*="logged-in"]').remove();
+    }
+  });
+  removeEls.forEach((node) =&gt; $(node).remove());
+  return $.html();
+}
+
+export async function applyGatingIfNeeded(request, requestURL, response) {
+  if (request.method !== 'GET' || response.status !== 200) return response;
+  if (!(response.headers.get('content-type') || '').includes('text/html')) return response;
+  const html = await response.text();
+  if (!GATED_META.test(html)) return htmlResponse(html, response);
+  const out = transformGatedHtml(html, isAuthenticated(request));
+  return htmlResponse(out, response, out !== html);
+}</code></pre>
+      </div>
+
+      <p>Personalised responses get tightened cache + <code>Vary: Cookie</code> automatically by <code>htmlResponse(..., personalized=true)</code>.</p>
+
+      <h3>2. <code>isAuthenticated</code> reads Cloudflare Access headers</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>workers/cdn/handlers/auth-check.js</code></span>
+          <a href="https://github.com/scdemos/demo/blob/main/workers/cdn/handlers/auth-check.js" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">// CF Access populates these on every request behind an Access policy.
+// Cf-Access-Authenticated-User-Email is set after a successful Access login.
+export function isAuthenticated(request) {
+  return Boolean(
+    request.headers.get('Cf-Access-Authenticated-User-Email')
+    || request.headers.get('Cf-Access-Jwt-Assertion'),
+  );
+}</code></pre>
+      </div>
+
+      <h3>3. Auth worker — login / logout / session</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>workers/auth/index.js</code></span>
+          <a href="https://github.com/scdemos/demo/blob/main/workers/auth/index.js" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">// /auth/login → behind a CF Access policy → after auth, redirect to ?returnTo
+// /auth/logout → /cdn-cgi/access/logout
+// /auth/session → returns { authenticated, email } (used by client-side checks)
+if (pathname === '/auth/login') return redirect(getSafeReturnTo(url));
+if (pathname === '/auth/logout') return redirect(new URL('/cdn-cgi/access/logout', url.origin).toString());
+if (pathname === '/auth/session') return json(request, { ...access });</code></pre>
+      </div>
+
+      <h3>4. Author-only preview — same rules in JS</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>scripts/utils/gated-content.js</code></span>
+          <a href="https://github.com/scdemos/demo/blob/main/scripts/utils/gated-content.js" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">// Mirrors the worker's `audience()`. Runs only in author / preview environments.
+function isAuthorEnvironment() {
+  const host = window.location.hostname;
+  return host.includes('localhost')
+    || host.includes('aem.page')
+    || host.includes('aem.reviews')
+    || host.endsWith('.ue.da.live')
+    || host.endsWith('.stage-ue.da.live');
+}
+
+function getAuthState() {
+  return new URLSearchParams(window.location.search).get('auth') === 'true';
+}
+
+function applyContentProtection() {
+  if (!isAuthorEnvironment() || !isGatedPage()) return;
+  const isAuthenticated = getAuthState();
+  // remove logged-in/logged-out sections + nested blocks
+}</code></pre>
+      </div>
+
+      <h3>5. Floating toggle — for authors only</h3>
+      <p><a href="https://github.com/scdemos/demo/blob/main/blocks/auth-toggle/auth-toggle.js" target="_blank"><code>blocks/auth-toggle/auth-toggle.js</code></a> renders a fixed handle that flips <code>?auth=true|false</code> and reloads. It is created by <code>createAuthorToggle()</code> in <code>gated-content.js</code> only when both <code>isAuthorEnvironment()</code> and <code>isGatedPage()</code> are true. In production the toggle never appears.</p>
+
+      <p>See the <a href="../use-cases/how-to-build-auth-toggle.html">Auth Toggle cookbook entry</a> for the full block source.</p>
+    </section>
+
+    <section id="gotchas" class="chapter-section">
+      <h2>Notes &amp; gotchas</h2>
+      <ul>
+        <li><strong>The CDN worker is the trust boundary.</strong> The browser-side <code>applyContentProtection()</code> only runs in <code>aem.page</code> / <code>localhost</code>, so authors can preview. Don't rely on it for production gating — it lives in the page that the user already received.</li>
+        <li><strong>Cache + cookies.</strong> When the worker rewrites the HTML for a logged-in user it forces <code>Cache-Control: private, no-cache, must-revalidate</code> and merges <code>Vary: Cookie</code>. Without this you'll serve a logged-in user's HTML to the next anonymous visitor on a shared cache.</li>
+        <li><strong>Two opt-in mechanisms.</strong> A whole section is gated via section-metadata <code>view: logged-in</code> (becomes <code>data-view</code> on <code>main &gt; div</code>). A single block is gated by adding the <code>logged-in</code> or <code>logged-out</code> class to the block (e.g. <code>cards (logged-in)</code> in a DA / Word block table).</li>
+        <li><strong>Skip list for fragments.</strong> The handler skips <code>/fragments/</code>, <code>/nav.plain.html</code>, and <code>/footer.plain.html</code>. Otherwise you'd risk gating a shared header/footer that's pulled into every page.</li>
+        <li><strong>Cloudflare Access policy scope.</strong> Put the Access policy on routes that <em>require</em> a logged-in user (e.g. <code>/account/*</code>). Public pages with mixed gated sections don't need a policy — the worker just reads whatever Access headers happen to be present.</li>
+        <li><strong>Author preview gotcha.</strong> Authors edit on <code>aem.page</code> (which never has Cloudflare Access in front), so they always look anonymous to the worker. The toggle bypasses this by toggling <code>?auth=true</code> and letting the JS layer do the rewrite locally.</li>
+      </ul>
+    </section>
+
+    <section id="adapt" class="chapter-section">
+      <h2>How to adapt into my project</h2>
+      <ol>
+        <li><strong>Pick your auth provider.</strong> The pattern is "trust a header from the edge." Cloudflare Access is the simplest, but Auth0, Okta, or your own JWT-bearing reverse proxy work too — just have <code>isAuthenticated()</code> read the right header.</li>
+        <li><strong>Copy <code>workers/cdn</code> + <code>workers/auth</code></strong> into your repo. Update <code>ORIGIN_HOSTNAME</code> in <code>workers/cdn/wrangler.jsonc</code> to <code>main--&lt;your-repo&gt;--&lt;your-org&gt;.aem.live</code>.</li>
+        <li><strong>Decide your audience taxonomy.</strong> The demo uses a binary <code>logged-in</code> / <code>logged-out</code>. If you need roles (member, editor, admin), extend <code>audience()</code> to return any string and have the worker compare against a roles claim.</li>
+        <li><strong>Wire <code>scripts/utils/gated-content.js</code></strong> from <code>scripts/scripts.js</code>'s <code>loadLazy</code>. The toggle and section stripping are gated on <code>isGatedPage()</code> — if you forget the <code>gated</code> meta, both layers are no-ops.</li>
+        <li><strong>Author one gated page</strong> end-to-end: add the page meta, mark one section <code>view: logged-in</code>, deploy. Verify in DevTools that <code>main &gt; div[data-view="logged-in"]</code> is missing on the public page and present after <code>?auth=true</code>.</li>
+      </ol>
+      <p><strong>Don't:</strong> bake business secrets into the page and rely on the rewrite to remove them. The pre-rewrite HTML lives at <code>main--&lt;repo&gt;--&lt;org&gt;.aem.live</code> and is publicly fetchable. Fetch privileged data <em>after</em> auth, from a worker that checks the Access header itself.</p>
+    </section>
+
+    <section id="links" class="chapter-section">
+      <h2>Links</h2>
+      <ul>
+        <li><a href="https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/" target="_blank">Cloudflare Access — application configuration</a></li>
+        <li><a href="https://www.aem.live/docs/byo-cdn-cloudflare-worker-setup" target="_blank">AEM — BYO CDN Cloudflare Worker setup</a></li>
+        <li><a href="https://github.com/scdemos/demo/tree/main/workers/cdn" target="_blank">scdemos/demo — workers/cdn (source)</a></li>
+        <li><a href="https://github.com/scdemos/demo/tree/main/workers/auth" target="_blank">scdemos/demo — workers/auth (source)</a></li>
+        <li><a href="../use-cases/how-to-build-auth-toggle.html">Cookbook: Auth Toggle block</a></li>
+        <li><a href="worker-backed-forms.html">Related playbook: Worker-backed forms</a></li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/playbooks/gated-content.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

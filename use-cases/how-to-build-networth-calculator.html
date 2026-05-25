@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Build Net Worth Calculator Block - AEM Edge Delivery Services</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Net Worth Calculator</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Net Worth Calculator Block</h1>
+      <p class="subtitle">Interactive financial health calculator tracking assets, liabilities, and emergency fund readiness</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Interactive</span>
+        <span class="tag">Advanced</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>The Net Worth Calculator is a comprehensive financial planning tool that helps users calculate their net worth by tracking assets and liabilities. It also calculates emergency fund readiness and provides actionable insights on financial health.</p>
+
+      <p><strong>Key Features:</strong></p>
+      <ul>
+        <li>Real-time calculation as users input values</li>
+        <li>Comprehensive asset tracking (cash, TFSA, RRSP, FHSA, home, vehicle, business, pension)</li>
+        <li>Liability tracking (mortgage, credit card, loans, tax owing)</li>
+        <li>Emergency fund calculation and readiness status</li>
+        <li>Optional home value inclusion in net worth</li>
+        <li>Configurable emergency fund target (3-12 months of expenses)</li>
+        <li>Visual metrics with color-coded status indicators</li>
+        <li>Responsive layout with sidebar form and results panel</li>
+        <li>CAD currency formatting</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>How It Works</h2>
+      <p>The calculator follows this workflow:</p>
+
+      <div class="mermaid">
+        graph TD
+          A[User Inputs Values] --> B[Calculate Total Assets]
+          B --> C[Calculate Total Liabilities]
+          C --> D[Net Worth = Assets - Liabilities]
+          D --> E{Include Home?}
+          E -->|No| F[Adjust Net Worth Excluding Home]
+          E -->|Yes| G[Keep Full Net Worth]
+          F --> H[Calculate Emergency Fund Needed]
+          G --> H
+          H --> I[Compare Cash to Emergency Fund Target]
+          I --> J[Display Results & Status]
+          J --> K[Show Color-Coded Metrics]
+      </div>
+
+      <p><strong>Calculation Logic:</strong></p>
+      <ol>
+        <li><strong>Total Assets:</strong> Sum of cash, investments (TFSA, RRSP, FHSA, non-registered), home, pension, business, vehicle, and other assets</li>
+        <li><strong>Total Liabilities:</strong> Sum of mortgage, credit cards, line of credit, student loan, car loan, tax owing, and other liabilities</li>
+        <li><strong>Net Worth:</strong> Total Assets - Total Liabilities</li>
+        <li><strong>Emergency Fund Target:</strong> (Essential Monthly Expenses + Monthly Debt Payments) × Target Months</li>
+        <li><strong>Emergency Fund Status:</strong> Compare cash on hand to target, with color-coded visual feedback</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Implementation</h2>
+
+      <h3>JavaScript (networth-calculator.js)</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>blocks/networth-calculator/networth-calculator.js</code></p>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/networth-calculator/networth-calculator.js"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <pre><code class="language-javascript">import { createTag } from '../../scripts/shared.js';
+
+const DEFAULTS = {
+  afterTaxMonthlyIncome: 6500,
+  monthlyEssentialExpenses: 3500,
+  monthlyDebtPayments: 600,
+  targetEmergencyMonths: 6,
+  includeHomeInNetWorth: true,
+  cash: 15000,
+  tfsa: 30000,
+  rrsp: 45000,
+  fhsa: 8000,
+  nonRegistered: 12000,
+  homeValue: 550000,
+  pensionValue: 0,
+  businessValue: 0,
+  vehicleValue: 15000,
+  otherAssets: 0,
+  mortgage: 380000,
+  creditCard: 2000,
+  lineOfCredit: 4000,
+  studentLoan: 12000,
+  carLoan: 8000,
+  taxOwing: 0,
+  otherLiabilities: 0,
+};
+
+function money(value) {
+  return new Intl.NumberFormat('en-CA', {
+    style: 'currency',
+    currency: 'CAD',
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
+
+function calculate(values) {
+  const cash = Math.max(0, toNumber(values.cash, DEFAULTS.cash));
+  const tfsa = Math.max(0, toNumber(values.tfsa, DEFAULTS.tfsa));
+  const rrsp = Math.max(0, toNumber(values.rrsp, DEFAULTS.rrsp));
+  const fhsa = Math.max(0, toNumber(values.fhsa, DEFAULTS.fhsa));
+  const nonRegistered = Math.max(0, toNumber(values.nonRegistered, DEFAULTS.nonRegistered));
+  const homeValue = Math.max(0, toNumber(values.homeValue, DEFAULTS.homeValue));
+  const pensionValue = Math.max(0, toNumber(values.pensionValue, DEFAULTS.pensionValue));
+  const businessValue = Math.max(0, toNumber(values.businessValue, DEFAULTS.businessValue));
+  const vehicleValue = Math.max(0, toNumber(values.vehicleValue, DEFAULTS.vehicleValue));
+  const otherAssets = Math.max(0, toNumber(values.otherAssets, DEFAULTS.otherAssets));
+
+  const mortgage = Math.max(0, toNumber(values.mortgage, DEFAULTS.mortgage));
+  const creditCard = Math.max(0, toNumber(values.creditCard, DEFAULTS.creditCard));
+  const lineOfCredit = Math.max(0, toNumber(values.lineOfCredit, DEFAULTS.lineOfCredit));
+  const studentLoan = Math.max(0, toNumber(values.studentLoan, DEFAULTS.studentLoan));
+  const carLoan = Math.max(0, toNumber(values.carLoan, DEFAULTS.carLoan));
+  const taxOwing = Math.max(0, toNumber(values.taxOwing, DEFAULTS.taxOwing));
+  const otherLiabilities = Math.max(0, toNumber(values.otherLiabilities, DEFAULTS.otherLiabilities));
+
+  const essentialExpenses = Math.max(0, toNumber(values.monthlyEssentialExpenses, DEFAULTS.monthlyEssentialExpenses));
+  const debtPayments = Math.max(0, toNumber(values.monthlyDebtPayments, DEFAULTS.monthlyDebtPayments));
+  const emergencyMonths = Math.max(3, Math.min(12, toNumber(values.targetEmergencyMonths, DEFAULTS.targetEmergencyMonths)));
+
+  const totalAssets = cash + tfsa + rrsp + fhsa + nonRegistered + homeValue
+    + pensionValue + businessValue + vehicleValue + otherAssets;
+  const totalLiabilities = mortgage + creditCard + lineOfCredit + studentLoan
+    + carLoan + taxOwing + otherLiabilities;
+
+  const includeHome = Boolean(values.includeHomeInNetWorth);
+  const netWorth = includeHome ? totalAssets - totalLiabilities
+    : totalAssets - homeValue - totalLiabilities;
+
+  const emergencyFundTarget = (essentialExpenses + debtPayments) * emergencyMonths;
+  const emergencyFundStatus = cash >= emergencyFundTarget ? 'Ready' : 'Needs Attention';
+
+  return {
+    totalAssets,
+    totalLiabilities,
+    netWorth,
+    emergencyFundTarget,
+    emergencyFundStatus,
+    cashOnHand: cash,
+  };
+}
+
+export default function decorate(block) {
+  block.textContent = '';
+  block.classList.add('networth-calculator');
+
+  const layout = createTag('div', { class: 'networth-calculator-layout' });
+  const form = createTag('form', { class: 'networth-calculator-form' });
+  const output = createTag('section', {
+    class: 'networth-calculator-output',
+    'aria-live': 'polite',
+  });
+
+  // Build form inputs (simplified for guide - see full implementation in source)
+  // Sections: Emergency Fund, Assets (Liquid + Investments + Property), Liabilities
+
+  layout.append(form, output);
+  block.append(layout);
+
+  function render() {
+    const result = calculate(values());
+    output.textContent = '';
+
+    // Render metrics with color-coded status
+    // (Full render logic in source code)
+  }
+
+  form.addEventListener('input', render);
+  form.addEventListener('change', render);
+  render();
+}</code></pre>
+
+      <h3>CSS (networth-calculator.css)</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>blocks/networth-calculator/networth-calculator.css</code></p>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/networth-calculator/networth-calculator.css"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <pre><code class="language-css">main .networth-calculator {
+  max-width: var(--grid-container-width);
+  margin: 0 auto;
+  padding: var(--space-m) var(--content-padding-inline);
+}
+
+main .networth-calculator .networth-calculator-layout {
+  display: grid;
+  gap: var(--space-s);
+}
+
+main .networth-calculator .networth-calculator-form {
+  display: grid;
+  gap: var(--space-xs);
+  border: var(--border-heritage);
+  border-radius: 16px;
+  padding: var(--space-m);
+  background: light-dark(var(--color-parchment), var(--color-card-dark));
+}
+
+main .networth-calculator input[type='number'],
+main .networth-calculator input[type='range'] {
+  inline-size: 100%;
+  border: 1px solid light-dark(var(--color-gray-300), var(--color-gray-600));
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  color: inherit;
+  background: light-dark(var(--color-light), rgb(25 29 35));
+}
+
+main .networth-calculator .networth-calculator-metric {
+  border: 1px solid light-dark(var(--color-gray-200), rgb(245 242 237 / 10%));
+  border-radius: 12px;
+  padding: var(--space-m);
+  background: light-dark(var(--color-light), var(--color-card-dark));
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+main .networth-calculator .networth-calculator-metric:hover {
+  border-color: light-dark(var(--color-gold), rgb(197 160 89 / 35%));
+  box-shadow: 0 8px 24px light-dark(rgb(161 79 43 / 10%), rgb(197 160 89 / 8%));
+}
+
+@media (width >= 900px) {
+  main .networth-calculator .networth-calculator-layout {
+    grid-template-columns: minmax(300px, 390px) 1fr;
+    align-items: start;
+  }
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Document Authoring</h2>
+      <p>The Net Worth Calculator block requires no configuration from content authors. Simply add the block name, and the calculator will render with default values.</p>
+
+      <details>
+        <summary>Expand to view and copy block structure</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th style="background-color: #f0f0f0;">Networth Calculator</th></tr>
+            </thead>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2>Financial Planning Features</h2>
+      <p><strong>Emergency Fund Guidance:</strong></p>
+      <ul>
+        <li>Calculates recommended emergency fund based on essential expenses and debt payments</li>
+        <li>Adjustable target from 3-12 months of expenses</li>
+        <li>Color-coded status (green = ready, yellow/red = needs attention)</li>
+      </ul>
+
+      <p><strong>Asset Categories:</strong></p>
+      <ul>
+        <li><strong>Liquid Assets:</strong> Cash on hand for immediate access</li>
+        <li><strong>Tax-Advantaged Investments:</strong> TFSA, RRSP, FHSA (Canadian accounts)</li>
+        <li><strong>Non-Registered Investments:</strong> Taxable investment accounts</li>
+        <li><strong>Property & Other:</strong> Home, vehicle, business, pension values</li>
+      </ul>
+
+      <p><strong>Liability Tracking:</strong></p>
+      <ul>
+        <li>Mortgage debt</li>
+        <li>Consumer debt (credit cards, line of credit)</li>
+        <li>Installment loans (student, auto)</li>
+        <li>Tax obligations and other liabilities</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Accessibility Features</h2>
+      <ul>
+        <li><strong>ARIA Live Region:</strong> Output announces results to screen readers</li>
+        <li><strong>Semantic HTML:</strong> Proper form, label, and input elements</li>
+        <li><strong>Keyboard Navigation:</strong> Full keyboard support for all inputs</li>
+        <li><strong>Tooltips:</strong> Contextual help for complex fields</li>
+        <li><strong>Range Sliders:</strong> Accessible slider for emergency fund target months</li>
+        <li><strong>Toggle Controls:</strong> Checkbox for including home in net worth calculation</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Best Practices</h2>
+      <ul>
+        <li><strong>Real-Time Feedback:</strong> Update calculations on every input change</li>
+        <li><strong>Sensible Defaults:</strong> Pre-populate with realistic example values</li>
+        <li><strong>Currency Formatting:</strong> Use Intl.NumberFormat for locale-aware display</li>
+        <li><strong>Validation:</strong> Constrain inputs to positive values using Math.max(0, value)</li>
+        <li><strong>Grouped Inputs:</strong> Organize fields by category (emergency, assets, liabilities)</li>
+        <li><strong>Visual Hierarchy:</strong> Use headings and borders to separate sections</li>
+        <li><strong>Color-Coded Status:</strong> Green for healthy, yellow/red for needs attention</li>
+        <li><strong>Responsive Design:</strong> Mobile-first with sidebar on desktop</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Quick Start</h2>
+      <ol>
+        <li>
+          <strong>Create block files:</strong>
+          <pre><code class="language-bash">mkdir -p blocks/networth-calculator
+touch blocks/networth-calculator/networth-calculator.js
+touch blocks/networth-calculator/networth-calculator.css</code></pre>
+        </li>
+        <li>
+          <strong>Copy implementation code</strong> from the Implementation section above
+        </li>
+        <li>
+          <strong>Test locally:</strong>
+          <pre><code class="language-bash">aem up</code></pre>
+          Navigate to a test page with the Net Worth Calculator block
+        </li>
+        <li>
+          <strong>Verify calculations:</strong> Test with different asset/liability values
+        </li>
+        <li>
+          <strong>Deploy:</strong> Push to preview and test before going live
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2024 AEM Edge Delivery Services Developer Guides</p>
+    </div>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

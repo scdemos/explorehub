@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Experimentation &amp; personalization | EDS Reference Playbook</title>
+  <meta name="description" content="Privacy-first A/B + audiences + campaigns at the eager phase, phased Adobe Target / WebSDK loaded as MarTech without blocking LCP.">
+
+  <meta property="og:title" content="Experimentation &amp; personalization | EDS Reference Playbook">
+  <meta property="og:description" content="Privacy-first A/B + audiences + campaigns at the eager phase, phased Adobe Target / WebSDK loaded as MarTech without blocking LCP.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="../assets/screenshots/experimentation-and-personalization.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="../assets/screenshots/experimentation-and-personalization.png">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css">
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Playbooks &amp; Recipes</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Experimentation &amp; personalization</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-playbook">Playbook</span>
+      <h1>Experimentation &amp; personalization</h1>
+      <p class="subtitle">Two layers of decisioning: lightweight in-page A/B + audiences (always-on, no LCP cost), and a deeper Adobe WebSDK / Target integration loaded in a phased way through the MarTech plugin.</p>
+      <div class="metadata">
+        <span class="tag">A/B</span>
+        <span class="tag">Audiences</span>
+        <span class="tag">Adobe Target</span>
+        <span class="tag">Web SDK</span>
+        <span class="tag">RUM</span>
+      </div>
+    </header>
+
+    <section id="problem" class="chapter-section">
+      <h2>Problem</h2>
+      <p>You need three things, often confused for one: (1) lightweight A/B tests on EDS pages, (2) audience-based content swaps without server roundtrips, (3) Adobe Target personalization and analytics through the WebSDK. Mash them together naively and your LCP collapses. Done right, all three coexist with minimal CWV impact.</p>
+    </section>
+
+    <section id="live-example" class="chapter-section">
+      <h2>Live example</h2>
+      <p>The demo wires both layers from <code>scripts/scripts.js</code>:</p>
+      <p>
+        <a class="btn btn-primary" target="_blank" href="https://main--demo--scdemos.aem.live/">Demo home (Target-ready hero / teaser)</a>
+        <a class="btn btn-secondary" target="_blank" href="https://github.com/scdemos/demo/blob/main/scripts/scripts.js">scripts.js (eager + lazy + delayed phases)</a>
+      </p>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>High-level architecture</h2>
+      <pre class="mermaid">
+flowchart TD
+  Eager["loadEager"]
+  --> InitMartech["initMartech<br/>(non-blocking start)"]
+  --> ExpEager{"experiment /<br/>audience /<br/>campaign meta?"}
+  ExpEager -->|yes| ExpPlugin["plugins/experimentation<br/>loadEager"]
+  ExpEager -->|no| Decorate
+  ExpPlugin --> Decorate["decorateMain"]
+  Decorate --> AppearAndLCP["body.appear + LCP image"]
+  AppearAndLCP --> MartechEager["martechEager<br/>once initMartech resolves"]
+
+  Lazy["loadLazy"]
+  Lazy --> Sections["section-by-section render"]
+  Sections --> MartechLazy["martechLazy<br/>WebSDK send-event"]
+
+  Delayed["loadDelayed"]
+  Delayed --> MartechDelayed["martechDelayed"]
+      </pre>
+      <p>Three priority lanes — <strong>eager</strong> (decisioning that affects the LCP element runs here), <strong>lazy</strong> (analytics events, propositions display), <strong>delayed</strong> (anything that's not on the critical path). The MarTech plugin enforces this; you don't write the timing wires by hand.</p>
+    </section>
+
+    <section id="snippets" class="chapter-section">
+      <h2>Code snippets</h2>
+
+      <h3>1. Eager phase — start MarTech, run experiments before <code>decorateMain</code></h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>scripts/scripts.js</code> (eager)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/scripts/scripts.js#L192-L249" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">async function loadEager(doc) {
+  decorateTemplateAndTheme();
+  applyTheme();
+
+  const isConsentGiven = true;
+  const martechLoadedPromise = !IS_QUICK_EDIT &amp;&amp; initMartech(
+    {
+      datastreamId: 'd73be188-...-8aa7cd1e343b',
+      orgId: '138A07885EE042D20A495CFA@AdobeOrg',
+      defaultConsent: 'in',
+      edgeConfigOverrides: {
+        com_adobe_target: { propertyToken: '2375354b-...-7c38fccd590b' },
+      },
+    },
+    {
+      personalization: !!getMetadata('target') &amp;&amp; isConsentGiven,
+      launchUrls: ['https://assets.adobedtm.com/.../launch-452113bfea88.min.js'],
+      decisionScopes: ['homepage-hero-mbox', 'homepage-teaser-mbox'],
+      propositionMetadata: {
+        'homepage-hero-mbox': { selector: 'main .section:first-child', actionType: 'replaceHtml' },
+        'homepage-teaser-mbox': { selector: 'main .section:nth-child(2)', actionType: 'replaceHtml' },
+      },
+    },
+  );
+
+  const main = doc.querySelector('main');
+  if (main) {
+    if (isExperimentationEnabled()) {
+      const { loadEager: runEager } = await import('../plugins/experimentation/src/index.js');
+      await runEager(document, { audiences: AUDIENCES }, getExperimentationContext());
+    }
+    decorateMain(main);
+    document.body.classList.add('appear');
+    await Promise.all([
+      martechLoadedPromise &amp;&amp; martechLoadedPromise.then(martechEager),
+      loadSection(main.querySelector('.section'), async (s) =&gt; {
+        await waitForFirstImage(s);
+        await loadFragments(s);
+      }),
+    ]);
+  }
+}</code></pre>
+      </div>
+
+      <h3>2. Experimentation triggers — page metadata only</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>scripts/scripts.js</code> (gate)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/scripts/scripts.js#L38-L42" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">function isExperimentationEnabled() {
+  return getMetadata('experiment')
+    || Object.keys(getAllMetadata('campaign')).length
+    || Object.keys(getAllMetadata('audience')).length;
+}
+
+const AUDIENCES = {
+  mobile: () =&gt; window.innerWidth &lt; 600,
+  desktop: () =&gt; window.innerWidth &gt;= 600,
+};</code></pre>
+      </div>
+
+      <p>The <code>plugins/experimentation</code> code path only loads when the page declares <code>experiment</code>, <code>campaign:*</code>, or <code>audience-*</code> meta tags. Pages with no experiment pay zero JS cost.</p>
+
+      <h3>3. Lazy phase — WebSDK send-event after content settles</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>scripts/scripts.js</code> (lazy)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/scripts/scripts.js#L251-L277" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">async function loadLazy(doc) {
+  // ... header / fragments / sections ...
+  loadFooter(footerEl);
+  if (!IS_QUICK_EDIT) await martechLazy();
+  // martechLazy fires the WebSDK event for the page-view, applies any
+  // remaining propositions that weren't on the LCP path.
+}</code></pre>
+      </div>
+
+      <h3>4. Delayed phase — anything off the critical path</h3>
+      <p><code>scripts/delayed.js</code> ends with <code>martechDelayed()</code>. Use this for non-critical telemetry, third-party tags, conversion-tracking pixels.</p>
+    </section>
+
+    <section id="gotchas" class="chapter-section">
+      <h2>Notes &amp; gotchas</h2>
+      <ul>
+        <li><strong>LCP is the budget.</strong> The MarTech init starts <em>before</em> <code>decorateMain</code> but <code>martechEager()</code> only resolves after the WebSDK is ready. The page never blocks on it — it's parallel to <code>loadSection(firstSection)</code>.</li>
+        <li><strong>Decision scopes are mboxes.</strong> Each <code>decisionScopes</code> entry maps to an mbox in Target. The <code>propositionMetadata</code> tells the plugin where in the DOM to apply the proposition (<code>selector</code> + <code>actionType</code>). Use this for hero swaps, teaser swaps, "show this badge to mobile users" — anything authored as plain HTML.</li>
+        <li><strong>Quick Edit bypass.</strong> The plugin guards on <code>IS_QUICK_EDIT</code>. Don't run experiments inside the DA quick-edit overlay — authors get a stable view to edit.</li>
+        <li><strong>Consent stub vs reality.</strong> The demo hardcodes <code>isConsentGiven = true</code>. Replace with your actual CMP signal (<code>tcfapi</code>, OneTrust, or in-house). Without that, regional compliance breaks.</li>
+        <li><strong>Audiences first, experiments second.</strong> Audiences are stable URL-driven matches (mobile/desktop, locale, logged-in) — they should be in the eager path. Bucket-based experiments are randomized; use them for tactical UI tests, not core layout decisions.</li>
+        <li><strong>RUM hooks.</strong> The experimentation plugin samples RUM events with the variant id, so dashboards can split CWV by experiment. Don't disable <code>sampleRUM</code> — it's how you discover that variant B tanked LCP.</li>
+        <li><strong>Avoid CLS during proposition apply.</strong> When Target replaces the first section's HTML, set min-height on the LCP container in your CSS so the layout doesn't shift when the proposition lands.</li>
+      </ul>
+    </section>
+
+    <section id="adapt" class="chapter-section">
+      <h2>How to adapt into my project</h2>
+      <ol>
+        <li><strong>Choose the layer you need.</strong> Most projects only need the experimentation plugin (no Target). Start there. Layer the WebSDK in only when marketing wants Target / Analytics integration.</li>
+        <li><strong>Copy <code>plugins/experimentation</code> + <code>plugins/martech</code></strong> as starting points. They're versioned plugins, not bespoke code — keep the upstream remote configured so you can pull updates.</li>
+        <li><strong>Update the MarTech config.</strong> Replace <code>datastreamId</code>, <code>orgId</code>, and <code>propertyToken</code> with your tenant's values from Adobe Experience Platform.</li>
+        <li><strong>Wire <code>isExperimentationEnabled()</code></strong> from <code>loadEager</code> exactly as the demo does. Don't load the plugin unconditionally.</li>
+        <li><strong>Author one experiment</strong> end-to-end on a low-stakes page first. Add the meta, deploy, verify <code>?experiment=...</code> control vs treatment switch, confirm RUM signals.</li>
+        <li><strong>Add CMP integration</strong> before going live. Replace <code>isConsentGiven = true</code> with the real signal.</li>
+      </ol>
+    </section>
+
+    <section id="links" class="chapter-section">
+      <h2>Links</h2>
+      <ul>
+        <li><a href="https://www.aem.live/developer/experimentation" target="_blank">AEM — experimentation</a></li>
+        <li><a href="https://github.com/adobe/aem-experimentation" target="_blank">aem-experimentation plugin</a></li>
+        <li><a href="https://github.com/adobe/aem-martech" target="_blank">aem-martech plugin</a></li>
+        <li><a href="https://experienceleague.adobe.com/docs/web-sdk/" target="_blank">Adobe WebSDK docs</a></li>
+        <li><a href="../use-cases/how-to-use-experimentation.html">Cookbook: Experimentation</a></li>
+        <li><a href="../use-cases/how-to-page-load-scripts-js.html">Cookbook: Page load &amp; scripts.js (eager / lazy / delayed)</a></li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/playbooks/experimentation-and-personalization.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

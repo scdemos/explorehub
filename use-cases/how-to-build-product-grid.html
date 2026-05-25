@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Grid Block - Developer Guide</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Product Grid Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Product Grid Block</h1>
+      <p class="subtitle">Dynamic product catalog powered by JSON index</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">E-Commerce</span>
+        <span class="tag">Intermediate</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>The Product Grid block displays a responsive grid of product cards fetched from a product index JSON file. It's designed for e-commerce use cases where product data is managed centrally and rendered dynamically across multiple pages.</p>
+
+      <div class="info-box">
+        <h3>Key Features</h3>
+        <ul>
+          <li><strong>JSON-powered</strong> - Loads products from external index files</li>
+          <li><strong>Responsive grid</strong> - 1 column mobile, 2 tablet, 3 desktop</li>
+          <li><strong>Optimized images</strong> - Uses AEM's picture element with multiple breakpoints</li>
+          <li><strong>Relative path resolution</strong> - Handles relative image paths automatically</li>
+          <li><strong>Price formatting</strong> - Canadian dollar formatting with CA$ prefix</li>
+          <li><strong>Loading states</strong> - Visual feedback during data fetch</li>
+          <li><strong>Error handling</strong> - Graceful fallback for failed requests</li>
+        </ul>
+      </div>
+
+      <div class="demo-box">
+        <h3>Live Demo</h3>
+        <p>See the product grid in action:</p>
+        <a href="http://localhost:3000/demo-docs/library" target="_blank" class="demo-link">View Product Grid Demo →</a>
+      </div>
+    </section>
+
+    <!-- Architecture -->
+    <section>
+      <h2>Architecture</h2>
+      <div class="mermaid">
+graph TB
+    A[Author: Link to index.json] --> B[Decorate Function]
+    B --> C[Parse Index URL]
+    C --> D[Fetch JSON Data]
+    D --> E[Build Product Cards]
+    E --> F{Image Path?}
+    F -->|Relative| G[Resolve Against Index URL]
+    F -->|Absolute| H[Use As-Is]
+    G --> I[Create Optimized Picture]
+    H --> I
+    I --> J[Append to Grid]
+    J --> K[Update UI State]
+
+    style A fill:#e1f5ff
+    style D fill:#fff4e1
+    style K fill:#e7f5e1
+      </div>
+    </section>
+
+    <!-- Building Blocks -->
+    <section>
+      <h2>Building Blocks</h2>
+
+      <h3>1. Core Components</h3>
+      <ul>
+        <li><strong>Index Fetcher</strong> - Retrieves product data from JSON endpoint</li>
+        <li><strong>Image Resolver</strong> - Converts relative paths to absolute URLs</li>
+        <li><strong>Card Builder</strong> - Creates individual product card elements</li>
+        <li><strong>Picture Generator</strong> - Leverages AEM's createOptimizedPicture for responsive images</li>
+        <li><strong>Price Formatter</strong> - Formats prices as Canadian dollars</li>
+      </ul>
+
+      <h3>2. Data Flow</h3>
+      <pre><code class="language-javascript">// Expected JSON structure
+{
+  "data": [
+    {
+      "sku": "TOOL-001",
+      "url": "/products/tools/hammer",
+      "title": "Professional Hammer",
+      "price": "24.99",
+      "image": "./media_1234.jpg"  // Relative or absolute
+    }
+  ]
+}</code></pre>
+
+      <h3>3. Path Resolution</h3>
+      <ul>
+        <li><strong>Relative paths</strong> - "./image.jpg" resolved against index URL directory</li>
+        <li><strong>Absolute paths</strong> - "/path/image.jpg" used as-is</li>
+        <li><strong>Full URLs</strong> - "https://..." used directly</li>
+      </ul>
+    </section>
+
+    <!-- Content Structure -->
+    <section>
+      <h2>Content Structure for Authors</h2>
+      <p>Authors reference a product index JSON file using a simple link in their document:</p>
+
+      <h3>Document Structure</h3>
+      <details>
+        <summary>Expand to view and copy product grid block structure</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th style="background-color: #f0f0f0;">Product Grid</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>/products/tools/index.json</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <div class="info-box">
+        <h3>Authoring Rules</h3>
+        <ul>
+          <li><strong>URL format</strong>: Link or plain text path to JSON file</li>
+          <li><strong>Relative URLs</strong>: Automatically resolved by browser</li>
+          <li><strong>Empty block</strong>: Shows "No products found" message</li>
+          <li><strong>Invalid URL</strong>: Shows error message</li>
+        </ul>
+      </div>
+
+      <h3>Product Index JSON Format</h3>
+      <pre><code class="language-json">{
+  "data": [
+    {
+      "sku": "TOOL-001",
+      "url": "/products/tools/hammer",
+      "title": "Professional Hammer",
+      "price": "24.99",
+      "image": "./media_abc123.jpg"
+    },
+    {
+      "sku": "TOOL-002",
+      "url": "/products/tools/wrench",
+      "title": "Adjustable Wrench",
+      "price": "32.50",
+      "image": "./media_def456.jpg"
+    }
+  ]
+}</code></pre>
+    </section>
+
+    <!-- Complete Implementation -->
+    <section>
+      <h2>Complete Implementation</h2>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>blocks/product-grid/product-grid.js</code></p>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/product-grid/product-grid.js"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <h3>JavaScript (product-grid.js) - 115 lines</h3>
+      <button class="copy-button" data-target="product-grid-js">Copy Code</button>
+      <pre><code id="product-grid-js" class="language-javascript">/**
+ * Product Grid block.
+ *
+ * Authoring: add a link to a product index JSON in the block.
+ *   | product-grid                              |
+ *   | /products/tools/index.json                |
+ *
+ * Fetches the index, resolves image URLs, and renders a responsive product card grid.
+ */
+
+import { createOptimizedPicture } from '../../scripts/aem.js';
+import { createTag } from '../../scripts/shared.js';
+
+/**
+ * Fetch and return the data array from a product index JSON.
+ * @param {string} url - Absolute URL to the index JSON.
+ * @returns {Promise<Array>}
+ */
+async function fetchProductIndex(url) {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`product-grid: index fetch failed (${resp.status})`);
+  const json = await resp.json();
+  return json?.data ?? [];
+}
+
+/**
+ * Resolve a possibly-relative image path against the index URL.
+ * e.g. "./media_abc.jpg" + "/products/tools/index.json" → "/products/tools/media_abc.jpg"
+ * @param {string} image
+ * @param {string} indexUrl
+ * @returns {string}
+ */
+function resolveImage(image, indexUrl) {
+  if (!image) return '';
+  try {
+    return new URL(image, new URL(indexUrl, window.location.origin)).pathname;
+  } catch {
+    return image;
+  }
+}
+
+/**
+ * Format a price string as Canadian dollars.
+ * @param {string} price
+ * @returns {string}
+ */
+function formatPrice(price) {
+  const num = parseFloat(price);
+  return Number.isFinite(num) ? `CA$${num.toFixed(2)}` : price;
+}
+
+/**
+ * Build a single product card <li>.
+ * @param {{ sku: string, url: string, title: string, price: string, image: string }} product
+ * @param {string} indexUrl - Used to resolve relative image paths.
+ * @returns {HTMLLIElement}
+ */
+function buildCard(product, indexUrl) {
+  const li = createTag('li', { class: 'product-grid-item' });
+  const link = createTag('a', { href: product.url, class: 'product-grid-link' });
+
+  // Image
+  if (product.image) {
+    const src = resolveImage(product.image, indexUrl);
+    const picture = createOptimizedPicture(src, product.title || '', false, [
+      { width: '400' },
+      { media: '(min-width: 900px)', width: '600' },
+    ]);
+    link.append(createTag('div', { class: 'product-grid-image' }, picture));
+  }
+
+  // Body: title + price
+  const body = createTag('div', { class: 'product-grid-body' });
+  body.append(createTag('p', { class: 'product-grid-title' }, product.title || product.sku));
+  if (product.price) {
+    body.append(createTag('p', { class: 'product-grid-price' }, formatPrice(product.price)));
+  }
+  link.append(body);
+
+  li.append(link);
+  return li;
+}
+
+export default async function decorate(block) {
+  // Read the authored index URL — works as a hyperlink or plain text path.
+  const anchor = block.querySelector('a[href]');
+  const text = block.textContent.trim();
+  const indexUrl = anchor
+    ? anchor.href // DOM href is always absolute; browser resolves relative links
+    : new URL(text, window.location.origin).href;
+
+  if (!indexUrl) return;
+
+  // Clear authored content and show loading state
+  block.textContent = '';
+  block.setAttribute('aria-busy', 'true');
+
+  try {
+    const products = await fetchProductIndex(indexUrl);
+
+    if (!products.length) {
+      block.append(createTag('p', { class: 'product-grid-empty' }, 'No products found.'));
+      return;
+    }
+
+    const ul = createTag('ul', { class: 'product-grid-list' });
+    products.forEach((product) => ul.append(buildCard(product, indexUrl)));
+    block.append(ul);
+  } catch {
+    block.append(createTag('p', { class: 'product-grid-empty' }, 'Unable to load products right now.'));
+  } finally {
+    block.removeAttribute('aria-busy');
+  }
+}</code></pre>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; margin-top: 2rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>blocks/product-grid/product-grid.css</code></p>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/product-grid/product-grid.css"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <h3>CSS (product-grid.css) - 120 lines</h3>
+      <button class="copy-button" data-target="product-grid-css">Copy Code</button>
+      <pre><code id="product-grid-css" class="language-css">/* ==========================================================================
+   Product Grid block
+   ========================================================================== */
+
+.product-grid[aria-busy='true'] {
+  min-height: 200px;
+  opacity: 0.5;
+}
+
+/* Grid list */
+.product-grid-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-l);
+}
+
+/* Card */
+.product-grid-item {
+  border: 1px solid light-dark(var(--color-gray-200), rgb(245 242 237 / 10%));
+  background: light-dark(var(--color-light), var(--color-card-dark));
+  border-radius: 12px;
+  overflow: hidden;
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.product-grid-item:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 48px light-dark(rgb(161 79 43 / 18%), rgb(197 160 89 / 18%));
+  border-color: light-dark(var(--color-gold), rgb(197 160 89 / 45%));
+}
+
+/* Link wraps the whole card */
+.product-grid-link {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Image */
+.product-grid-image {
+  line-height: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.product-grid-image picture {
+  display: block;
+}
+
+.product-grid-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.product-grid-item:hover .product-grid-image img {
+  transform: scale(1.05);
+}
+
+/* Body */
+.product-grid-body {
+  padding: var(--space-m);
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.product-grid-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--body-font-size-m);
+  line-height: 1.3;
+  color: light-dark(var(--color-ink), var(--color-parchment));
+}
+
+.product-grid-price {
+  margin: 0;
+  margin-top: auto;
+  padding-top: var(--space-s);
+  font-weight: 700;
+  font-size: var(--body-font-size-s);
+  color: light-dark(var(--color-rust), var(--color-rust-bright));
+}
+
+/* Empty / error state */
+.product-grid-empty {
+  color: light-dark(var(--color-gray-600), var(--color-gray-400));
+  font-size: var(--body-font-size-s);
+}
+
+/* Tablet: 2 columns */
+@media (width >= 600px) {
+  .product-grid-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop: 3 columns */
+@media (width >= 900px) {
+  .product-grid-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .product-grid-body {
+    padding: var(--space-l);
+  }
+}</code></pre>
+    </section>
+
+    <!-- Step-by-Step Setup -->
+    <section>
+      <h2>Step-by-Step Setup</h2>
+
+      <h3>1. Create Block Files</h3>
+      <pre><code class="language-bash">mkdir -p blocks/product-grid
+touch blocks/product-grid/product-grid.js
+touch blocks/product-grid/product-grid.css</code></pre>
+
+      <h3>2. Add JavaScript Implementation</h3>
+      <p>Copy the complete JavaScript code above into <code>product-grid.js</code>.</p>
+
+      <h3>3. Add CSS Styling</h3>
+      <p>Copy the complete CSS code above into <code>product-grid.css</code>.</p>
+
+      <h3>4. Create Product Index JSON</h3>
+      <p>Create your product data file at the desired location (e.g., <code>/products/tools/index.json</code>):</p>
+      <pre><code class="language-json">{
+  "data": [
+    {
+      "sku": "TOOL-001",
+      "url": "/products/tools/hammer",
+      "title": "Professional Hammer",
+      "price": "24.99",
+      "image": "./media_abc.jpg"
+    }
+  ]
+}</code></pre>
+
+      <h3>5. Add Block to Page</h3>
+      <p>In your document editor, add the block with a link to your index:</p>
+      <details>
+        <summary>Expand to view and copy product grid block structure</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th style="background-color: #f0f0f0;">Product Grid</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>/products/tools/index.json</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <h3>6. Test Locally</h3>
+      <pre><code class="language-bash">aem up
+# Visit http://localhost:3000/your-page</code></pre>
+    </section>
+
+    <!-- Accessibility -->
+    <section>
+      <h2>Accessibility</h2>
+
+      <h3>ARIA Attributes</h3>
+      <ul>
+        <li><code>aria-busy="true"</code> - Indicates loading state during fetch</li>
+        <li>Removed after content loads or on error</li>
+      </ul>
+
+      <h3>Semantic HTML</h3>
+      <ul>
+        <li><code>&lt;ul&gt;</code> / <code>&lt;li&gt;</code> - Proper list semantics for grid</li>
+        <li><code>&lt;a&gt;</code> - Card wrapper is a semantic link</li>
+        <li>Image alt text derived from product title</li>
+      </ul>
+
+      <h3>Keyboard Navigation</h3>
+      <ul>
+        <li><kbd>Tab</kbd> - Navigate between product cards</li>
+        <li><kbd>Enter</kbd> - Activate focused card link</li>
+        <li>Focus indicators visible on all cards</li>
+      </ul>
+    </section>
+
+    <!-- Performance -->
+    <section>
+      <h2>Performance Considerations</h2>
+
+      <h3>Image Optimization</h3>
+      <ul>
+        <li><strong>Responsive images</strong> - Multiple breakpoints (400px, 600px)</li>
+        <li><strong>Lazy loading</strong> - Native lazy attribute via createOptimizedPicture</li>
+        <li><strong>WebP format</strong> - Automatic WebP delivery when supported</li>
+        <li><strong>Aspect ratio</strong> - 16:9 defined in CSS prevents layout shift</li>
+      </ul>
+
+      <h3>Data Loading</h3>
+      <ul>
+        <li><strong>Single fetch</strong> - One request per block instance</li>
+        <li><strong>Async decoration</strong> - Non-blocking decorate function</li>
+        <li><strong>Error handling</strong> - Graceful degradation on fetch failure</li>
+      </ul>
+
+      <h3>CSS Performance</h3>
+      <ul>
+        <li><strong>GPU acceleration</strong> - Transform and opacity for animations</li>
+        <li><strong>Grid layout</strong> - Native CSS Grid for responsive columns</li>
+        <li><strong>Scoped selectors</strong> - All rules prefixed with .product-grid</li>
+      </ul>
+    </section>
+
+    <!-- Related Guides -->
+    <section>
+      <h2>Related Guides</h2>
+      <ul>
+        <li><a href="how-to-build-related-articles.html">Related Articles</a> - Similar query-index powered block</li>
+        <li><a href="how-to-build-cards-block.html">Cards Block</a> - Another card-based layout</li>
+      </ul>
+    </section>
+
+    <!-- Troubleshooting -->
+    <section>
+      <h2>Troubleshooting</h2>
+
+      <h3>Images Not Loading</h3>
+      <p><strong>Issue:</strong> Product images show broken or missing.</p>
+      <p><strong>Solution:</strong> Check that image paths are resolved correctly:</p>
+      <pre><code class="language-javascript">// Verify resolveImage is handling your path format
+console.log(resolveImage('./media_abc.jpg', '/products/tools/index.json'));
+// Should output: /products/tools/media_abc.jpg</code></pre>
+
+      <h3>No Products Displayed</h3>
+      <p><strong>Issue:</strong> Grid shows "No products found" despite valid JSON.</p>
+      <p><strong>Solution:</strong> Verify JSON structure matches expected format:</p>
+      <pre><code class="language-javascript">// JSON must have "data" array at top level
+{
+  "data": [ /* products here */ ]
+}</code></pre>
+
+      <h3>Fetch Fails with CORS Error</h3>
+      <p><strong>Issue:</strong> Console shows CORS policy error.</p>
+      <p><strong>Solution:</strong> Ensure index JSON is served from same origin or has proper CORS headers.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

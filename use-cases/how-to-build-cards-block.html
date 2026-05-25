@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cards Block - Developer Guide | AEM Edge Delivery</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Cards Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Cards Block</h1>
+      <p class="subtitle">Flexible card layouts with three variants: default, links, and bento</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Query Index</span>
+        <span class="tag">Intermediate</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>The Cards block displays content in flexible card layouts with three distinct variants: authored cards (default), query-index powered cards (links), and asymmetric bento grids (bento). Each variant provides different authoring patterns and visual layouts.</p>
+
+      <h3>Key Features</h3>
+      <ul>
+        <li>Three variants - Default, Links, Bento for different use cases</li>
+        <li>Query-index integration - Dynamic content from site metadata</li>
+        <li>Image optimization - Automatic responsive image generation</li>
+        <li>Link wrapping - Entire card clickable in default variant</li>
+        <li>Bento featured card - First card highlighted in grid</li>
+        <li>Universal Editor support - Preserves authored links</li>
+      </ul>
+
+      <div class="links">
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/cards/cards.js" target="_blank" class="btn">View JavaScript (188 lines)</a>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/cards/cards.css" target="_blank" class="btn">View CSS (275 lines)</a>
+        <a href="https://demo.bbird.live/demo-docs/library" target="_blank" class="btn btn-secondary">Live Demo</a>
+      </div>
+    </section>
+
+    <!-- 2. Architecture Flow -->
+    <section>
+      <h2>Architecture Flow</h2>
+      <div class="mermaid">
+flowchart TD
+    Block[Cards Block] --> Variant{Check Variant}
+    Variant -->|links| Links[decorateLinks]
+    Variant -->|bento| Bento[decorateBento]
+    Variant -->|default| Default[decorateDefault]
+
+    Links --> Extract[getAuthoredLinks]
+    Extract --> Fetch[fetchQueryIndexAll]
+    Fetch --> Resolve[resolveArticlesFromIndex]
+    Resolve --> BuildLinks[buildLinksCard]
+
+    Bento --> RowsBento[Parse Authored Rows]
+    RowsBento --> Featured[Mark First as Featured]
+    Featured --> Tags[Extract Tag Labels]
+
+    Default --> RowsDefault[Parse Authored Rows]
+    RowsDefault --> Images[Extract Images]
+    Images --> Wrap[Wrap in Link]
+    Wrap --> Optimize[createOptimizedPicture]
+
+    BuildLinks --> Render[Render Card Grid]
+    Tags --> Render
+    Optimize --> Render
+      </div>
+    </section>
+
+    <!-- 3. Block Authoring -->
+    <section>
+      <h2>Block Authoring for Content Authors</h2>
+      <p>Authors create cards blocks using different table structures depending on the variant. Each row typically represents one card.</p>
+
+      <h3>Default Variant (Authored Cards)</h3>
+      <details>
+        <summary>Expand to view and copy</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">cards</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width: 40%;">
+                  <img src="https://placehold.co/600x400/e8e8e8/666?text=Card+1" alt="Card 1" style="max-width: 100%; height: auto;"><br>
+                  <a href="/page1">Link</a>
+                </td>
+                <td>
+                  <strong>Card Title 1</strong><br>
+                  Description text for the first card
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <img src="https://placehold.co/600x400/e8e8e8/666?text=Card+2" alt="Card 2" style="max-width: 100%; height: auto;"><br>
+                  <a href="/page2">Link</a>
+                </td>
+                <td>
+                  <strong>Card Title 2</strong><br>
+                  Description text for the second card
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <img src="https://placehold.co/600x400/e8e8e8/666?text=Card+3" alt="Card 3" style="max-width: 100%; height: auto;"><br>
+                  <a href="/page3">Link</a>
+                </td>
+                <td>
+                  <strong>Card Title 3</strong><br>
+                  Description text for the third card
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 0.5rem;"><em>Note: In DA, use actual image uploads and real links. The link in column 1 wraps the entire card.</em></p>
+        </div>
+      </details>
+
+      <h3>Links Variant (Query-Index Powered)</h3>
+      <details>
+        <summary>Expand to view and copy</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="1" style="background-color: #f0f0f0;">cards (links)</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  - /articles/article-1<br>
+                  - /articles/article-2<br>
+                  - /articles/article-3<br>
+                  - /blog/post-1<br>
+                  - /blog/post-2
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 0.5rem;"><em>Note: Provide paths as bullet list. Block fetches metadata (title, description, image) from query-index.</em></p>
+        </div>
+      </details>
+
+      <h3>Bento Variant (Asymmetric Grid)</h3>
+      <details>
+        <summary>Expand to view and copy</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">cards (bento)</th></tr>
+            </thead>
+            <caption style="caption-side: top; text-align: left; padding: 0.5rem; font-size: 0.85rem; color: var(--color-text-secondary, #666); font-style: italic;">
+              Note: the <code>bento</code> variant is only authored via DA / Word tables — it is not currently in <a href="https://github.com/scdemos/demo/blob/main/ue/models/blocks/cards.json" target="_blank"><code>ue/models/blocks/cards.json</code></a>. The Universal Editor variant select offers Default and Links only.
+            </caption>
+            <tbody>
+              <tr>
+                <td style="width: 40%;">
+                  <img src="https://placehold.co/800x500/b7410e/f5f5dc?text=Featured+Card" alt="Featured" style="max-width: 100%; height: auto;">
+                </td>
+                <td>
+                  <em>// Featured Label</em><br>
+                  <strong>Featured Card Title</strong><br>
+                  This is the featured card (first row) with larger prominence in the grid.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <img src="https://placehold.co/600x400/e8e8e8/666?text=Card+2" alt="Card 2" style="max-width: 100%; height: auto;">
+                </td>
+                <td>
+                  <em>// Category</em><br>
+                  <strong>Second Card</strong><br>
+                  Regular card in bento grid.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <img src="https://placehold.co/600x400/e8e8e8/666?text=Card+3" alt="Card 3" style="max-width: 100%; height: auto;">
+                </td>
+                <td>
+                  <em>// Another Tag</em><br>
+                  <strong>Third Card</strong><br>
+                  Another regular card.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 0.5rem;"><em>Note: First row = featured card. First paragraph becomes tag/label.</em></p>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2 id="markup-flow">From Authoring to Rendering</h2>
+      <p>Understanding the transformation from authored content to decorated HTML helps developers debug and extend the cards block effectively.</p>
+
+      <h3>Step 1: What the Author Creates</h3>
+      <p>For a basic manual cards block, authors create a simple table with one row per card:</p>
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr><th>Cards</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <img src="https://placehold.co/600x400/e8e8e8/666?text=Card+1" alt="Card 1" style="max-width: 100%; height: auto;"><br>
+                <strong><a href="/article-1">First Article</a></strong><br>
+                Learn about financial independence and early retirement.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <img src="https://placehold.co/600x400/e8e8e8/666?text=Card+2" alt="Card 2" style="max-width: 100%; height: auto;"><br>
+                <strong><a href="/article-2">Second Article</a></strong><br>
+                Discover budgeting strategies that actually work.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Step 2: Plain HTML (.plain.html)</h3>
+      <p>AEM converts the table to nested divs <strong>before any JavaScript or CSS runs</strong>:</p>
+
+      <pre><code class="language-html">&lt;div&gt;
+  &lt;div class="cards"&gt;
+    &lt;div&gt;
+      &lt;div&gt;
+        &lt;picture&gt;
+          &lt;source type="image/webp" srcset="./media_abc.png?width=2000&amp;format=webply" media="(min-width: 600px)"&gt;
+          &lt;img loading="lazy" alt="" src="./media_abc.png?width=750" width="750" height="419"&gt;
+        &lt;/picture&gt;
+      &lt;/div&gt;
+      &lt;div&gt;
+        &lt;p&gt;&lt;strong&gt;&lt;a href="/article-1"&gt;First Article&lt;/a&gt;&lt;/strong&gt;&lt;/p&gt;
+        &lt;p&gt;Learn about financial independence and early retirement.&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div&gt;
+      &lt;div&gt;
+        &lt;picture&gt;
+          &lt;source type="image/webp" srcset="./media_xyz.jpg?width=2000&amp;format=webply" media="(min-width: 600px)"&gt;
+          &lt;img loading="lazy" alt="" src="./media_xyz.jpg?width=750" width="750" height="578"&gt;
+        &lt;/picture&gt;
+      &lt;/div&gt;
+      &lt;div&gt;
+        &lt;p&gt;&lt;strong&gt;&lt;a href="/article-2"&gt;Second Article&lt;/a&gt;&lt;/strong&gt;&lt;/p&gt;
+        &lt;p&gt;Discover budgeting strategies that actually work.&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+      <p><strong>Key observations:</strong></p>
+      <ul>
+        <li>Block name "Cards" becomes <code>class="cards"</code></li>
+        <li>Each table row becomes a card <code>&lt;div&gt;</code></li>
+        <li>Content within each row is wrapped in child <code>&lt;div&gt;</code> elements</li>
+        <li>Images are converted to responsive <code>&lt;picture&gt;</code> elements</li>
+        <li><strong>No card-specific classes yet</strong> - no <code>card-image</code>, <code>card-body</code>, or <code>card-title</code></li>
+      </ul>
+
+      <h3>Step 3: JavaScript Decoration</h3>
+      <p>The <code>blocks/cards/cards.js</code> file adds semantic classes and creates proper card structure:</p>
+
+      <pre><code class="language-javascript">export default function decorate(block) {
+  const ul = document.createElement('ul');
+  [...block.children].forEach((row) =&gt; {
+    const li = document.createElement('li');
+    li.className = 'cards-card';  // ← Adds card class
+
+    while (row.firstElementChild) {
+      li.append(row.firstElementChild);
+    }
+
+    [...li.children].forEach((div) =&gt; {
+      if (div.children.length === 1 &amp;&amp; div.querySelector('picture')) {
+        div.className = 'cards-card-image';  // ← Marks image div
+      } else {
+        div.className = 'cards-card-body';   // ← Marks text div
+      }
+    });
+
+    ul.append(li);
+  });
+
+  block.textContent = '';
+  block.append(ul);
+}</code></pre>
+
+      <h3>Step 4: Decorated HTML (Final DOM)</h3>
+      <p>After the full AEM decoration pipeline runs, the structure is transformed into a semantic list with optimized images. This is what you see in browser DevTools:</p>
+
+      <pre><code class="language-html">&lt;div&gt;
+  &lt;div class="cards block" data-block-name="cards" data-block-status="loaded"&gt;
+    &lt;ul&gt;
+      &lt;li class="cards-card"&gt;
+        &lt;div class="cards-card-image"&gt;
+          &lt;picture&gt;
+            &lt;source type="image/webp"
+                    srcset="./media_abc.png?width=2000&amp;format=webply&amp;optimize=medium"
+                    media="(min-width: 600px)"&gt;
+            &lt;source type="image/webp"
+                    srcset="./media_abc.png?width=750&amp;format=webply&amp;optimize=medium"&gt;
+            &lt;source type="image/png"
+                    srcset="./media_abc.png?width=2000&amp;format=png&amp;optimize=medium"
+                    media="(min-width: 600px)"&gt;
+            &lt;img loading="lazy" alt=""
+                 src="./media_abc.png?width=750&amp;format=png&amp;optimize=medium"
+                 width="750" height="419"&gt;
+          &lt;/picture&gt;
+        &lt;/div&gt;
+        &lt;div class="cards-card-body"&gt;
+          &lt;p&gt;&lt;strong&gt;&lt;a href="/article-1"&gt;First Article&lt;/a&gt;&lt;/strong&gt;&lt;/p&gt;
+          &lt;p&gt;Learn about financial independence and early retirement.&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/li&gt;
+      &lt;li class="cards-card"&gt;
+        &lt;div class="cards-card-image"&gt;
+          &lt;picture&gt;
+            &lt;source type="image/webp"
+                    srcset="./media_xyz.jpg?width=2000&amp;format=webply&amp;optimize=medium"
+                    media="(min-width: 600px)"&gt;
+            &lt;source type="image/webp"
+                    srcset="./media_xyz.jpg?width=750&amp;format=webply&amp;optimize=medium"&gt;
+            &lt;source type="image/jpeg"
+                    srcset="./media_xyz.jpg?width=2000&amp;format=jpg&amp;optimize=medium"
+                    media="(min-width: 600px)"&gt;
+            &lt;img loading="lazy" alt=""
+                 src="./media_xyz.jpg?width=750&amp;format=jpg&amp;optimize=medium"
+                 width="750" height="578"&gt;
+          &lt;/picture&gt;
+        &lt;/div&gt;
+        &lt;div class="cards-card-body"&gt;
+          &lt;p&gt;&lt;strong&gt;&lt;a href="/article-2"&gt;Second Article&lt;/a&gt;&lt;/strong&gt;&lt;/p&gt;
+          &lt;p&gt;Discover budgeting strategies that actually work.&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+      <p><strong>Key transformations:</strong></p>
+      <ul>
+        <li><code>class="block"</code> and data attributes added by AEM's core pipeline</li>
+        <li>Divs transformed into <code>&lt;ul&gt;</code>/<code>&lt;li&gt;</code> structure by block JavaScript</li>
+        <li><code>&lt;picture&gt;</code> elements with responsive sources generated by <code>createOptimizedPicture()</code></li>
+        <li>Semantic classes (<code>cards-card</code>, <code>cards-card-image</code>, <code>cards-card-body</code>) added by block JavaScript</li>
+      </ul>
+
+      <h3>Step 5: CSS Styling</h3>
+      <p>Finally, <code>blocks/cards/cards.css</code> creates the card grid layout:</p>
+
+      <pre><code class="language-css">/* Card grid */
+.cards ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-l);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Individual card */
+.cards-card {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-background);
+}
+
+/* Card image */
+.cards-card-image img {
+  width: 100%;
+  aspect-ratio: 3/2;
+  object-fit: cover;
+}
+
+/* Card text content */
+.cards-card-body {
+  padding: var(--space-m);
+}</code></pre>
+
+      <div class="info-box">
+        <strong>The Flow Summary:</strong>
+        <ol>
+          <li><strong>Author</strong> creates a multi-row table in their document with "Cards" as the header</li>
+          <li><strong>AEM</strong> converts each row to nested divs with <code>class="cards"</code></li>
+          <li><strong>JavaScript</strong> transforms divs into semantic <code>&lt;ul&gt;</code>/<code>&lt;li&gt;</code> structure and adds classes</li>
+          <li><strong>CSS</strong> applies grid layout and card styling using those classes</li>
+        </ol>
+      </div>
+
+      <h3>Viewing Plain HTML</h3>
+      <p>To debug or understand the markup at any stage, append <code>.plain.html</code> to the URL:</p>
+      <ul>
+        <li><strong>Regular:</strong> <code>https://main--{repo}--{owner}.aem.live/{path}</code></li>
+        <li><strong>Plain HTML:</strong> <code>https://main--{repo}--{owner}.aem.live/{path}.plain.html</code></li>
+      </ul>
+      <p><strong>Example:</strong> <code>https://main--demo--scdemos.aem.live/index.plain.html</code></p>
+      <p>This reveals the AEM-generated markup before block decoration runs.</p>
+    </section>
+
+    <!-- 4. Configuration Options -->
+    <section>
+      <h2>Configuration Options</h2>
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Variant</th>
+            <th>CSS Class</th>
+            <th>Content Source</th>
+            <th>Best For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Default</td>
+            <td>None</td>
+            <td>Authored rows (image + text)</td>
+            <td>Static content, team pages, features</td>
+          </tr>
+          <tr>
+            <td>Links</td>
+            <td><code>.links</code></td>
+            <td>Query-index metadata</td>
+            <td>Blog grids, article listings, dynamic content</td>
+          </tr>
+          <tr>
+            <td>Bento</td>
+            <td><code>.bento</code></td>
+            <td>Authored rows with tags</td>
+            <td>Feature showcases, highlighted content, hero sections</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 5. How It Works -->
+    <section>
+      <h2>How It Works</h2>
+
+      <h3>Step 1: Detect Variant</h3>
+      <p>The main <code>decorate()</code> function checks CSS classes to determine variant (<a href="https://github.com/scdemos/demo/blob/main/blocks/cards/cards.js#L183-L188" target="_blank">cards.js:183-188</a>):</p>
+      <pre><code class="language-javascript">export default async function decorate(block) {
+  if (block.classList.contains('links')) {
+    await decorateLinks(block);
+  } else if (block.classList.contains('bento')) {
+    decorateBento(block);
+  } else {
+    decorateDefault(block);
+  }
+}</code></pre>
+
+      <h3>Step 2: Links Variant - Query Index</h3>
+      <p>For links variant, extract paths and resolve metadata (<a href="https://github.com/scdemos/demo/blob/main/blocks/cards/cards.js#L36-L56" target="_blank">cards.js:36-56</a>):</p>
+      <pre><code class="language-javascript">async function decorateLinks(block) {
+  // Extract authored link paths
+  const authoredLinks = getAuthoredLinks(block);
+
+  // Fetch site-wide metadata index
+  const indexRows = await fetchQueryIndexAll();
+
+  // Resolve article metadata for each path
+  const articles = resolveArticlesFromIndex(authoredLinks, indexRows);
+
+  // Build card for each article
+  const ul = createTag('ul');
+  articles.forEach((article) => {
+    ul.append(buildLinksCard(article));
+  });
+
+  block.replaceChildren(ul);
+}</code></pre>
+
+      <h3>Step 3: Build Links Card</h3>
+      <p>Create card from article metadata (<a href="https://github.com/scdemos/demo/blob/main/blocks/cards/cards.js#L11-L31" target="_blank">cards.js:11-31</a>):</p>
+      <pre><code class="language-javascript">function buildLinksCard(article) {
+  const href = normalizePath(article.path);
+  const li = createTag('li');
+  const link = createTag('a', { href, class: 'cards-card-link' });
+
+  // Add optimized image if available
+  if (article.image) {
+    const imageDiv = createTag('div', { class: 'cards-card-image' });
+    imageDiv.append(
+      createOptimizedPicture(article.image, article.title, false, [{ width: '750' }])
+    );
+    link.append(imageDiv);
+  }
+
+  // Add title and description
+  const body = createTag('div', { class: 'cards-card-body' });
+  body.append(createTag('p', {}, createTag('strong', {}, article.title)));
+  if (article.description) {
+    body.append(createTag('p', {}, article.description));
+  }
+
+  link.append(body);
+  li.append(link);
+  return li;
+}</code></pre>
+
+      <h3>Step 4: Default Variant - Card Wrapping</h3>
+      <p>For default variant, wrap content in clickable link (<a href="https://github.com/scdemos/demo/blob/main/blocks/cards/cards.js#L115-L180" target="_blank">cards.js:115-180</a>):</p>
+      <pre><code class="language-javascript">function decorateDefault(block) {
+  const ul = createTag('ul');
+
+  [...block.children].forEach((row) => {
+    const li = createTag('li');
+
+    // Extract image and body content
+    const imageDiv = createTag('div', { class: 'cards-card-image' });
+    const bodyDiv = createTag('div', { class: 'cards-card-body' });
+
+    // Find link in authored content
+    const linkEl = li.querySelector('a[href]');
+
+    if (linkEl) {
+      // Wrap entire card in link
+      const wrapper = createTag('a', {
+        href: linkEl.getAttribute('href'),
+        class: 'cards-card-link',
+      });
+      while (li.firstChild) wrapper.append(li.firstChild);
+      li.append(wrapper);
+
+      // Remove original link element
+      linkEl.replaceWith(...linkEl.childNodes);
+    }
+
+    ul.append(li);
+  });
+
+  // Optimize all images
+  ul.querySelectorAll('picture > img').forEach((img) => {
+    img.closest('picture').replaceWith(
+      createOptimizedPicture(img.src, img.alt, false, [{ width: '750' }])
+    );
+  });
+
+  block.replaceChildren(ul);
+}</code></pre>
+
+      <h3>Step 5: Bento Variant - Featured Card</h3>
+      <p>For bento variant, mark first card as featured and extract tags (<a href="https://github.com/scdemos/demo/blob/main/blocks/cards/cards.js#L64-L110" target="_blank">cards.js:64-110</a>):</p>
+      <pre><code class="language-javascript">function decorateBento(block) {
+  const ul = createTag('ul');
+
+  [...block.children].forEach((row, idx) => {
+    const li = createTag('li');
+
+    // First card is featured
+    if (idx === 0) {
+      li.classList.add('cards-card-featured');
+    }
+
+    // Extract image into wrapper
+    const picture = li.querySelector('picture');
+    if (picture) {
+      const imageDiv = createTag('div', { class: 'cards-card-image' });
+      imageDiv.append(picture);
+      li.prepend(imageDiv);
+    }
+
+    // Mark first <p> as tag/label
+    const firstP = li.querySelector('p');
+    if (firstP) {
+      firstP.classList.add('cards-card-tag');
+    }
+
+    // Wrap remaining content in body
+    const body = createTag('div', { class: 'cards-card-body' });
+    [...li.children].forEach((child) => {
+      if (!child.classList.contains('cards-card-image')) {
+        body.append(child);
+      });
+    li.append(body);
+
+    ul.append(li);
+  });
+
+  block.replaceChildren(ul);
+}</code></pre>
+    </section>
+
+    <!-- 6. Complete Implementation -->
+    <section>
+      <h2>Complete Implementation</h2>
+      <p>Full source code available on GitHub:</p>
+      <ul>
+        <li><a href="https://github.com/scdemos/demo/blob/main/blocks/cards/cards.js" target="_blank"><strong>cards.js</strong></a> - 188 lines of JavaScript</li>
+        <li><a href="https://github.com/scdemos/demo/blob/main/blocks/cards/cards.css" target="_blank"><strong>cards.css</strong></a> - 275 lines of CSS (mobile-first, responsive grid)</li>
+      </ul>
+
+      <h3>Key Implementation Details</h3>
+      <ul>
+        <li><strong>Three decoration functions</strong> - <code>decorateDefault()</code>, <code>decorateLinks()</code>, <code>decorateBento()</code></li>
+        <li><strong>Query-index integration</strong> - <code>fetchQueryIndexAll()</code> and <code>resolveArticlesFromIndex()</code></li>
+        <li><strong>Image optimization</strong> - <code>createOptimizedPicture()</code> generates responsive images</li>
+        <li><strong>Link wrapping</strong> - Entire card becomes clickable in default variant</li>
+        <li><strong>Universal Editor support</strong> - <code>isUE</code> check preserves authored links</li>
+        <li><strong>CSS Grid layout</strong> - Responsive grid with <code>grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))</code></li>
+        <li><strong>Bento asymmetry</strong> - <code>.cards-card-featured</code> spans 2 columns</li>
+      </ul>
+    </section>
+
+    <!-- 7. Quick Start -->
+    <section>
+      <h2>Quick Start</h2>
+      <ol class="steps">
+        <li>
+          <h3>Create block files</h3>
+          <pre><code class="language-bash">mkdir -p blocks/cards
+touch blocks/cards/cards.js
+touch blocks/cards/cards.css</code></pre>
+        </li>
+
+        <li>
+          <h3>Copy implementation</h3>
+          <p>Download JavaScript and CSS from GitHub and place in your block directory.</p>
+        </li>
+
+        <li>
+          <h3>For links variant: Set up query-index</h3>
+          <p>Ensure <code>/query-index.json</code> is configured. See <a href="how-to-author-search-page.html">Search Page guide</a>.</p>
+        </li>
+
+        <li>
+          <h3>Author content in DA</h3>
+          <p>Create table based on desired variant (default, links, or bento).</p>
+        </li>
+
+        <li>
+          <h3>Test locally</h3>
+          <pre><code class="language-bash">aem up
+# Visit http://localhost:3000/your-page</code></pre>
+        </li>
+      </ol>
+    </section>
+
+    <!-- 8. Accessibility & Performance -->
+    <section>
+      <h2>Accessibility & Performance</h2>
+
+      <details>
+        <summary>Accessibility Features</summary>
+        <div class="details-content">
+          <h4>Semantic HTML</h4>
+          <ul>
+            <li><code>&lt;ul&gt;</code> and <code>&lt;li&gt;</code> for card list</li>
+            <li><code>&lt;article&gt;</code> wraps each card</li>
+            <li><code>&lt;a&gt;</code> links for navigation</li>
+            <li><code>&lt;img&gt;</code> with <code>alt</code> text</li>
+            <li>Heading hierarchy preserved from authored content</li>
+          </ul>
+
+          <h4>Keyboard Navigation</h4>
+          <ul>
+            <li><kbd>Tab</kbd> - Navigate between cards</li>
+            <li><kbd>Enter</kbd> - Activate card link</li>
+            <li>Focus visible - Outline on card links</li>
+            <li>Entire card clickable - Large hit target</li>
+          </ul>
+
+          <h4>Screen Reader Support</h4>
+          <ul>
+            <li>List structure announced</li>
+            <li>Link text from card title</li>
+            <li>Alt text for images</li>
+            <li>Description text accessible</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>Performance Optimizations</summary>
+        <div class="details-content">
+          <h4>Load Performance</h4>
+          <ul>
+            <li><strong>188 lines JS</strong> - Compact implementation</li>
+            <li><strong>275 lines CSS</strong> - Mobile-first grid</li>
+            <li><strong>Image optimization</strong> - <code>createOptimizedPicture()</code> generates WebP, AVIF</li>
+            <li><strong>Lazy loading</strong> - Images load on scroll</li>
+            <li><strong>Shared utilities</strong> - Reuses functions from shared.js</li>
+          </ul>
+
+          <h4>Runtime Performance</h4>
+          <ul>
+            <li><strong>Single query-index fetch</strong> - Links variant fetches once</li>
+            <li><strong>Efficient DOM manipulation</strong> - Batch operations</li>
+            <li><strong>CSS Grid</strong> - Native browser layout engine</li>
+            <li><strong>No JavaScript for layout</strong> - Pure CSS responsive grid</li>
+          </ul>
+
+          <h4>CSS Performance</h4>
+          <ul>
+            <li><strong>Grid auto-fill</strong> - <code>repeat(auto-fill, minmax(300px, 1fr))</code></li>
+            <li><strong>Transform animations</strong> - GPU-accelerated hover effects</li>
+            <li><strong>Scoped selectors</strong> - All prefixed with <code>.cards</code></li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>Advanced Customization</summary>
+        <div class="details-content">
+          <h4>Custom Image Sizes</h4>
+          <pre><code class="language-javascript">// Change image width in createOptimizedPicture():
+createOptimizedPicture(src, alt, false, [{ width: '1200' }]); // Larger images</code></pre>
+
+          <h4>Custom Grid Columns</h4>
+          <pre><code class="language-css">/* In cards.css, adjust grid: */
+.cards ul {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Narrower cards */
+}</code></pre>
+
+          <h4>Different Featured Card Position</h4>
+          <pre><code class="language-javascript">// In decorateBento(), change featured logic:
+if (idx === 1) li.classList.add('cards-card-featured'); // Second card featured</code></pre>
+
+          <h4>Add Date to Links Cards</h4>
+          <pre><code class="language-javascript">// In buildLinksCard(), after description:
+if (article.date) {
+  body.append(createTag('p', { class: 'cards-card-date' },
+    formatDate(article.date)
+  ));
+}</code></pre>
+        </div>
+      </details>
+    </section>
+
+    <!-- 9. Related Resources -->
+    <section>
+      <h2>Related Resources</h2>
+      <div class="related-guides">
+        <a href="how-to-author-search-page.html" class="guide-card">
+          <h4>Search Page</h4>
+          <p>Query-index setup required for links variant</p>
+        </a>
+        <a href="how-to-build-related-articles.html" class="guide-card">
+          <h4>Related Articles</h4>
+          <p>Similar query-index integration pattern</p>
+        </a>
+        <a href="how-to-use-experimentation.html" class="guide-card">
+          <h4>Experimentation</h4>
+          <p>A/B test different card layouts</p>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

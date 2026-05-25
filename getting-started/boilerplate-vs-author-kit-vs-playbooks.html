@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Boilerplate vs Author Kit vs Playbooks | EDS Reference Playbook</title>
+  <meta name="description" content="The single most-asked onboarding question, answered in one page. When to start from aem-boilerplate, when to use author-kit, and where this playbook fits.">
+
+  <meta property="og:title" content="Boilerplate vs Author Kit vs Playbooks">
+  <meta property="og:description" content="When to start from aem-boilerplate, when to use author-kit, and where the Reference Playbook fits.">
+  <meta property="og:type" content="article">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Getting Started</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Boilerplate vs Author Kit vs Playbooks</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>Boilerplate vs Author Kit vs Playbooks</h1>
+      <p class="subtitle">Three different things that all sound like "starting points." Pick the right one for the right job.</p>
+    </header>
+
+    <section class="chapter-section">
+      <h2>The 30-second answer</h2>
+      <ul>
+        <li><strong>aem-boilerplate</strong> — your project's <em>code</em> starts here. Fork once per site / project.</li>
+        <li><strong>author-kit</strong> — your project's <em>authoring tools</em> (Sidekick plugins, DA tools) start here. Imported as a dependency, not forked.</li>
+        <li><strong>This Reference Playbook</strong> — your team's <em>brain</em> for "how would I solve this use case." Read it; copy patterns; never fork it.</li>
+      </ul>
+    </section>
+
+    <section class="chapter-section">
+      <h2>Side-by-side</h2>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>aem-boilerplate</th>
+            <th>author-kit</th>
+            <th>Reference Playbook</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">What is it?</th>
+            <td>Minimal, opinionated starting code for a new EDS project</td>
+            <td>Reusable Sidekick plugins + DA authoring helpers</td>
+            <td>Use-case-driven implementation patterns, code-cited</td>
+          </tr>
+          <tr>
+            <th scope="row">How do you use it?</th>
+            <td>Fork and customize</td>
+            <td>Import / copy individual tools</td>
+            <td>Read; copy snippets; never fork</td>
+          </tr>
+          <tr>
+            <th scope="row">When?</th>
+            <td>Day 1 of every new site</td>
+            <td>When you need an authoring affordance the platform doesn't ship</td>
+            <td>When you have a use case and want to see "how was this done?"</td>
+          </tr>
+          <tr>
+            <th scope="row">Stability</th>
+            <td>Stable; track upstream for fixes</td>
+            <td>Stable per-tool; you decide which to import</td>
+            <td>Reference-only; pinned to commits in <code>scdemos/demo</code></td>
+          </tr>
+          <tr>
+            <th scope="row">Adobe-blessed?</th>
+            <td>Yes — it's the official starter</td>
+            <td>Yes — official author kit</td>
+            <td>No — community / SC reference, "gray" not "official"</td>
+          </tr>
+          <tr>
+            <th scope="row">Where</th>
+            <td><a href="https://github.com/adobe/aem-boilerplate" target="_blank">adobe/aem-boilerplate</a></td>
+            <td><a href="https://github.com/adobe-rnd/aem-author-kit" target="_blank">adobe-rnd/aem-author-kit</a></td>
+            <td>This site (or <a href="https://github.com/scdemos/demo-playground" target="_blank">scdemos/demo-playground</a>)</td>
+          </tr>
+          <tr>
+            <th scope="row">Updates</th>
+            <td>You decide when to sync upstream</td>
+            <td>Each tool has its own version</td>
+            <td>Continuous; chapters get rev'd as <code>scdemos/demo</code> evolves</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="chapter-section">
+      <h2>How they fit together</h2>
+      <p>Imagine a typical project month one:</p>
+      <ol>
+        <li><strong>Day 1</strong> — Fork <code>aem-boilerplate</code> as your project's repo. Configure DA, Sidekick, hosting.</li>
+        <li><strong>Day 7</strong> — A stakeholder asks for a "tags picker" for content authors. Import the Tags plugin from <code>author-kit</code> instead of building one.</li>
+        <li><strong>Day 14</strong> — You need to ship gated content. Read the <a href="../playbooks/gated-content.html">Gated Content playbook</a>, see how <code>scdemos/demo</code> implements it, copy the worker + auth-toggle pattern, adapt to your auth provider.</li>
+        <li><strong>Day 21</strong> — Marketing wants A/B tests. Read the <a href="../playbooks/experimentation-and-personalization.html">Experimentation playbook</a>, copy the experimentation plugin pattern, ship it.</li>
+      </ol>
+      <p>You forked once (boilerplate). You imported as needed (author-kit). You inspected and adapted patterns (this playbook). At no point did you take a hard dependency on the playbook itself — and that's the design.</p>
+    </section>
+
+    <section class="chapter-section">
+      <h2>Common confusions, cleared up</h2>
+      <h3>"Should I fork <code>scdemos/demo</code>?"</h3>
+      <p>Almost certainly no. <code>scdemos/demo</code> is a <em>reference</em> — a kitchen-sink demo with 60+ blocks across many use cases. Forking it means inheriting all of it, which is rarely what you want. Instead: fork <code>aem-boilerplate</code>, then copy specific blocks / workers / patterns from <code>scdemos/demo</code> as you need them.</p>
+
+      <h3>"Is <code>author-kit</code> a UI framework?"</h3>
+      <p>No. It's a collection of small, independent tools (Sidekick plugins, DA helpers). You import the ones you need, ignore the ones you don't. There's no shared framework code to take a dependency on.</p>
+
+      <h3>"Why isn't this Reference Playbook on aem.live?"</h3>
+      <p>Because what's on aem.live is "Adobe-blessed" and goes through the official documentation review process. This playbook trades that for speed and breadth — it covers patterns we've shipped to customers but that haven't been formalized yet. Treat it as community knowledge, not Adobe doctrine.</p>
+
+      <h3>"Can I contribute back?"</h3>
+      <p>Yes — see <a href="contributing.html">Contributing &amp; feedback</a>. New playbook proposals welcome.</p>
+    </section>
+
+    <section class="chapter-section" id="for-ai-assistants">
+      <h2>For AI assistants</h2>
+      <p>Point your IDE or LLM at two skill layers:</p>
+      <ul>
+        <li><strong><a href="https://github.com/scdemos/demo-playground/blob/main/.skills/eds-reference-playbook/SKILL.md" target="_blank">eds-reference-playbook</a></strong> — install globally from this repo (<code>.skills/eds-reference-playbook/</code>). Routes to playbooks, cookbook, <code>scdemos/demo</code>, and official docs before inventing patterns.</li>
+        <li><strong><a href="../ai-and-aem/skills.html">Task skills</a></strong> — copy <code>.skills/</code> from <code>scdemos/demo</code> into each EDS project for CDD, import, build, test, and review procedures.</li>
+      </ul>
+      <p>See <a href="../ai-and-aem/playground-agent-skills.html">Playground agent skills</a> for install paths and example prompts, or the <a href="../ai-and-aem/skills.html">AEM Skills</a> catalog.</p>
+    </section>
+
+    <section class="chapter-section">
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="https://www.aem.live/docs/getting-started" target="_blank">aem.live — Getting Started</a> (official tutorial)</li>
+        <li><a href="https://github.com/adobe/aem-boilerplate" target="_blank">adobe/aem-boilerplate</a> (the starter repo)</li>
+        <li><a href="../playbooks/index.html">Playbooks &amp; Recipes</a> (use-case-driven patterns)</li>
+        <li><a href="../cookbook/index.html">Cookbook</a> (block-by-block reference)</li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/getting-started/boilerplate-vs-author-kit-vs-playbooks.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

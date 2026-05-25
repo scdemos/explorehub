@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>volvo | Case studies | EDS Reference Playbook</title>
+  <meta name="description" content="Sample case study: Volvo Cars on AEM Edge Delivery Services — global automotive brand, localization, and rich product storytelling.">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Case studies</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">volvo</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip">Case study</span>
+      <h1>volvo</h1>
+      <p class="subtitle">Volvo Cars — global automotive brand experience on AEM Edge Delivery Services.</p>
+      <div class="metadata">
+        <span class="tag">Automotive</span>
+        <span class="tag">Global</span>
+      </div>
+      <p><a class="btn btn-primary" href="https://www.volvocars.com/" target="_blank" rel="noopener">Visit live site</a></p>
+    </header>
+
+    <p class="case-study-draft"><strong>Draft / sample content.</strong> Placeholder narrative for structure — add market-specific rollout notes and approved metrics when available.</p>
+
+    <section id="overview" class="chapter-section">
+      <h2>Overview</h2>
+      <p>Volvo Cars represents a large-scale consumer brand on EDS: rich imagery, vehicle storytelling, campaign landings, and localized markets. The implementation emphasizes design consistency, performance on image-heavy templates, and author-friendly block variants.</p>
+      <p>Use as a reference when explaining EDS to <strong>automotive or lifestyle brands</strong> with multi-market rollouts.</p>
+    </section>
+
+    <section id="snapshot" class="chapter-section">
+      <h2>Customer snapshot</h2>
+      <dl class="case-study-facts">
+        <dt>Industry</dt><dd>Automotive</dd>
+        <dt>Primary domain</dt><dd>volvocars.com (sample)</dd>
+        <dt>EDS scope</dt><dd>Brand, vehicle, campaign, sustainability stories (sample)</dd>
+        <dt>Authoring</dt><dd>Document Authoring + market workflows (sample)</dd>
+        <dt>Scale signal</dt><dd>Many locales, deep component library (sample)</dd>
+        <dt>Integrations</dt><dd>Configurator / retailer tools, analytics (sample)</dd>
+      </dl>
+    </section>
+
+    <section id="challenge" class="chapter-section">
+      <h2>Business challenge</h2>
+      <p>Markets needed autonomy within a strict design system — new campaigns and vehicle launches every quarter without breaking global performance or accessibility standards.</p>
+      <ul>
+        <li>Balance global design system with local offers and copy.</li>
+        <li>Keep LCP strong on full-bleed imagery and video loops (sample).</li>
+        <li>Integrate third-party configurators without owning checkout in EDS (sample).</li>
+      </ul>
+    </section>
+
+    <section id="solution" class="chapter-section">
+      <h2>Solution on EDS</h2>
+      <p>Pages are assembled from a broad block palette (hero, tabs, cards, fragments) with section metadata controlling layout width and visual theme. JSON-driven or templated pages may back listing experiences where appropriate.</p>
+      <ul>
+        <li>Reusable campaign templates with block variants per vehicle line.</li>
+        <li>Fragment-based shared chrome (header/footer) across markets (sample).</li>
+        <li>Structured data feeds for news / press or vehicle metadata (sample).</li>
+      </ul>
+    </section>
+
+    <section id="highlights" class="chapter-section">
+      <h2>Technical highlights</h2>
+      <div class="case-study-highlights">
+        <article class="case-study-highlight">
+          <h3>Design-system blocks</h3>
+          <p>Consistent spacing, typography, and imagery ratios — inspect section classes and block decoration on vehicle pages.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Tabs &amp; storytelling modules</h3>
+          <p>Long-form product stories decomposed into tabbed sections — see cookbook tabs/modal guides when adopting.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Dynamic listings (sample)</h3>
+          <p>JSON or index-driven list/detail patterns for news or catalog-style content — <a href="../playbooks/json2html-dynamic-pages.html">JSON2HTML playbook</a>.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>Architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Markets[Regional teams] --> DA[DA / content]
+  DA --> EDS[EDS]
+  EDS --> MarketsWeb[Market sites]
+  MarketsWeb --> Tools[Configurator APIs]
+  EDS --> JSON[Structured JSON sources]
+  JSON --> Lists[List / detail pages]
+      </pre>
+      <p>Regional authors publish to shared pipelines; some experiences blend static blocks with generated list/detail pages (sample).</p>
+    </section>
+
+    <section id="outcomes" class="chapter-section">
+      <h2>Outcomes</h2>
+      <p><em>Sample metrics — replace when verified.</em></p>
+      <div class="case-study-metrics">
+        <div class="case-study-metric"><strong>20+</strong><span>Markets on shared block library (sample)</span></div>
+        <div class="case-study-metric"><strong>50%</strong><span>Reduction in dev tickets for campaign pages (sample)</span></div>
+        <div class="case-study-metric"><strong>AA</strong><span>Accessibility target on core templates (sample)</span></div>
+      </div>
+    </section>
+
+    <section id="lessons" class="chapter-section">
+      <h2>Lessons &amp; what to inspect</h2>
+      <ul>
+        <li>Vehicle detail templates: block order, image lazy-loading, CTA placement.</li>
+        <li>How fragments carry global navigation and footer across locales.</li>
+        <li>Performance panel on campaign pages with autoplay video backgrounds.</li>
+      </ul>
+    </section>
+
+    <section id="related" class="chapter-section">
+      <h2>Related playbook &amp; cookbook</h2>
+      <ul>
+        <li><a href="../playbooks/json2html-dynamic-pages.html">JSON → dynamic HTML</a></li>
+        <li><a href="../use-cases/how-to-build-tabs-block.html">Tabs block</a></li>
+        <li><a href="../use-cases/how-to-build-fragment-block.html">Fragment block</a></li>
+        <li><a href="../use-cases/how-to-page-load-scripts-js.html">Page load &amp; scripts.js</a></li>
+      </ul>
+    </section>
+
+    <section id="resources" class="chapter-section">
+      <h2>Resources</h2>
+      <ul>
+        <li><a href="https://www.volvocars.com/" target="_blank" rel="noopener">Production site — volvocars.com</a></li>
+        <li><a href="../playbooks/index.html">Playbook chapters</a></li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/case-studies/volvo.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

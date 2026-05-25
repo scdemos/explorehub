@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="../favicon.ico" />
+  <title>How to Build a Fragment Picker DA Plugin | AEM Edge Delivery Developer Guides</title>
+  <meta name="description" content="Tree-based browser with live preview that inserts a fragment link into the active DA document via the DA SDK." />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Fragment Picker Plugin</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Fragment Picker DA Plugin</h1>
+      <p class="subtitle">A two-panel tree + live preview that inserts a fragment link into the open DA document via the DA SDK.</p>
+      <div class="metadata">
+        <span class="tag">DA Plugin</span>
+        <span class="tag">DA SDK</span>
+        <span class="tag">Tree</span>
+        <span class="tag">Library</span>
+      </div>
+    </header>
+
+    <section>
+      <h2 id="overview">Overview</h2>
+      <p>The fragment-picker is a self-contained plugin under <code>tools/plugins/fragments/</code>. Two files do the work:</p>
+      <ul>
+        <li><a href="https://github.com/scdemos/demo/blob/main/tools/plugins/fragments/fragments.html" target="_blank"><code>fragments.html</code></a> — the static shell (left tree panel + right preview panel + insert button)</li>
+        <li><a href="https://github.com/scdemos/demo/blob/main/tools/plugins/fragments/fragments.js" target="_blank"><code>fragments.js</code></a> — DA SDK wiring, <code>crawl</code> over <code>/fragments</code>, tree rendering, preview iframe, insert handler</li>
+      </ul>
+
+      <div class="info-box warning">
+        <strong>Sidekick / DA Library registration:</strong> the plugin is built but is <strong>not</strong> currently registered in <code>tools/sidekick/config.json</code>. Open <a href="https://github.com/scdemos/demo/blob/main/tools/sidekick/config.json" target="_blank"><code>tools/sidekick/config.json</code></a> to confirm; only the experimentation plugin is wired up there. To use this plugin you need to either add a <code>plugins[]</code> entry pointing at <code>/tools/plugins/fragments/fragments.html</code>, or invoke it from a DA Library config that lists the same path.
+      </div>
+    </section>
+
+    <section>
+      <h2 id="authoring">HTML Shell</h2>
+      <p>The static shell defines a <code>.fragments-container</code> with two panels and a single <code>.preview-iframe</code>:</p>
+
+      <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;title&gt;Fragments Tool&lt;/title&gt;
+  &lt;link rel="stylesheet" href="fragments.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class="fragments-container"&gt;
+    &lt;!-- Left: tree --&gt;
+    &lt;div class="fragments-panel"&gt;
+      &lt;div class="panel-header"&gt;&lt;h2 class="panel-title"&gt;Fragments&lt;/h2&gt;&lt;/div&gt;
+      &lt;input type="search" class="fragment-search"
+             placeholder="Enter fragment name" role="searchbox"
+             aria-label="Search fragments"&gt;
+      &lt;div class="message-wrapper hidden"&gt;
+        &lt;div class="feedback-message"&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class="fragments-list" role="list"&gt;
+        &lt;div class="loading-state"&gt;Loading fragments...&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Right: preview --&gt;
+    &lt;div class="preview-panel"&gt;
+      &lt;div class="panel-header preview-header"&gt;
+        &lt;h2 class="panel-title"&gt;Preview&lt;/h2&gt;
+        &lt;div class="preview-actions"&gt;
+          &lt;button class="action-btn insert-btn" type="button" disabled
+                  aria-label="Insert selected fragment"&gt;Insert&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class="preview-panel-content"&gt;
+        &lt;div class="preview-placeholder"&gt;
+          &lt;svg class="preview-placeholder-icon" ... &gt;&lt;/svg&gt;
+          &lt;p&gt;Select a fragment to preview&lt;/p&gt;
+        &lt;/div&gt;
+        &lt;iframe class="preview-iframe hidden" allow="clipboard-write *"&gt;&lt;/iframe&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;script type="module" src="fragments.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+      <p>Selectors used by the JS: <code>.fragments-list</code>, <code>.fragment-search</code>, <code>.feedback-message</code>, <code>.message-wrapper</code>, <code>.preview-iframe</code>, <code>.preview-placeholder</code>, <code>.insert-btn</code>.</p>
+    </section>
+
+    <section>
+      <h2 id="implementation">Implementation</h2>
+
+      <h3>1. DA SDK + tree crawl</h3>
+      <pre><code class="language-javascript">import DA_SDK from 'https://da.live/nx/utils/sdk.js';
+import { crawl } from 'https://da.live/nx/public/utils/tree.js';
+
+const FRAGMENTS_BASE = '/fragments';
+const CONSTANTS = {
+  AUTO_HIDE_DELAY: 1000,
+  CRAWL_THROTTLE: 10,
+  ICONS: {
+    FOLDER: '/.da/icons/folder-icon.png',
+    FOLDER_OPEN: '/.da/icons/folder-open-icon.png',
+    FRAGMENT: '/.da/icons/fragment-icon.png',
+  },
+};
+
+let selectedFragment = null;
+
+(async function init() {
+  try {
+    const { actions, context } = await DA_SDK;
+    // ... wire search, insert button, keyboard nav, then loadFragments()
+  } catch (e) {
+    showMessage('Initialization failed. Please refresh the page.', true);
+  }
+}());</code></pre>
+
+      <h3>2. Crawling <code>/fragments</code></h3>
+      <pre><code class="language-javascript">async function loadFragments() {
+  const fragmentsContainer = document.querySelector('.fragments-list');
+  const { context: loadContext, token } = await DA_SDK;
+  const path = `/${loadContext.org}/${loadContext.repo}${FRAGMENTS_BASE}`;
+  const basePath = `/${loadContext.org}/${loadContext.repo}`;
+
+  const files = [];
+  const { results } = crawl({
+    path,
+    callback: (file) => {
+      if (file.path.endsWith('.html')) files.push(file);
+    },
+    throttle: CONSTANTS.CRAWL_THROTTLE,
+    mode: 'horizontal',
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  await results;
+
+  fragmentsContainer.innerHTML = '';
+  if (files.length === 0) {
+    fragmentsContainer.innerHTML = '<div class="loading-state">No fragments found</div>';
+    return;
+  }
+  const tree = createFileTree(files, basePath);
+  // ...render tree...
+}</code></pre>
+
+      <h3>3. Preview iframe URL</h3>
+      <p>Selecting a tree item renders a preview to the AEM page URL derived from <code>context.org</code>/<code>context.repo</code>:</p>
+
+      <pre><code class="language-javascript">function showPreview(fragmentPath, fragmentName, context, fragmentElement) {
+  const iframe = document.querySelector('.preview-iframe');
+  const placeholder = document.querySelector('.preview-placeholder');
+  const insertBtn = document.querySelector('.insert-btn');
+
+  const basePath = `/${context.org}/${context.repo}`;
+  const displayPath = fragmentPath.replace(basePath, '').replace(/\.html$/, '');
+  const previewUrl = `https://main--${context.repo}--${context.org}.aem.page${displayPath}`;
+
+  // Update selection visuals on the tree
+  if (selectedFragment?.element) {
+    selectedFragment.element.classList.remove('selected');
+    selectedFragment.element.classList.add('was-selected');
+  }
+  selectedFragment = { path: fragmentPath, name: fragmentName, element: fragmentElement };
+  fragmentElement.classList.remove('was-selected');
+  fragmentElement.classList.add('selected');
+
+  insertBtn.disabled = false;
+  insertBtn.setAttribute('aria-label', `Insert fragment "${fragmentName}"`);
+  iframe.src = previewUrl;
+  iframe.classList.remove('hidden');
+  placeholder.classList.add('hidden');
+}</code></pre>
+
+      <h3>4. Inserting via DA SDK <code>actions.sendHTML</code></h3>
+      <pre><code class="language-javascript">function handleFragmentInsert(actions, context) {
+  if (!selectedFragment) {
+    showMessage('No fragment selected', true);
+    return;
+  }
+  if (!actions?.sendHTML) {
+    showMessage('Cannot insert fragment: Editor not available', true);
+    return;
+  }
+  const basePath = `/${context.org}/${context.repo}`;
+  const displayPath = selectedFragment.path.replace(basePath, '').replace(/\.html$/, '');
+  const fragmentUrl = `https://main--${context.repo}--${context.org}.aem.page${displayPath}`;
+  actions.sendHTML(`<a href="${fragmentUrl}" class="fragment">${fragmentUrl}</a>`);
+  showMessage('Fragment inserted successfully', false, true);
+  actions.closeLibrary();
+}</code></pre>
+
+      <p>The HTML inserted is the same shape that <code>blocks/fragment/fragment.js</code> auto-blocks on at runtime. See <a href="how-to-build-fragment-block.html">the Fragment block guide</a> for the rendering side.</p>
+
+      <h3>5. Keyboard navigation</h3>
+      <p>The <code>.fragments-list</code> listens for <code>ArrowUp</code>/<code>ArrowDown</code> across <code>.fragment-btn-item</code> nodes (also triggers preview), and <code>Enter</code> to invoke the Insert button:</p>
+
+      <pre><code class="language-javascript">fragmentsList.addEventListener('keydown', (e) => {
+  const allFragments = Array.from(fragmentsList.querySelectorAll('.fragment-btn-item'));
+  if (allFragments.length === 0) return;
+  const currentIndex = allFragments.findIndex((btn) => btn === document.activeElement);
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    const next = (currentIndex + 1) % allFragments.length;
+    allFragments[next].focus(); allFragments[next].click();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    const prev = currentIndex <= 0 ? allFragments.length - 1 : currentIndex - 1;
+    allFragments[prev].focus(); allFragments[prev].click();
+  } else if (e.key === 'Enter' && currentIndex >= 0) {
+    e.preventDefault();
+    insertBtn.click();
+  }
+});</code></pre>
+    </section>
+
+    <section>
+      <h2 id="how-it-works">How It Works</h2>
+      <pre class="mermaid">
+sequenceDiagram
+  participant User
+  participant Plugin as fragments.html
+  participant SDK as DA_SDK
+  participant DA as DA Admin
+  participant Doc as Author document
+
+  User->>Plugin: Open library / plugin
+  Plugin->>SDK: await DA_SDK
+  SDK-->>Plugin: { actions, context, token }
+  Plugin->>DA: crawl /fragments via Bearer token
+  DA-->>Plugin: file list
+  Plugin->>User: render tree
+  User->>Plugin: click fragment
+  Plugin->>Plugin: preview iframe → main--repo--org.aem.page/...
+  User->>Plugin: click Insert
+  Plugin->>SDK: actions.sendHTML(`&lt;a href=&quot;...&quot; class=&quot;fragment&quot;&gt;...&lt;/a&gt;`)
+  Plugin->>SDK: actions.closeLibrary()
+  SDK->>Doc: insert link into editor
+      </pre>
+
+      <h3>Notes &amp; Gotchas</h3>
+      <ul>
+        <li>The crawl uses <code>token</code> from <code>DA_SDK</code> as a Bearer header. The token is per-session — don't cache it across reloads.</li>
+        <li>The preview URL is always <code>main--{repo}--{org}.aem.page</code>. If your fragments aren't published to <code>main</code>, the preview iframe will 404.</li>
+        <li>Class names matter: the JS expects exactly <code>.preview-iframe</code> and <code>.message-wrapper</code> (not <code>.preview-frame</code> / <code>.message-container</code>).</li>
+        <li>Folder icons are loaded from <code>/.da/icons/folder-icon.png</code> and <code>/.da/icons/folder-open-icon.png</code> — if your project doesn't host these, swap to inline SVG.</li>
+        <li>DA Library v2 supports a <code>plugins</code> array in the library config; you can also expose this from <code>tools/sidekick/config.json</code> by adding an entry that points at <code>/tools/plugins/fragments/fragments.html</code>.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="testing">Testing</h2>
+      <table>
+        <thead><tr><th>Test Case</th><th>Expected Result</th></tr></thead>
+        <tbody>
+          <tr><td>Open the plugin</td><td>Tree loads with folders expanded to <code>FRAGMENTS_BASE</code> depth</td></tr>
+          <tr><td>Click a fragment</td><td>Preview iframe loads <code>main--{repo}--{org}.aem.page/fragments/...</code>; Insert enabled</td></tr>
+          <tr><td>Click Insert</td><td>Plugin sends an <code>&lt;a class="fragment"&gt;</code> via <code>actions.sendHTML</code> and closes the library</td></tr>
+          <tr><td>Search "header"</td><td>Only matching items + their parent folders remain visible; matching folders auto-expand</td></tr>
+          <tr><td>Clear search</td><td>Tree restores to initial expand depth</td></tr>
+          <tr><td>Arrow keys in tree</td><td>Focus moves; click is dispatched; preview updates</td></tr>
+          <tr><td>Enter on focused fragment</td><td>Triggers Insert button</td></tr>
+          <tr><td>No <code>actions.sendHTML</code> present</td><td>Error message: "Cannot insert fragment: Editor not available"</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2 id="customization">Customization Ideas</h2>
+      <ul>
+        <li><strong>Different base path</strong> — change <code>FRAGMENTS_BASE</code> to point at <code>/library/components</code>, <code>/snippets</code>, etc.</li>
+        <li><strong>Insert as block</strong> — instead of a fragment <code>&lt;a&gt;</code>, send a full block table (e.g. an embed block) by replacing <code>actions.sendHTML(...)</code> with serialized table HTML.</li>
+        <li><strong>Filter by folder</strong> — accept a <code>?folder=...</code> query parameter and scope the crawl path.</li>
+        <li><strong>Recently used</strong> — persist the last N inserted fragment paths in <code>localStorage</code> and render them as a top-of-tree group.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="resources">Resources</h2>
+      <ul>
+        <li><a href="https://da.live/nx/utils/sdk.js" target="_blank">DA SDK</a></li>
+        <li><a href="https://da.live/nx/public/utils/tree.js" target="_blank">DA crawl helper</a></li>
+        <li><a href="how-to-build-fragment-block.html">Fragment Block (rendering side)</a></li>
+        <li><a href="how-to-build-tags-plugin.html">Tags Plugin (similar DA SDK pattern)</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

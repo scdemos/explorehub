@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Build Auth Toggle Block - AEM Edge Delivery Services</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Auth Toggle Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build an Auth Toggle Block</h1>
+      <p class="subtitle">Floating preview panel for testing authenticated vs. anonymous content views</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Testing</span>
+        <span class="tag">Intermediate</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>The Auth Toggle block creates a floating panel for content authors and developers to preview gated content in both authenticated and anonymous states without needing to log in/out. It appears as a fixed handle on the right side of the page that expands into a control panel.</p>
+
+      <p><strong>Key Features:</strong></p>
+      <ul>
+        <li>Only appears on gated pages (via <code>isGatedPage()</code> check)</li>
+        <li>Fixed position floating panel at bottom-right corner</li>
+        <li>Expandable handle with "AUTH STATE" label</li>
+        <li>Shows current state (Authenticated or Anonymous)</li>
+        <li>One-click switching between states via query parameter (<code>?auth=true/false</code>)</li>
+        <li>Click-outside-to-close behavior</li>
+        <li>Accessible with ARIA attributes and keyboard support</li>
+        <li>Smooth animations and bounce effect on load</li>
+        <li>Auto-removes itself on non-gated pages</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>How It Works</h2>
+      <p>The Auth Toggle follows this workflow:</p>
+
+      <div class="mermaid">
+        graph TD
+          A[Page Loads] --> B{Is Gated Page?}
+          B -->|No| C[Remove Block]
+          B -->|Yes| D[Read ?auth Query Param]
+          D --> E{auth=true?}
+          E -->|Yes| F[Current State: Authenticated]
+          E -->|No| G[Current State: Anonymous]
+          F --> H[Render Panel with Switch to Anonymous]
+          G --> I[Render Panel with Switch to Authenticated]
+          H --> J[Show Floating Handle]
+          I --> J
+          J --> K[User Clicks Handle]
+          K --> L[Expand Panel]
+          L --> M[User Clicks Switch Button]
+          M --> N[Update ?auth Query Param]
+          N --> O[Reload Page]
+      </div>
+
+      <p><strong>Authentication State Logic:</strong></p>
+      <ol>
+        <li><strong>Check Gated Page:</strong> Use <code>isGatedPage()</code> utility to determine if auth toggle should appear</li>
+        <li><strong>Read Query Param:</strong> Check <code>?auth=true</code> or <code>?auth=false</code> in URL</li>
+        <li><strong>Display Current State:</strong> Show indicator for current authentication state</li>
+        <li><strong>Toggle State:</strong> When user switches, update query param and reload page</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Implementation</h2>
+
+      <h3>JavaScript (auth-toggle.js)</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>blocks/auth-toggle/auth-toggle.js</code></p>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/auth-toggle/auth-toggle.js"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <pre><code class="language-javascript">import { loadCSS } from '../../scripts/aem.js';
+import { createTag } from '../../scripts/shared.js';
+import { isGatedPage } from '../../scripts/shared.js';
+
+const CSS_CLASSES = {
+  TOGGLE: 'auth-toggle',
+  HANDLE: 'auth-handle',
+  HANDLE_ICON: 'auth-handle-icon',
+  HEADER: 'auth-header',
+  CLOSE: 'auth-close',
+  OPTIONS: 'auth-options',
+  OPTION_BUTTON: 'auth-option-button',
+  EXPANDED: 'expanded',
+  HIDDEN: 'hidden',
+  VISIBLE: 'visible',
+  BOUNCE: 'bounce',
+  CURRENT_STATE: 'current-state',
+  AUTHENTICATED: 'authenticated',
+  ANONYMOUS: 'anonymous',
+};
+
+function getAuthState() {
+  const authValue = new URLSearchParams(window.location.search).get('auth');
+  return authValue === 'true';
+}
+
+export default function decorate(block) {
+  if (!isGatedPage()) {
+    block.remove();
+    return block;
+  }
+
+  const currentState = getAuthState();
+  let isExpanded = false;
+
+  block.innerHTML = '';
+  block.id = CSS_CLASSES.TOGGLE;
+  block.classList.add(CSS_CLASSES.TOGGLE);
+
+  const handleIcon = createTag('div', { class: CSS_CLASSES.HANDLE_ICON }, 'AUTH STATE');
+  const handle = createTag('button', {
+    type: 'button',
+    class: CSS_CLASSES.HANDLE,
+    title: 'Open or close auth preview',
+    'aria-label': 'Auth preview panel',
+    'aria-expanded': 'false',
+  }, handleIcon);
+
+  const headerText = createTag('span', {}, 'Auth State');
+  const closeBtn = createTag('button', {
+    class: CSS_CLASSES.CLOSE,
+    type: 'button',
+    'aria-label': 'Close auth panel',
+  }, 'x');
+  const header = createTag('div', { class: CSS_CLASSES.HEADER }, [headerText, closeBtn]);
+
+  const panelBody = createTag('div', { class: 'auth-toggle-body', id: \`\${block.id || CSS_CLASSES.TOGGLE}-panel\` });
+  panelBody.setAttribute('role', 'region');
+  panelBody.setAttribute('aria-label', 'Auth preview');
+  handle.setAttribute('aria-controls', panelBody.id);
+
+  const optionsContainer = createTag('div', { class: CSS_CLASSES.OPTIONS });
+  const currentStateIndicator = createTag('div', {
+    class: \`\${CSS_CLASSES.OPTION_BUTTON} \${CSS_CLASSES.CURRENT_STATE}\`,
+  }, currentState ? 'Authenticated' : 'Anonymous');
+
+  const switchButton = createTag('button', {
+    class: CSS_CLASSES.OPTION_BUTTON,
+    type: 'button',
+    'data-auth-state': currentState ? CSS_CLASSES.ANONYMOUS : CSS_CLASSES.AUTHENTICATED,
+  }, currentState ? 'Switch to Anonymous' : 'Switch to Authenticated');
+
+  optionsContainer.append(currentStateIndicator, switchButton);
+  panelBody.append(header, optionsContainer);
+
+  function handleClickOutside(event) {
+    if (block.contains(event.target)) return;
+    if (isExpanded) {
+      isExpanded = false;
+      block.classList.remove(CSS_CLASSES.EXPANDED);
+      handle.classList.remove(CSS_CLASSES.HIDDEN);
+      handle.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('click', handleClickOutside);
+    }
+  }
+
+  function togglePanel() {
+    isExpanded = !isExpanded;
+    block.classList.toggle(CSS_CLASSES.EXPANDED, isExpanded);
+    handle.classList.toggle(CSS_CLASSES.HIDDEN, isExpanded);
+    handle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    if (isExpanded) {
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 100);
+    } else {
+      document.removeEventListener('click', handleClickOutside);
+    }
+  }
+
+  function handleOptionClick(targetState) {
+    const url = new URL(window.location.href);
+    if (targetState === CSS_CLASSES.AUTHENTICATED) {
+      url.searchParams.set('auth', 'true');
+    } else if (targetState === CSS_CLASSES.ANONYMOUS) {
+      url.searchParams.set('auth', 'false');
+    }
+    window.location.href = url.toString();
+  }
+
+  handle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    togglePanel();
+  });
+  closeBtn.addEventListener('click', togglePanel);
+  switchButton.addEventListener('click', () => {
+    handleOptionClick(switchButton.getAttribute('data-auth-state'));
+  });
+
+  block.append(handle, panelBody);
+
+  block.cleanup = () => {
+    document.removeEventListener('click', handleClickOutside);
+  };
+
+  requestAnimationFrame(() => {
+    block.classList.add(CSS_CLASSES.VISIBLE);
+    setTimeout(() => {
+      handle.classList.add(CSS_CLASSES.BOUNCE);
+      setTimeout(() => handle.classList.remove(CSS_CLASSES.BOUNCE), 400);
+    }, 300);
+  });
+
+  return block;
+}
+
+export async function createAuthToggle() {
+  if (!isGatedPage()) return undefined;
+
+  await loadCSS(\`\${window.hlx.codeBasePath}/blocks/auth-toggle/auth-toggle.css\`);
+  const block = createTag('div', { class: CSS_CLASSES.TOGGLE });
+  document.body.append(block);
+  return decorate(block);
+}</code></pre>
+
+      <h3>CSS (auth-toggle.css)</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>blocks/auth-toggle/auth-toggle.css</code></p>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/auth-toggle/auth-toggle.css"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <pre><code class="language-css">.auth-toggle {
+  position: fixed;
+  inset: auto -14rem calc(var(--space-l) + env(safe-area-inset-bottom, 0px)) auto;
+  transform: none;
+  z-index: 10050;
+  width: min(13rem, calc(100vw - 1.5rem));
+  padding: var(--space-m);
+  overflow: visible;
+  border: var(--border-heritage);
+  border-right: 0;
+  border-radius: var(--space-s) 0 0 var(--space-s);
+  background: light-dark(var(--color-parchment), var(--color-card-dark));
+  color: var(--text-color);
+  box-shadow: -0.5rem 0 1.25rem rgb(0 0 0 / 18%);
+  font-family: var(--body-font-family);
+  font-size: var(--body-font-size-xs);
+  line-height: 1.4;
+  opacity: 0;
+  transition: right 0.3s ease, opacity 0.2s ease;
+}
+
+.auth-toggle.visible {
+  opacity: 1;
+}
+
+.auth-toggle.expanded {
+  right: max(var(--space-m), env(safe-area-inset-right, 0px));
+}
+
+.auth-handle {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: -2.5rem;
+  transform: translateY(-50%);
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  margin: 0;
+  border: 1px solid light-dark(var(--color-rust), var(--color-rust-bright));
+  border-right: 0;
+  border-radius: var(--space-s) 0 0 var(--space-s);
+  background: light-dark(var(--color-rust), var(--color-rust-bright));
+  color: var(--color-light);
+  padding: 0.75rem 0.5rem;
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  box-shadow: -0.25rem 0 0.75rem rgb(0 0 0 / 15%);
+  transition: left 0.2s ease, opacity 0.2s ease;
+}
+
+.auth-handle:hover {
+  left: -2.75rem;
+}
+
+.auth-handle.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.auth-handle-icon {
+  color: inherit;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  letter-spacing: 0.025rem;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.auth-option-button {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  margin: 0;
+  border: 1px solid light-dark(var(--color-gray-200), var(--color-gray-700));
+  border-radius: 4px;
+  background: light-dark(var(--color-light), var(--color-gray-800));
+  color: var(--text-color);
+  cursor: pointer;
+  font-family: var(--body-font-family);
+  font-size: var(--body-font-size-xs);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.5rem 0.75rem;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.auth-option-button:hover {
+  border-color: light-dark(var(--color-rust), var(--color-rust-bright));
+  background: light-dark(var(--color-gray-100), var(--color-gray-700));
+}
+
+.auth-option-button.current-state {
+  border-color: light-dark(var(--color-green-400), var(--color-green-300));
+  background: light-dark(var(--color-green-100), rgb(30 144 41 / 22%));
+  color: light-dark(var(--color-green-600), var(--color-green-200));
+  cursor: default;
+  pointer-events: none;
+}
+
+.auth-handle.bounce {
+  animation: auth-handle-bounce 0.4s ease-in-out;
+}
+
+@keyframes auth-handle-bounce {
+  0%, 100% {
+    left: -2.5rem;
+    transform: translateY(-50%);
+  }
+  50% {
+    left: -2.75rem;
+    transform: translateY(-50%);
+  }
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Document Authoring</h2>
+      <p>The Auth Toggle block is typically not added by content authors in documents. Instead, it's programmatically injected into gated pages via the <code>createAuthToggle()</code> export function.</p>
+
+      <details>
+        <summary>Expand to view and copy block structure (if manually added)</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th style="background-color: #f0f0f0;">Auth Toggle</th></tr>
+            </thead>
+          </table>
+        </div>
+      </details>
+
+      <p><strong>Programmatic integration in this demo:</strong></p>
+      <p>The auth toggle is <strong>not</strong> wired directly from <code>scripts.js</code>. It is created by <a href="https://github.com/scdemos/demo/blob/main/scripts/utils/gated-content.js" target="_blank"><code>scripts/utils/gated-content.js</code></a>, which gates the toggle on both <code>isGatedPage()</code> AND <code>isAuthorEnvironment()</code> (so it never appears in production):</p>
+
+      <pre><code class="language-javascript">// scripts/utils/gated-content.js
+import { createAuthToggle } from '../../blocks/auth-toggle/auth-toggle.js';
+import { isGatedPage } from '../shared.js';
+
+function isAuthorEnvironment() {
+  const host = window.location.hostname;
+  return host.includes('localhost')
+    || host.includes('aem.page')
+    || host.includes('aem.reviews')
+    || host.endsWith('.ue.da.live')
+    || host.endsWith('.stage-ue.da.live');
+}
+
+async function createAuthorToggle() {
+  if (!isAuthorEnvironment() || !isGatedPage()) return undefined;
+  return createAuthToggle();
+}
+
+function initContentProtection() {
+  if (!isAuthorEnvironment() || !isGatedPage()) return;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', async () => {
+      applyContentProtection();    // hides logged-in/logged-out sections in author env
+      await createAuthorToggle();  // injects the floating panel
+    }, { once: true });
+    return;
+  }
+  applyContentProtection();
+  createAuthorToggle();
+}</code></pre>
+
+      <p><code>scripts/scripts.js</code> calls <code>initContentProtection()</code> from <code>loadLazy</code>. There is no direct call to <code>createAuthToggle()</code> from <code>scripts.js</code>; that helper is invoked through <code>createAuthorToggle()</code> in the gated-content utility.</p>
+
+      <div class="info-box">
+        <strong>Why two layers?</strong> Production gating happens server-side in <code>workers/cdn/handlers/gating.js</code>. The toggle and <code>applyContentProtection()</code> only run in author/preview environments — they exist solely so authors can preview both states without logging in to Cloudflare Access.
+      </div>
+    </section>
+
+    <section>
+      <h2>Gated Page Detection</h2>
+      <p><code>isGatedPage()</code> lives in <a href="https://github.com/scdemos/demo/blob/main/scripts/shared.js" target="_blank"><code>scripts/shared.js</code></a> and uses <code>getMetadata</code> from <code>aem.js</code>:</p>
+
+      <pre><code class="language-javascript">// scripts/shared.js
+import { getMetadata } from './aem.js';
+
+export function isGatedPage() {
+  return String(getMetadata('gated') || '').trim().toLowerCase() === 'true';
+}</code></pre>
+
+      <p>To mark a page as gated, add <code>&lt;meta name="gated" content="true"&gt;</code> to the document (typically via Page Metadata in DA / Word).</p>
+    </section>
+
+    <section>
+      <h2>Accessibility</h2>
+      <ul>
+        <li><strong>ARIA attributes:</strong> <code>aria-expanded</code>, <code>aria-controls</code>, <code>aria-label</code> for screen readers</li>
+        <li><strong>Semantic buttons:</strong> the handle and switch are real <code>&lt;button type="button"&gt;</code> elements; Tab/Enter work natively</li>
+        <li><strong>Click-outside:</strong> a delayed <code>document.click</code> listener collapses the panel when clicked outside the block</li>
+        <li><strong>Role region:</strong> panel body has <code>role="region"</code> for landmark navigation</li>
+        <li><strong>Visual feedback:</strong> bounce animation on first appearance, hover offset on the handle, color-coded current-state pill</li>
+      </ul>
+      <p><strong>Note:</strong> the demo source does <em>not</em> implement an <kbd>Escape</kbd> handler. If you need it, listen for <code>keydown</code> on the panel and call the existing <code>togglePanel()</code> when <code>e.key === 'Escape'</code>.</p>
+    </section>
+
+    <section>
+      <h2>Best Practices</h2>
+      <ul>
+        <li><strong>Author/Developer Only:</strong> This tool should only appear for authors and developers, not end users</li>
+        <li><strong>Environment Detection:</strong> Consider hiding in production or for non-authenticated authors</li>
+        <li><strong>Query Param Strategy:</strong> Use <code>?auth=true/false</code> to avoid cookie complexity</li>
+        <li><strong>Cleanup Handlers:</strong> Remove event listeners on block removal to prevent memory leaks</li>
+        <li><strong>Fixed Positioning:</strong> Use z-index high enough to appear above all content but not navigation</li>
+        <li><strong>Mobile Support:</strong> Panel width uses <code>min()</code> to adapt to small screens</li>
+        <li><strong>Safe Area Insets:</strong> Respect device safe areas (notches, home indicators)</li>
+        <li><strong>Visual Distinction:</strong> Use distinct color (rust/orange) to indicate it's a dev tool</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Quick Start</h2>
+      <ol>
+        <li>
+          <strong>Create block files:</strong>
+          <pre><code class="language-bash">mkdir -p blocks/auth-toggle
+touch blocks/auth-toggle/auth-toggle.js
+touch blocks/auth-toggle/auth-toggle.css</code></pre>
+        </li>
+        <li>
+          <strong>Add <code>isGatedPage()</code> to scripts/shared.js:</strong>
+          <pre><code class="language-javascript">import { getMetadata } from './aem.js';
+export function isGatedPage() {
+  return String(getMetadata('gated') || '').trim().toLowerCase() === 'true';
+}</code></pre>
+        </li>
+        <li>
+          <strong>Copy the JavaScript and CSS code</strong> from the Implementation section above into <code>blocks/auth-toggle/</code>.
+        </li>
+        <li>
+          <strong>Add the gated-content utility</strong> at <code>scripts/utils/gated-content.js</code> with <code>isAuthorEnvironment()</code>, <code>applyContentProtection()</code>, and <code>initContentProtection()</code> (see <a href="https://github.com/scdemos/demo/blob/main/scripts/utils/gated-content.js" target="_blank">demo source</a>).
+        </li>
+        <li>
+          <strong>Wire into scripts/scripts.js:</strong>
+          <pre><code class="language-javascript">import { initContentProtection } from './utils/gated-content.js';
+
+async function loadLazy(doc) {
+  // ... existing lazy work
+  initContentProtection();
+}</code></pre>
+        </li>
+        <li>
+          <strong>Mark pages as gated:</strong> add <code>gated: true</code> to the page's metadata table (renders as <code>&lt;meta name="gated" content="true"&gt;</code>).
+        </li>
+        <li>
+          <strong>Test locally:</strong>
+          <pre><code class="language-bash">aem up</code></pre>
+          Navigate to a gated page and verify the auth toggle appears
+        </li>
+        <li>
+          <strong>Test switching:</strong> Click handle, then switch between authenticated/anonymous states
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2024 AEM Edge Delivery Services Developer Guides</p>
+    </div>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

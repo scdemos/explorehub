@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Developer Guide: Dynamic Forms Block | AEM Edge Delivery Services</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">How to Build Forms</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Dynamic Forms Block</h1>
+      <p class="subtitle">Complete implementation guide for building JSON-driven forms with validation, conditional logic, and remote submission</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Forms</span>
+        <span class="tag">Advanced</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>The Forms block creates dynamic forms from JSON definitions, supporting text inputs, textareas, selects, radio/checkbox groups, toggles, conditional fields, validation, and remote submission. Perfect for contact forms, lead generation, feedback, and surveys.</p>
+
+      <div class="links">
+        <a href="https://main--demo--scdemos.aem.page/fragments/feedback" class="btn" target="_blank">View Live Demo</a>
+        <a href="https://demo.bbird.live/demo-docs/usecases/how-to-forms" class="btn btn-secondary" target="_blank">Author Perspective</a>
+        <a href="https://www.aem.live/developer/forms" class="btn btn-secondary" target="_blank">Official Docs</a>
+      </div>
+      <h3>Key Features</h3>
+      <ul>
+        <li><strong>JSON-Driven:</strong> Form structure defined in JSON, fetched at runtime</li>
+        <li><strong>Field Types:</strong> text, email, tel, number, textarea, select, radio, checkbox, toggle</li>
+        <li><strong>Conditional Logic:</strong> Show/hide fields based on other field values</li>
+        <li><strong>Validation:</strong> Built-in HTML5 validation with custom messages</li>
+        <li><strong>Remote Submission:</strong> POST to any endpoint (Cloudflare Workers, App Builder, etc.)</li>
+        <li><strong>Thank You Pages:</strong> Load fragment content after successful submission</li>
+        <li><strong>Accessibility:</strong> ARIA attributes, keyboard navigation, screen reader support</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Architecture</h2>
+
+      <div class="mermaid">
+graph TB
+    A[Form Block] --> B[Load JSON Definition]
+    B --> C[Parse Field Config]
+    C --> D[Build Form Elements]
+
+    D --> E[Text/Textarea Inputs]
+    D --> F[Select Dropdowns]
+    D --> G[Radio/Checkbox Groups]
+    D --> H[Toggle Switches]
+
+    D --> I[Enable Conditionals]
+    I --> J[Controller/Controlled Map]
+    J --> K[Toggle Visibility]
+
+    D --> L[Enable Submission]
+    L --> M[Validate Form]
+    M --> N[Generate Payload]
+    N --> O[POST to Endpoint]
+    O --> P[Thank You Fragment]
+
+    style A fill:#0066cc,color:#fff
+    style O fill:#008060,color:#fff
+      </div>
+
+      <h3>Building Blocks</h3>
+      <div class="blocks-list">
+        <div class="block-card">
+          <h4>Form Block</h4>
+          <p>Main component that builds forms from JSON</p>
+          <code>blocks/form/form.js</code><br>
+          <code>blocks/form/form.css</code>
+        </div>
+
+        <div class="block-card">
+          <h4>Form Definition</h4>
+          <p>JSON file defining form structure</p>
+          <code>/forms/contact-us.json</code>
+        </div>
+
+        <div class="block-card">
+          <h4>Submit Endpoint</h4>
+          <p>Remote handler for form submissions</p>
+          <code>Cloudflare Worker, App Builder, etc.</code>
+        </div>
+
+        <div class="block-card">
+          <h4>Thank You Fragment</h4>
+          <p>Optional confirmation content</p>
+          <code>/fragments/thank-you</code>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Content Structure</h2>
+      <p>Authors create form blocks in DA with two links:</p>
+
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Row</th>
+            <th>Content</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><code>/forms/contact-us.json</code></td>
+            <td>Link to JSON form definition</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><code>https://example.com/api/submit</code></td>
+            <td>Optional: Submit endpoint URL</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Expected HTML</h3>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">HTML received by decorate function</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-markup">&lt;div class="form"&gt;
+  &lt;div&gt;
+    &lt;div&gt;&lt;a href="/forms/contact-us.json"&gt;Form Definition&lt;/a&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    &lt;div&gt;&lt;a href="https://example.com/api/submit"&gt;Submit&lt;/a&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Form Definition JSON</h2>
+      <p>The JSON file defines all form fields with their types, labels, validation, and conditional logic:</p>
+
+      <h3>Basic Structure</h3>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">Minimal form definition</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-json">{
+  "data": [
+    {
+      "field": "Name",
+      "label": "Your Name",
+      "type": "text",
+      "required": "true",
+      "placeholder": "John Doe"
+    },
+    {
+      "field": "Email",
+      "label": "Email Address",
+      "type": "email",
+      "required": "true",
+      "placeholder": "john@example.com"
+    },
+    {
+      "field": "Message",
+      "label": "Your Message",
+      "type": "textarea",
+      "required": "true",
+      "placeholder": "Tell us more..."
+    },
+    {
+      "field": "Submit",
+      "type": "submit",
+      "label": "Send Message"
+    }
+  ]
+}</code></pre>
+      </div>
+
+      <h3>Complete Field Reference</h3>
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>field</code></td>
+            <td>string</td>
+            <td>Field name (becomes input ID/name)</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td><code>label</code></td>
+            <td>string</td>
+            <td>Display label for the field</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td><code>type</code></td>
+            <td>string</td>
+            <td>Field type (see types below)</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td><code>required</code></td>
+            <td>string</td>
+            <td>"true" or "false" (string, not boolean)</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><code>placeholder</code></td>
+            <td>string</td>
+            <td>Placeholder text</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><code>default</code></td>
+            <td>string</td>
+            <td>Default value</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><code>help</code></td>
+            <td>string</td>
+            <td>Help text shown below field</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><code>options</code></td>
+            <td>string</td>
+            <td>Comma-separated options (for select/radio/checkbox)</td>
+            <td>For select/radio/checkbox</td>
+          </tr>
+          <tr>
+            <td><code>conditional</code></td>
+            <td>string</td>
+            <td>Controller field condition (e.g., "contactMethod-email")</td>
+            <td>No</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Supported Field Types</h3>
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>HTML Element</th>
+            <th>Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>text</code></td>
+            <td><code>&lt;input type="text"&gt;</code></td>
+            <td>General text input</td>
+          </tr>
+          <tr>
+            <td><code>email</code></td>
+            <td><code>&lt;input type="email"&gt;</code></td>
+            <td>Email addresses (validated)</td>
+          </tr>
+          <tr>
+            <td><code>tel</code></td>
+            <td><code>&lt;input type="tel"&gt;</code></td>
+            <td>Phone numbers</td>
+          </tr>
+          <tr>
+            <td><code>number</code></td>
+            <td><code>&lt;input type="number"&gt;</code></td>
+            <td>Numeric input</td>
+          </tr>
+          <tr>
+            <td><code>textarea</code></td>
+            <td><code>&lt;textarea&gt;</code></td>
+            <td>Multi-line text</td>
+          </tr>
+          <tr>
+            <td><code>select</code></td>
+            <td><code>&lt;select&gt;</code></td>
+            <td>Dropdown menu</td>
+          </tr>
+          <tr>
+            <td><code>radio</code></td>
+            <td><code>&lt;input type="radio"&gt;</code></td>
+            <td>Single choice from options</td>
+          </tr>
+          <tr>
+            <td><code>checkbox</code></td>
+            <td><code>&lt;input type="checkbox"&gt;</code></td>
+            <td>Multiple selections</td>
+          </tr>
+          <tr>
+            <td><code>toggle</code></td>
+            <td><code>&lt;input type="checkbox" role="switch"&gt;</code></td>
+            <td>On/off switch</td>
+          </tr>
+          <tr>
+            <td><code>submit</code></td>
+            <td><code>&lt;button type="submit"&gt;</code></td>
+            <td>Submit button</td>
+          </tr>
+          <tr>
+            <td><code>reset</code></td>
+            <td><code>&lt;button type="reset"&gt;</code></td>
+            <td>Reset button</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Advanced Features</h2>
+
+      <h3>Conditional Fields</h3>
+      <p>Show/hide fields based on other field values using the <code>conditional</code> property:</p>
+
+      <details>
+        <summary>Complete Example with Conditional Logic</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Form with conditional fields</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-json">{
+  "data": [
+    {
+      "field": "Contact Method",
+      "label": "How should we contact you?",
+      "type": "radio",
+      "options": "Email, Phone",
+      "required": "true"
+    },
+    {
+      "field": "Email Address",
+      "label": "Your Email",
+      "type": "email",
+      "required": "true",
+      "conditional": "contactMethod-email",
+      "help": "We'll respond within 24 hours"
+    },
+    {
+      "field": "Phone Number",
+      "label": "Your Phone",
+      "type": "tel",
+      "required": "true",
+      "conditional": "contactMethod-phone",
+      "help": "Include country code"
+    },
+    {
+      "field": "Submit",
+      "type": "submit",
+      "label": "Submit"
+    }
+  ]
+}</code></pre>
+          </div>
+
+          <p><strong>How it works:</strong></p>
+          <ul>
+            <li><code>conditional: "contactMethod-email"</code> means show this field when "Contact Method" equals "Email"</li>
+            <li>Format: <code>{controllerFieldName}-{value}</code> (converted to camelCase)</li>
+            <li>Controlled fields are hidden by default until condition is met</li>
+            <li><code>required</code> is dynamically toggled based on visibility</li>
+            <li>Hidden fields removed from tab order (<code>tabindex="-1"</code>)</li>
+          </ul>
+        </div>
+      </details>
+
+      <h3>Select with Remote Options</h3>
+      <p>Load select options from a remote JSON endpoint:</p>
+
+      <details>
+        <summary>Remote Options Example</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Select with remote options</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-json">{
+  "field": "Country",
+  "label": "Select Your Country",
+  "type": "select",
+  "options": "https://example.com/api/countries.json",
+  "placeholder": "Choose a country"
+}</code></pre>
+          </div>
+
+          <p><strong>Expected JSON format from endpoint:</strong></p>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">countries.json</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-json">{
+  "data": [
+    { "option": "United States", "value": "US" },
+    { "option": "Canada", "value": "CA" },
+    { "option": "United Kingdom", "value": "UK" }
+  ]
+}</code></pre>
+          </div>
+        </div>
+      </details>
+
+      <h3>Thank You Pages</h3>
+      <p>Load confirmation content after successful submission using the fragment block:</p>
+
+      <details>
+        <summary>Thank You Page Configuration</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Confirmation field in JSON</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-json">{
+  "field": "Confirmation",
+  "type": "confirmation",
+  "label": "/fragments/thank-you"
+}</code></pre>
+          </div>
+
+          <p><strong>How it works:</strong></p>
+          <ul>
+            <li>After successful form submission, the form block is replaced with content from <code>/fragments/thank-you</code></li>
+            <li>Uses the fragment block internally to load and decorate content</li>
+            <li>Path must be same-origin (no external URLs)</li>
+            <li>Fallback message shown if fragment fails to load</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2>Implementation</h2>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>blocks/form/form.js</code></p>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/form/form.js"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>blocks/form/form.css</code></p>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/form/form.css"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <h3>Step 1: Form Loading</h3>
+      <p>The form block uses Intersection Observer for lazy loading:</p>
+
+      <details>
+        <summary>Form Loading Code</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">form.js - Main decorate function (lines 733-767)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">export default function decorate(block) {
+  // Hide block until form is ready
+  block.style.visibility = 'hidden';
+
+  // Extract form definition URL and submit endpoint
+  const [source, submit] = [...block.querySelectorAll('a[href]')].map((a) => a.href);
+
+  if (source) {
+    // Use Intersection Observer to load form when visible
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(async (entry) => {
+        if (entry.isIntersecting) {
+          try {
+            // Fetch form definition JSON
+            const resp = await fetch(new URL(source, window.location.origin));
+            if (!resp.ok) throw new Error(`${resp.status}: ${resp.statusText}`);
+
+            const json = await resp.json();
+
+            // Handle different JSON formats (data, fields, or top-level array)
+            const raw = json.data ?? json.fields ?? json;
+            const data = Array.isArray(raw) ? raw : (raw?.fields && Array.isArray(raw.fields) ? raw.fields : null);
+
+            if (!data || !Array.isArray(data)) {
+              throw new Error(`No form fields at ${source}`);
+            }
+
+            // Build form from field definitions
+            const form = buildForm(data, submit);
+
+            // Replace block content with form
+            block.replaceChildren(form);
+            block.removeAttribute('style');
+          } catch (error) {
+            console.error('Could not build form from', source, error);
+            block.parentElement.remove();
+          }
+
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0 });
+
+    observer.observe(block);
+  } else {
+    console.error('Unable to create form without source');
+    block.parentElement.remove();
+  }
+}</code></pre>
+          </div>
+
+          <p><strong>Key Points:</strong></p>
+          <ul>
+            <li>Lazy loads form definition when block enters viewport</li>
+            <li>Supports multiple JSON formats for flexibility</li>
+            <li>Removes block entirely if form fails to load</li>
+            <li>Initial visibility hidden prevents content flash</li>
+          </ul>
+        </div>
+      </details>
+
+      <h3>Step 2: Building Form Elements</h3>
+      <p>Each field type has a dedicated builder function:</p>
+
+      <details>
+        <summary>Field Builders</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">form.js - Build input (lines 61-74)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">function buildInput(field) {
+  const {
+    type, field: fieldName, required, default: defaultValue, placeholder,
+  } = field;
+
+  const input = createElement('input');
+  input.type = type || 'text';
+  input.id = generateId(fieldName);    // Converts to camelCase
+  input.name = input.id;
+  input.required = required === 'true';  // String comparison
+  if (defaultValue) input.value = defaultValue;
+  if (placeholder) input.placeholder = placeholder;
+  return input;
+}</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">form.js - Build select (lines 183-228)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">function buildSelect(field, controlled) {
+  const {
+    type, options, field: fieldName, label, required, placeholder,
+  } = field;
+  if (!options) return null;
+
+  const wrapper = createElement('div', `form-field ${type}-field`);
+
+  // Add controller/condition data attributes for conditional logic
+  if (controlled) {
+    const controller = controlled.split('-')[0];
+    wrapper.dataset.controller = controller;
+    wrapper.dataset.condition = controlled;
+  }
+
+  wrapper.append(buildLabel(label, 'label', generateId(fieldName), required === 'true'));
+
+  const select = createElement('select');
+  select.id = generateId(fieldName);
+  select.name = select.id;
+  select.required = required === 'true';
+  wrapper.append(select);
+
+  // Add placeholder option if specified
+  if (placeholder) {
+    const placeholderOption = createElement('option');
+    placeholderOption.value = '';
+    placeholderOption.textContent = placeholder;
+    placeholderOption.disabled = true;
+    placeholderOption.selected = true;
+    select.append(placeholderOption);
+  }
+
+  // Try to parse options as URL for remote loading
+  try {
+    const url = new URL(options);
+    buildOptionsFromUrl(url).then((os) => {
+      select.append(...os);
+    });
+  } catch (error) {
+    // Not a URL - treat as comma-separated list
+    options.split(',').forEach((o) => {
+      const option = o.trim();
+      const optionEl = createElement('option');
+      optionEl.value = option;
+      optionEl.textContent = option;
+      select.append(optionEl);
+    });
+  }
+
+  return wrapper;
+}</code></pre>
+          </div>
+        </div>
+      </details>
+
+      <h3>Step 3: Conditional Logic</h3>
+      <p>Controller/controlled relationships enable dynamic field visibility:</p>
+
+      <details>
+        <summary>Conditional Logic Implementation</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">form.js - Toggle conditional (lines 284-308)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">function toggleConditional(e, controllerConfig) {
+  const { target } = e;
+  const controller = target.name;
+
+  // Check if this is a controlling input
+  if (controllerConfig.has(controller)) {
+    const inputs = [...controllerConfig.get(controller)];
+
+    inputs.forEach((i) => {
+      const field = i.closest('.form-field');
+      const { condition } = field.dataset;
+
+      // Check if condition is met (e.g., "contactMethod-email")
+      const conditionMet = condition.includes(toClassName(target.value));
+
+      // Toggle visibility
+      field.setAttribute('aria-hidden', !conditionMet);
+
+      // Toggle required and tabindex based on visibility
+      if (conditionMet) {
+        // Restore original required state
+        if (i.dataset.originalRequired === 'true') {
+          i.setAttribute('required', '');
+        }
+        i.removeAttribute('tabindex');
+      } else {
+        // Remove required and exclude from tab order
+        i.removeAttribute('required');
+        i.setAttribute('tabindex', '-1');
+      }
+    });
+  }
+}</code></pre>
+          </div>
+
+          <p><strong>How it works:</strong></p>
+          <ol>
+            <li>On form load, build map of controller → controlled fields</li>
+            <li>Set initial visibility based on default values</li>
+            <li>Listen for <code>change</code> events on form</li>
+            <li>When controller changes, check all controlled fields</li>
+            <li>Show field if condition matches, hide otherwise</li>
+            <li>Dynamically toggle <code>required</code> and <code>tabindex</code></li>
+          </ol>
+        </div>
+      </details>
+
+      <h3>Step 4: Form Submission</h3>
+      <p>Submission validates, generates payload, POSTs to endpoint, and shows confirmation:</p>
+
+      <details>
+        <summary>Submission Handler</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">form.js - Handle submit (lines 534-575)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">async function handleSubmit(form) {
+  const status = form.querySelector('.form-status');
+  const setStatus = (msg) => { if (status) status.textContent = msg; };
+
+  try {
+    // Generate payload from form data
+    const payload = generatePayload(form);
+    const body = { data: payload };
+
+    // Disable form during submission
+    toggleForm(form);
+    setStatus('Sending...');
+
+    // POST to remote endpoint
+    const response = await fetch(form.dataset.action, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      // Check for thank you page configuration
+      if (form.dataset.confirmation) {
+        const replaced = await replaceWithThankYou(form, form.dataset.confirmation);
+        if (!replaced) {
+          // Fallback if fragment fails
+          setStatus('Thanks! Your message has been sent.');
+          form.reset();
+        }
+      } else {
+        // No thank you page - show inline message
+        setStatus('Thanks! Your message has been sent.');
+        form.reset();
+      }
+    } else {
+      const error = await response.text();
+      throw new Error(error);
+    }
+  } catch (error) {
+    setStatus('Unable to submit right now. Please try again.');
+    console.error(error);
+  } finally {
+    // Re-enable form
+    toggleForm(form, false);
+  }
+}</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">form.js - Generate payload (lines 447-461)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">function generatePayload(form) {
+  const payload = {};
+
+  [...form.elements].forEach((field) => {
+    if (field.name && !field.disabled) {
+      if (field.type === 'radio') {
+        // Only include checked radio
+        if (field.checked) payload[field.name] = field.value;
+      } else if (field.type === 'checkbox') {
+        // Concatenate checked checkboxes
+        if (field.checked) {
+          payload[field.name] = payload[field.name]
+            ? `${payload[field.name]},${field.value}`
+            : field.value;
+        }
+      } else {
+        // All other fields
+        payload[field.name] = field.value;
+      }
+    }
+  });
+
+  return payload;
+}</code></pre>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2>Step-by-Step Setup</h2>
+
+      <ol class="steps">
+        <li>
+          <h3>Create Form Definition JSON</h3>
+          <p>Create a JSON file defining your form fields:</p>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">/forms/contact-us.json</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-json">{
+  "data": [
+    {
+      "field": "Name",
+      "label": "Your Name",
+      "type": "text",
+      "required": "true"
+    },
+    {
+      "field": "Email",
+      "label": "Email Address",
+      "type": "email",
+      "required": "true"
+    },
+    {
+      "field": "Message",
+      "label": "Your Message",
+      "type": "textarea",
+      "required": "true"
+    },
+    {
+      "field": "Submit",
+      "type": "submit",
+      "label": "Send Message"
+    },
+    {
+      "field": "Confirmation",
+      "type": "confirmation",
+      "label": "/fragments/thank-you"
+    }
+  ]
+}</code></pre>
+          </div>
+        </li>
+
+        <li>
+          <h3>Create Submit Endpoint</h3>
+          <p>Set up a Cloudflare Worker or other serverless function:</p>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Cloudflare Worker example</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">export default {
+  async fetch(request) {
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 });
+    }
+
+    try {
+      const body = await request.json();
+      const { data } = body;
+
+      // Send to Slack, email, CRM, etc.
+      await sendToSlack(data);
+
+      return new Response('Success', { status: 200 });
+    } catch (error) {
+      return new Response('Error', { status: 500 });
+    }
+  }
+};</code></pre>
+          </div>
+        </li>
+
+        <li>
+          <h3>Add Form Block Code</h3>
+          <p>Copy the complete form block JavaScript and CSS into your project:</p>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Terminal</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-bash">mkdir -p blocks/form
+# Copy form.js (768 lines) and form.css from demo site</code></pre>
+          </div>
+        </li>
+
+        <li>
+          <h3>Create Form Block in DA</h3>
+          <p>In Document Authoring, add a form block:</p>
+          <details>
+            <summary>Expand to view and copy form block structure</summary>
+            <div class="details-content">
+              <button class="copy-btn" onclick="copyTable(this)"
+                      style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+                Copy
+              </button>
+              <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                  <tr><th style="background-color: #f0f0f0;">Form</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>/forms/contact-us.json</td></tr>
+                  <tr><td>https://your-worker.workers.dev/submit</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </li>
+
+        <li>
+          <h3>Test Locally</h3>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Terminal</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-bash">npx -y @adobe/aem-cli up</code></pre>
+          </div>
+          <p>Navigate to your page and verify:</p>
+          <ul>
+            <li>Form loads from JSON</li>
+            <li>All fields render correctly</li>
+            <li>Validation works</li>
+            <li>Conditional fields show/hide</li>
+            <li>Submission sends to endpoint</li>
+            <li>Thank you page appears (if configured)</li>
+          </ul>
+        </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Accessibility</h2>
+      <p>The form block includes comprehensive accessibility features:</p>
+
+      <ul>
+        <li><strong>Semantic HTML:</strong> Proper <code>&lt;label&gt;</code>, <code>&lt;fieldset&gt;</code>, <code>&lt;legend&gt;</code> elements</li>
+        <li><strong>Required Indicators:</strong> Visual asterisks added via CSS <code>::after</code></li>
+        <li><strong>Help Text:</strong> Associated via <code>aria-describedby</code></li>
+        <li><strong>Error Handling:</strong> <code>aria-invalid</code> set on validation failure</li>
+        <li><strong>Live Regions:</strong> Status messages announced with <code>aria-live="polite"</code></li>
+        <li><strong>Conditional Fields:</strong> <code>aria-hidden</code>, <code>aria-controls</code>, <code>aria-controlledby</code></li>
+        <li><strong>Focus Management:</strong> First invalid field focused and scrolled into view</li>
+        <li><strong>Keyboard Navigation:</strong> Hidden fields excluded from tab order</li>
+        <li><strong>Toggle Switches:</strong> <code>role="switch"</code> and <code>aria-checked</code></li>
+      </ul>
+
+      <div class="alert alert-success">
+        <strong>WCAG 2.1 AA Compliant:</strong> Meets accessibility standards when used with proper field labels and help text.
+      </div>
+    </section>
+
+    <section>
+      <h2>Example: Contact Form Worker</h2>
+      <p>Complete Cloudflare Worker that sends form data to Slack:</p>
+
+      <details>
+        <summary>Full Worker Code</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">workers/contact_us/src/index.js</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">export default {
+  async fetch(request, env) {
+    // Handle CORS preflight
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
+      });
+    }
+
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 });
+    }
+
+    try {
+      const body = await request.json();
+      const { data } = body;
+
+      // Format message for Slack
+      const message = {
+        text: 'New Form Submission',
+        blocks: [
+          {
+            type: 'header',
+            text: { type: 'plain_text', text: 'New Contact Form Submission' },
+          },
+          {
+            type: 'section',
+            fields: Object.entries(data).map(([key, value]) => ({
+              type: 'mrkdwn',
+              text: `*${key}:*\n${value}`,
+            })),
+          },
+        ],
+      };
+
+      // Send to Slack webhook
+      await fetch(env.SLACK_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(message),
+      });
+
+      return new Response('Success', {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    } catch (error) {
+      console.error('Error processing form:', error);
+      return new Response('Error', { status: 500 });
+    }
+  },
+};</code></pre>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2>Video Tutorial</h2>
+      <div class="video-container">
+        <iframe src="https://demo.bbird.live/demo-docs/media/forms-demo.mp4" allowfullscreen></iframe>
+      </div>
+      <p><strong>Tutorial Contents:</strong></p>
+      <ul>
+        <li>Creating form definitions in JSON</li>
+        <li>Adding form blocks to pages</li>
+        <li>Setting up conditional fields</li>
+        <li>Configuring submit endpoints</li>
+        <li>Testing form submissions</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Related Guides</h2>
+      <div class="related-guides">
+        <a href="how-to-contact-form-worker.html" class="guide-card">
+          <h4>Contact Form Worker</h4>
+          <p>Complete guide to building Cloudflare Workers for form handling</p>
+        </a>
+
+        <a href="how-to-fragments.html" class="guide-card">
+          <h4>Fragment Block</h4>
+          <p>Learn how to use fragments for thank you pages and reusable content</p>
+        </a>
+
+        <a href="how-to-universal-editor.html" class="guide-card">
+          <h4>Universal Editor Forms</h4>
+          <p>Alternative WYSIWYG form authoring with Universal Editor</p>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

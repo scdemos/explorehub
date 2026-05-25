@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Case studies | EDS Reference Playbook</title>
+  <meta name="description" content="Production AEM Edge Delivery Services sites — patterns, scale, and what to inspect when adapting similar experiences.">
+  <link rel="stylesheet" href="../styles/styles.css">
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Case studies</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip">Case studies</span>
+      <h1>Case studies</h1>
+      <p class="subtitle">Live production sites on AEM Edge Delivery Services. Use these pages to orient before diving into playbooks and cookbook — each entry links the public site and notes what to look for when inspecting or scoping similar work.</p>
+      <div class="metadata">
+        <span class="tag">Reference</span>
+      </div>
+    </header>
+
+    <section class="category-section">
+      <h2>Sites</h2>
+      <div class="card-grid">
+        <article class="guide-card">
+          <h3><a href="cmegroup.html">cmegroup.com</a></h3>
+          <p>Financial markets — complex navigation, DA Sheets plugins, performance-sensitive publishing.</p>
+        </article>
+        <article class="guide-card">
+          <h3><a href="revolt.html">revolt.tv</a></h3>
+          <p>Media / entertainment — content-rich pages and brand-led experience patterns.</p>
+        </article>
+        <article class="guide-card">
+          <h3><a href="volvo.html">volvo</a></h3>
+          <p>Automotive — global brand site on EDS; multi-market content and component depth.</p>
+        </article>
+        <article class="guide-card">
+          <h3><a href="crn.html">crn.com</a></h3>
+          <p>B2B publishing — editorial velocity, search, and multi-property theming.</p>
+        </article>
+        <article class="guide-card">
+          <h3><a href="run-disney.html">run disney</a></h3>
+          <p>Events / registration — campaign pages, forms, and seasonal content cadence.</p>
+        </article>
+        <article class="guide-card">
+          <h3><a href="jet2.html">jet2</a></h3>
+          <p>Travel — high-traffic consumer journeys, merchandising blocks, and conversion paths.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="chapter-section">
+      <h2>Page structure</h2>
+      <p>Each case study follows the same scaffold (see <code>case-studies/_template.html</code> for the canonical outline):</p>
+      <ol>
+        <li>Overview</li>
+        <li>Customer snapshot</li>
+        <li>Business challenge</li>
+        <li>Solution on EDS</li>
+        <li>Technical highlights</li>
+        <li>Architecture</li>
+        <li>Outcomes (sample metrics until verified)</li>
+        <li>Lessons &amp; what to inspect</li>
+        <li>Related playbook &amp; cookbook</li>
+        <li>Resources</li>
+      </ol>
+      <p>Pages marked with a draft banner use <strong>sample content</strong> — safe to replace in a later polish pass.</p>
+    </section>
+
+    <section class="chapter-section">
+      <h2>How to use these pages</h2>
+      <ul>
+        <li>Open the <strong>live site</strong> and compare against relevant <a href="../playbooks/index.html">playbook chapters</a> or <a href="../cookbook/index.html">cookbook</a> blocks.</li>
+        <li>Use browser devtools + RUM to see real-world block decoration and third-party integrations.</li>
+        <li>When scoping your own project, treat these as <em>orientation</em> — not copy-paste implementations.</li>
+      </ul>
+      <p>Want another site listed? <a href="../getting-started/contributing.html">Contributing &amp; feedback</a>.</p>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/case-studies/index.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

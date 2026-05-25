@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Search &amp; discovery | EDS Reference Playbook</title>
+  <meta name="description" content="Faceted search and content recommendations powered by query-index.json. No external search service.">
+
+  <meta property="og:title" content="Search &amp; discovery | EDS Reference Playbook">
+  <meta property="og:description" content="Faceted search and content recommendations powered by query-index.json. No external search service.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="../assets/screenshots/search-and-discovery.png">
+  <meta name="twitter:image" content="../assets/screenshots/search-and-discovery.png">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css">
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Playbooks &amp; Recipes</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Search &amp; discovery</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-playbook">Playbook</span>
+      <h1>Search &amp; discovery</h1>
+      <p class="subtitle">Faceted search and content recommendations using only <code>query-index.json</code>. No Algolia, no Elasticsearch, no external service. The same data also powers related-content surfaces and recommendations.</p>
+      <div class="metadata">
+        <span class="tag">Search</span>
+        <span class="tag">Query Index</span>
+        <span class="tag">Discovery</span>
+        <span class="tag">Recommendations</span>
+      </div>
+    </header>
+
+    <section id="problem" class="chapter-section">
+      <h2>Problem</h2>
+      <p>Customers want a search bar with filters and pagination, plus "related content" rails on article pages. The team has been told search needs Algolia, but the content set is small (hundreds, not millions) and authors don't want to maintain a parallel taxonomy in a separate dashboard.</p>
+    </section>
+
+    <section id="live-example" class="chapter-section">
+      <h2>Live example</h2>
+      <p>
+        <a class="btn btn-primary" target="_blank" href="https://demo.bbird.live/learn/">Search page (faceted)</a>
+        <a class="btn btn-secondary" target="_blank" href="https://demo.bbird.live/learn/fire/whats-fire">Article with related-articles rail</a>
+      </p>
+      <p>Open DevTools → Network and watch a single <code>query-index.json</code> request feed both the search filters and the recommendations.</p>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>High-level architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Author["Authors maintain
+  pages + keywords"]
+  --> Index["EDS publishes
+  query-index.json"]
+  Index --> SearchBlock["blocks/search
+  facets + pagination"]
+  Index --> Related["blocks/related-articles
+  keyword + recency match"]
+  Index --> Cards["blocks/cards (links)
+  curated lists"]
+  SearchBlock --> User
+  Related --> User
+  Cards --> User
+      </pre>
+      <p>One JSON, three consumers. <code>query-index.json</code> is published from a spreadsheet that captures every page's <code>title</code>, <code>description</code>, <code>image</code>, <code>keywords</code>, <code>date</code>, <code>lastModified</code>, and <code>template</code>. Anything that needs to surface content reads from this index — no parallel store.</p>
+    </section>
+
+    <section id="snippets" class="chapter-section">
+      <h2>Code snippets</h2>
+
+      <h3>1. Paginated query-index fetch (shared utility)</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>scripts/shared.js</code></span>
+          <a href="https://github.com/scdemos/demo/blob/main/scripts/shared.js#L113-L148" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">export const QUERY_INDEX_PAGE_SIZE = 500;
+
+export async function fetchQueryIndexPage(offset, limit, baseUrl = '') {
+  const path = `/query-index.json?offset=${offset}&amp;limit=${limit}`;
+  const url = baseUrl ? `${String(baseUrl).replace(/\/+$/, '')}${path}` : path;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Query index request failed: ${resp.status}`);
+  return (await resp.json())?.data || [];
+}
+
+export async function fetchQueryIndexAll(options = {}) {
+  const { pageSize = QUERY_INDEX_PAGE_SIZE, baseUrl = '' } = options;
+  async function fetchPage(offset, acc) {
+    const rows = await fetchQueryIndexPage(offset, pageSize, baseUrl);
+    if (!rows.length) return acc;
+    const next = [...acc, ...rows];
+    return rows.length === pageSize ? fetchPage(offset + rows.length, next) : next;
+  }
+  return fetchPage(0, []);
+}</code></pre>
+      </div>
+
+      <h3>2. Search block — facets from authored config</h3>
+      <p>The search block reads its filter groups straight from the block table. Each non-reserved key becomes a facet group, each comma-separated value an option:</p>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>blocks/search/search.js</code> (excerpt)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/blocks/search/search.js#L13-L52" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">const RESERVED_CONFIG_KEYS = ['view', 'keywords', 'excluded-keywords', 'searchbar'];
+
+function parseFilterGroupsFromConfig(config) {
+  return Object.entries(config)
+    .filter(([key]) =&gt; !RESERVED_CONFIG_KEYS.includes(key))
+    .map(([key, value]) =&gt; {
+      const options = String(value || '')
+        .split(',').map((v) =&gt; v.trim()).filter(Boolean)
+        .map((v) =&gt; ({ key: toClassName(v), label: v, match: v.toLowerCase() }));
+      if (!options.length) return null;
+      const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, ' ');
+      return { key, label, options };
+    })
+    .filter(Boolean);
+}
+
+function rowMatchesFilterGroups(row, selectedByGroup, filterGroups) {
+  return filterGroups.every((group) =&gt; {
+    const selected = selectedByGroup.get(group.key) || [];
+    if (!selected.length) return true;
+    const values = getGroupMatches(row, group);
+    return selected.some((v) =&gt; values.includes(v));
+  });
+}</code></pre>
+      </div>
+
+      <h3>3. Related articles — keyword + recency</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>blocks/related-articles/related-articles.js</code> (excerpt)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/blocks/related-articles/related-articles.js#L36-L60" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">function matchArticles(rows, keywordsConfig, excludedConfig, limit) {
+  const requested = parseKeywords(keywordsConfig);
+  const excluded = parseKeywords(excludedConfig);
+  const isRandom = requested.includes('random');
+  const hasMultipleKeywords = requested.filter((k) =&gt; k !== 'random').length &gt; 1;
+  const shouldShuffle = isRandom || hasMultipleKeywords;
+
+  const filtered = isRandom || !requested.length
+    ? rows
+    : rows.filter((row) =&gt; requested.some((k) =&gt; rowMatchesKeyword(row, k)));
+
+  const withoutExcluded = excluded.length
+    ? filtered.filter((row) =&gt; !excluded.some((k) =&gt; rowMatchesKeyword(row, k)))
+    : filtered;
+
+  const deduped = withoutExcluded.filter((row, idx, arr) =&gt;
+    arr.findIndex((x) =&gt; x.path === row.path) === idx);
+
+  if (shouldShuffle) return shuffle(deduped).slice(0, limit);
+  return deduped.sort((a, b) =&gt; getContentTimestamp(b) - getContentTimestamp(a)).slice(0, limit);
+}</code></pre>
+      </div>
+
+      <p>Three modes from one helper: keyword-matched (recency-sorted), random (shuffled), or curated (authored anchor list joined with index metadata via <code>resolveArticlesFromIndex</code>).</p>
+
+      <h3>4. Resolving authored links to index metadata</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>scripts/shared.js</code> (excerpt)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/scripts/shared.js#L188-L209" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">export function resolveArticlesFromIndex(authoredLinks, indexRows) {
+  return authoredLinks.map(({ path, title: linkTitle }) =&gt; {
+    const norm = normalizePath(path);
+    const row = indexRows.find((r) =&gt; r?.path &amp;&amp; normalizePath(r.path) === norm);
+    const fallbackTitle = norm.split('/').filter(Boolean).pop()?.replace(/-/g, ' ') || norm;
+    return {
+      path: norm,
+      title: row?.title?.trim() || linkTitle || fallbackTitle,
+      description: row?.description?.trim() || '',
+      image: row?.image,
+      date: row?.date || row?.publisheddate || row?.lastModified,
+    };
+  });
+}</code></pre>
+      </div>
+
+      <p>Authors paste a bullet list of links into a <code>cards (links)</code> or <code>related-articles</code> block; the block enriches each link with current title/description/image from the index. Authors edit content once, in the page metadata.</p>
+    </section>
+
+    <section id="gotchas" class="chapter-section">
+      <h2>Notes &amp; gotchas</h2>
+      <ul>
+        <li><strong>The index is a contract.</strong> Decide your column set early (<code>title, description, image, date, keywords, template, ...</code>). Add columns in the published spreadsheet first, then update the consuming blocks.</li>
+        <li><strong>Comma-separated keywords.</strong> The search and related-articles blocks both rely on <code>keywords</code> being a comma list. Spaces are tolerated; case is normalised. Don't store JSON arrays — the existing helpers split on <code>,</code>.</li>
+        <li><strong>Pagination matters past 500 rows.</strong> <code>fetchQueryIndexAll</code> handles it, but the search block uses <code>fetchQueryIndexPage</code> with a fixed <code>FETCH_LIMIT = 500</code> in the demo. For large catalogs, raise the limit or paginate server-side.</li>
+        <li><strong>Recency sort needs a real date column.</strong> If <code>date</code> is empty, the helper falls back to <code>publisheddate</code> then <code>lastModified</code>. Without any of those, sort order is undefined.</li>
+        <li><strong>Filtering is in-browser.</strong> Good for &lt; 5k rows. Past that, consider serving a slimmed JSON variant (worker + KV) or moving to a real search index. The blocks are designed so you can swap the data source without touching the UI.</li>
+        <li><strong>"Random" is not stable.</strong> If your QA runs flaky tests on a related-articles block configured with <code>keywords: random</code>, mock <code>Math.random</code> or pin the keywords during tests.</li>
+        <li><strong>Search bar UX.</strong> The search block treats <code>?q=...</code> in the URL as the initial query — share-able links, browser history, deep linking from email campaigns. Worth keeping when you customize the block.</li>
+      </ul>
+    </section>
+
+    <section id="adapt" class="chapter-section">
+      <h2>How to adapt into my project</h2>
+      <ol>
+        <li><strong>Audit your <code>query-index.json</code></strong> — open <code>https://main--&lt;repo&gt;--&lt;org&gt;.aem.live/query-index.json</code> and confirm you have <code>title, description, image, date, keywords</code> at minimum.</li>
+        <li><strong>Copy <code>scripts/shared.js</code></strong> helpers (<code>fetchQueryIndexAll</code>, <code>parseKeywords</code>, <code>resolveArticlesFromIndex</code>, <code>shuffle</code>). They're project-agnostic.</li>
+        <li><strong>Pick the variant.</strong>
+          <ul>
+            <li>Faceted browse → <code>blocks/search</code>.</li>
+            <li>Per-article rail → <code>blocks/related-articles</code>.</li>
+            <li>Curated link list with metadata → <code>blocks/cards</code> (links variant).</li>
+          </ul>
+        </li>
+        <li><strong>Author the block.</strong> The <code>blocks/search</code> table accepts arbitrary facet keys — make them match the columns in your index spreadsheet.</li>
+        <li><strong>Outgrowing in-browser?</strong> Keep the same blocks but swap the data layer to a worker that wraps Vectorize / KV / Algolia. The block doesn't care where the JSON came from.</li>
+      </ol>
+    </section>
+
+    <section id="links" class="chapter-section">
+      <h2>Links</h2>
+      <ul>
+        <li><a href="https://www.aem.live/developer/indexing" target="_blank">AEM — query-index documentation</a></li>
+        <li><a href="https://github.com/scdemos/demo/blob/main/blocks/search/search.js" target="_blank">scdemos/demo — search block</a></li>
+        <li><a href="https://github.com/scdemos/demo/blob/main/blocks/related-articles/related-articles.js" target="_blank">scdemos/demo — related-articles block</a></li>
+        <li><a href="../use-cases/how-to-author-search-page.html">Cookbook: Search page</a></li>
+        <li><a href="../use-cases/how-to-build-related-articles.html">Cookbook: Related Articles</a></li>
+        <li><a href="rss-and-feeds.html">Related playbook: RSS feeds (also reads query-index)</a></li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/playbooks/search-and-discovery.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

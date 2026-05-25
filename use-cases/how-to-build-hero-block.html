@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="../favicon.ico" />
+  <title>How to Build a Hero Block | AEM Edge Delivery Developer Guides</title>
+  <meta name="description" content="Learn to build a cinematic hero block with dual-image theming, gradient overlays, and responsive animations for AEM Edge Delivery Services." />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+  
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Hero Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Hero Block</h1>
+      <p class="subtitle">Create a cinematic hero with dual-image theming, gradient overlays, and staggered animations</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">LCP Critical</span>
+        <span class="tag">Dark Mode</span>
+        <span class="tag">Intermediate</span>
+      </div>
+    </header>
+
+    <section>
+      <h2 id="overview">Overview</h2>
+      <p>
+        The Hero block creates a full-width, visually striking page header with text overlay on an image. It supports
+        dual images for light/dark themes, gradient fades, color variants, animated text entrance, and a no-image fallback.
+        As an above-the-fold block, it's optimized for Largest Contentful Paint (LCP) performance.
+      </p>
+
+      <div class="info-box">
+        <strong>Key Features:</strong>
+        <ul>
+          <li><strong>Dual-Image Theming:</strong> Light and dark images that swap based on user theme preference</li>
+          <li><strong>Gradient Overlay:</strong> Cinematic fade from transparent to background color</li>
+          <li><strong>Text Overlay:</strong> Absolutely positioned text with tagline, heading, body, and CTA</li>
+          <li><strong>Staggered Animations:</strong> Sequential fade-in entrance for text elements</li>
+          <li><strong>Color Variants:</strong> Rust, gold, ink, and obsidian background options</li>
+          <li><strong>No-Image Fallback:</strong> Centered text layout when image is omitted</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="authoring">Authoring Structure</h2>
+      <p>Authors create hero blocks using a two-row table:</p>
+
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Row</th>
+              <th>Content</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Image (or two images for dual-theme)</td>
+              <td>Background image (first = light, second = dark)</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Tagline (optional)<br>Heading<br>Body text (optional)<br>CTA button (optional)</td>
+              <td>Text content with automatic classification</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="markup-flow">From Authoring to Rendering</h2>
+      <p>Understanding how AEM Edge Delivery transforms authored content into decorated blocks is crucial. This section shows the complete flow from what authors create to what renders on the page.</p>
+
+      <h3>Step 1: What the Author Creates</h3>
+      <p>Authors work in a document editor (Google Docs, Word, SharePoint) and create a simple table:</p>
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr><th>Hero</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <img src="https://placehold.co/1200x400/e8e8e8/666?text=Hero+Light" alt="Hero light" style="max-width: 100%; height: auto;"><br>
+                <img src="https://placehold.co/1200x400/2a2a2a/ccc?text=Hero+Dark" alt="Hero dark" style="max-width: 100%; height: auto;">
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Financial Independence · Retire Early</p>
+                <h1>The <em>Science</em> of Wealth Preservation</h1>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Step 2: Plain HTML (.plain.html)</h3>
+      <p>AEM converts the authored table into semantic HTML with minimal structure. This is what appears <strong>before any JavaScript or CSS runs</strong>:</p>
+
+      <pre><code class="language-html">&lt;div&gt;
+  &lt;div class="hero"&gt;
+    &lt;div&gt;
+      &lt;div&gt;
+        &lt;picture&gt;
+          &lt;source type="image/webp" srcset="./media_abc.png?width=2000&amp;format=webply" media="(min-width: 600px)"&gt;
+          &lt;img loading="lazy" alt="" src="./media_abc.png?width=750" width="750" height="371"&gt;
+        &lt;/picture&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div&gt;
+      &lt;div&gt;
+        &lt;picture&gt;
+          &lt;source type="image/webp" srcset="./media_xyz.png?width=2000&amp;format=webply" media="(min-width: 600px)"&gt;
+          &lt;img loading="lazy" alt="" src="./media_xyz.png?width=750" width="750" height="371"&gt;
+        &lt;/picture&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div&gt;
+      &lt;div&gt;
+        &lt;p&gt;Financial Independence · Retire Early&lt;/p&gt;
+        &lt;h1&gt;&lt;strong&gt;The&lt;/strong&gt; &lt;em&gt;Science&lt;/em&gt; &lt;strong&gt;of Wealth Preservation&lt;/strong&gt;&lt;/h1&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+      <p><strong>Key observations:</strong></p>
+      <ul>
+        <li>Block name "Hero" becomes <code>class="hero"</code></li>
+        <li>Each table row becomes a <code>&lt;div&gt;</code> child</li>
+        <li>Each table cell is wrapped in another <code>&lt;div&gt;</code></li>
+        <li>Images are converted to responsive <code>&lt;picture&gt;</code> elements with WebP sources</li>
+        <li>Content structure is preserved exactly as authored</li>
+        <li><strong>No special classes yet</strong> - no <code>hero-img-light</code>, <code>hero-img-dark</code>, <code>hero-text</code>, or <code>hero-tagline</code></li>
+      </ul>
+
+      <h3>Step 3: JavaScript Decoration</h3>
+      <p>The <code>blocks/hero/hero.js</code> file runs and transforms the plain HTML by adding semantic classes:</p>
+
+      <pre><code class="language-javascript">// Detect dual images and add theme classes
+const pictures = block.querySelectorAll('picture');
+if (pictures.length &gt;= 2) {
+  const lightDiv = pictures[0].closest('.hero &gt; div');
+  const darkDiv = pictures[1].closest('.hero &gt; div');
+  lightDiv.classList.add('hero-img-light');  // ← Adds class
+  darkDiv.classList.add('hero-img-dark');     // ← Adds class
+}
+
+// Mark text container
+const h1 = block.querySelector('h1');
+const textDiv = h1.closest('div').parentElement;
+textDiv.classList.add('hero-text');           // ← Adds class
+
+// Detect tagline (first &lt;p&gt; before &lt;h1&gt;)
+const children = [...contentDiv.children];
+const h1Index = children.indexOf(h1);
+for (let i = 0; i &lt; h1Index; i += 1) {
+  if (children[i].tagName === 'P') {
+    children[i].classList.add('hero-tagline'); // ← Adds class
+    break;
+  }
+}</code></pre>
+
+      <h3>Step 4: Decorated HTML (Final DOM)</h3>
+      <p>After the full AEM decoration pipeline runs (including block JavaScript), the DOM has semantic classes, data attributes, and optimized images. This is what you see in browser DevTools:</p>
+
+      <pre><code class="language-html">&lt;div&gt;
+  &lt;div class="hero block" data-block-name="hero" data-block-status="loaded"&gt;
+    &lt;div class="hero-img-light"&gt;
+      &lt;div&gt;
+        &lt;picture&gt;
+          &lt;source type="image/webp"
+                  srcset="./media_abc.png?width=2000&amp;format=webply&amp;optimize=medium"
+                  media="(min-width: 600px)"&gt;
+          &lt;source type="image/webp"
+                  srcset="./media_abc.png?width=750&amp;format=webply&amp;optimize=medium"&gt;
+          &lt;source type="image/png"
+                  srcset="./media_abc.png?width=2000&amp;format=png&amp;optimize=medium"
+                  media="(min-width: 600px)"&gt;
+          &lt;img loading="eager" alt=""
+               src="./media_abc.png?width=750&amp;format=png&amp;optimize=medium"
+               width="750" height="371"&gt;
+        &lt;/picture&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="hero-img-dark"&gt;
+      &lt;div&gt;
+        &lt;picture&gt;
+          &lt;source type="image/webp"
+                  srcset="./media_xyz.png?width=2000&amp;format=webply&amp;optimize=medium"
+                  media="(min-width: 600px)"&gt;
+          &lt;source type="image/webp"
+                  srcset="./media_xyz.png?width=750&amp;format=webply&amp;optimize=medium"&gt;
+          &lt;source type="image/png"
+                  srcset="./media_xyz.png?width=2000&amp;format=png&amp;optimize=medium"
+                  media="(min-width: 600px)"&gt;
+          &lt;img loading="lazy" alt=""
+               src="./media_xyz.png?width=750&amp;format=png&amp;optimize=medium"
+               width="750" height="371"&gt;
+        &lt;/picture&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="hero-text"&gt;
+      &lt;div&gt;
+        &lt;p class="hero-tagline"&gt;Financial Independence · Retire Early&lt;/p&gt;
+        &lt;h1 id="the-science-of-wealth-preservation"&gt;
+          &lt;strong&gt;The&lt;/strong&gt; &lt;em&gt;Science&lt;/em&gt; &lt;strong&gt;of Wealth Preservation&lt;/strong&gt;
+        &lt;/h1&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+      <p><strong>Additional transformations by AEM's core pipeline:</strong></p>
+      <ul>
+        <li><code>class="block"</code> added to all blocks by <code>aem.js</code></li>
+        <li><code>data-block-name</code> and <code>data-block-status</code> track block lifecycle</li>
+        <li><code>&lt;picture&gt;</code> elements generated by <code>createOptimizedPicture()</code> from <code>aem.js</code></li>
+        <li>Multiple <code>&lt;source&gt;</code> elements provide WebP format with PNG fallback</li>
+        <li>Responsive sizing: 2000px for desktop (min-width: 600px), 750px for mobile</li>
+        <li>Automatic optimization with <code>?width=X&amp;format=Y&amp;optimize=medium</code> query params</li>
+        <li>First image gets <code>loading="eager"</code> for LCP optimization</li>
+      </ul>
+
+      <h3>Step 5: CSS Styling</h3>
+      <p>Finally, <code>blocks/hero/hero.css</code> uses the added classes to style the block:</p>
+
+      <pre><code class="language-css">/* Hide dark image by default */
+.hero .hero-img-dark {
+  display: none;
+}
+
+/* Show dark image in dark mode */
+.dark-scheme .hero .hero-img-light {
+  display: none;
+}
+.dark-scheme .hero .hero-img-dark {
+  display: block;
+}
+
+/* Position text overlay */
+.hero .hero-text {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+/* Style tagline */
+.hero .hero-tagline {
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  color: var(--color-gold);
+  text-transform: uppercase;
+  letter-spacing: 5px;
+}</code></pre>
+
+      <div class="info-box">
+        <strong>The Flow Summary:</strong>
+        <ol>
+          <li><strong>Author</strong> creates a 2-row table in a document with "Hero" as the header</li>
+          <li><strong>AEM</strong> converts it to plain HTML with <code>class="hero"</code> and nested divs</li>
+          <li><strong>JavaScript</strong> detects patterns and adds semantic classes (hero-img-light, hero-text, etc.)</li>
+          <li><strong>CSS</strong> uses those classes to apply positioning, theming, and styling</li>
+        </ol>
+      </div>
+
+      <h3>Viewing Plain HTML</h3>
+      <p>To see the plain HTML for any page, add <code>.plain.html</code> to the URL:</p>
+      <ul>
+        <li><strong>Regular:</strong> <code>https://main--{repo}--{owner}.aem.live/{path}</code></li>
+        <li><strong>Plain HTML:</strong> <code>https://main--{repo}--{owner}.aem.live/{path}.plain.html</code></li>
+      </ul>
+      <p><strong>Example:</strong> <code>https://main--demo--scdemos.aem.live/index.plain.html</code></p>
+      <p>This shows exactly what markup AEM generates before any block JavaScript runs, which is invaluable for debugging and understanding the transformation flow.</p>
+    </section>
+
+    <section>
+      <h2 id="implementation">Implementation</h2>
+
+      <h3>Step 1: JavaScript Decoration</h3>
+      <p>Create <code>blocks/hero/hero.js</code>:</p>
+
+      <pre><code class="language-javascript">/** @param {Element} block The hero block element */
+export default function decorate(block) {
+  const pictures = block.querySelectorAll('picture');
+
+  // Dual-image theming
+  if (pictures.length >= 2) {
+    const lightDiv = pictures[0].closest('.hero > div');
+    const darkDiv = pictures[1].closest('.hero > div');
+    if (lightDiv) lightDiv.classList.add('hero-img-light');
+    if (darkDiv) darkDiv.classList.add('hero-img-dark');
+
+    // In dark mode, move dark image first for LCP optimization
+    const isDark = document.body.classList.contains('dark-scheme');
+    if (isDark && darkDiv && lightDiv) {
+      lightDiv.parentElement.insertBefore(darkDiv, lightDiv);
+    }
+  } else if (pictures.length < 1) {
+    block.classList.add('no-image');
+  }
+
+  const h1 = block.querySelector('h1');
+  if (!h1) return;
+
+  // Mark text container
+  const contentDiv = h1.closest('div');
+  if (!contentDiv) return;
+
+  const textDiv = contentDiv.parentElement;
+  if (textDiv) textDiv.classList.add('hero-text');
+
+  // Find first &lt;p&gt; before &lt;h1&gt; and mark as tagline
+  const children = [...contentDiv.children];
+  const h1Index = children.indexOf(h1);
+  for (let i = 0; i &lt; h1Index; i += 1) {
+    if (children[i].tagName === 'P' &amp;&amp; !children[i].classList.contains('button-container')) {
+      children[i].classList.add('hero-tagline');
+      break;
+    }
+  }
+}</code></pre>
+
+      <h3>Step 2: CSS Styling</h3>
+      <p>Create <code>blocks/hero/hero.css</code> with the complete styling:</p>
+
+      <pre><code class="language-css">/* Container reset */
+.hero-container .hero-wrapper {
+  max-width: unset;
+  padding: 0;
+}
+
+.hero {
+  position: relative;
+  background-color: light-dark(var(--color-parchment), var(--color-obsidian));
+}
+
+/* Image container */
+.hero > div:first-child {
+  position: relative;
+  line-height: 0;
+}
+
+/* Gradient fade overlay */
+.hero > div:first-child::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 65%;
+  background: linear-gradient(to bottom, transparent 0%, light-dark(var(--color-parchment), var(--color-obsidian)) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Dual-image: hide dark by default */
+.hero .hero-img-dark {
+  display: none;
+}
+
+/* Dark theme: swap images */
+.dark-scheme .hero .hero-img-light,
+:root[data-theme='dark'] .hero .hero-img-light {
+  display: none;
+}
+
+.dark-scheme .hero .hero-img-dark,
+:root[data-theme='dark'] .hero .hero-img-dark {
+  display: block;
+}
+
+.hero picture img {
+  display: block;
+  width: 100%;
+  max-height: 580px;
+  object-fit: cover;
+  opacity: 0.55;
+}
+
+/* Text overlay */
+.hero > div:last-child {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 40px var(--content-padding-inline);
+  display: flex;
+  align-items: center;
+}
+
+.hero > div:last-child > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-m);
+  max-width: 600px;
+}
+
+/* Staggered entrance animations */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes hero-enter {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .hero > div:last-child > div {
+    animation: hero-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .hero .hero-tagline {
+    animation: hero-enter 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+  }
+
+  .hero h1 {
+    animation: hero-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+  }
+
+  .hero p.button-container {
+    animation: hero-enter 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+  }
+}
+
+/* Tagline */
+.hero .hero-tagline {
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-gold);
+  text-transform: uppercase;
+  letter-spacing: 5px;
+  margin: 0;
+}
+
+/* Heading */
+.hero h1 {
+  margin: 0;
+  font-family: var(--font-family-serif);
+  font-size: clamp(2rem, 8vw, 4.5rem);
+  font-weight: 500;
+  line-height: 1.05;
+  color: light-dark(var(--color-ink), var(--color-parchment));
+}
+
+.hero h1 em {
+  font-weight: 400;
+  font-style: italic;
+  background: linear-gradient(135deg, var(--color-rust) 0%, var(--color-gold) 100%);
+  background-clip: text;
+  color: transparent;
+}
+
+/* Body text (hidden on mobile) */
+.hero p:not(.button-container, .hero-tagline) {
+  display: none;
+  max-width: 550px;
+  margin: 0;
+  font-family: var(--font-family-serif);
+  font-size: 1.15rem;
+  color: light-dark(var(--color-ink), var(--color-muted));
+  line-height: 1.7;
+}
+
+/* Tablet: show body text */
+@media (width >= 600px) {
+  .hero p:not(.button-container, .hero-tagline) {
+    display: block;
+    font-size: 1.3rem;
+  }
+}
+
+/* Desktop */
+@media (width >= 900px) {
+  .hero > div:last-child {
+    padding: 100px 5vw;
+  }
+
+  .hero > div:last-child > div {
+    max-width: 1000px;
+    margin: 0 25%;
+  }
+
+  .hero h1 {
+    font-size: clamp(3.5rem, 5vw, 6rem);
+  }
+}
+
+/* No-image fallback */
+.hero.no-image > div:last-child {
+  position: static;
+  padding: 80px var(--content-padding-inline);
+}
+
+.hero.no-image > div:last-child > div {
+  align-items: center;
+  text-align: center;
+  max-width: var(--grid-container-width);
+  margin: 0 auto;
+}
+
+.hero.no-image p:not(.button-container, .hero-tagline) {
+  display: block;
+}
+
+/* Color variants */
+.hero.rust {
+  background-color: var(--color-rust);
+}
+
+.hero.rust h1,
+.hero.rust p:not(.button-container, .hero-tagline) {
+  color: var(--color-parchment);
+}
+
+:root .hero.rust h1 em {
+  background: none;
+  color: var(--color-gold);
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="features">Key Features Explained</h2>
+
+      <h3>1. Dual-Image Theming</h3>
+      <p>The hero intelligently handles two images for light/dark themes:</p>
+      <pre class="mermaid">
+graph LR
+    A[2 Images Detected] --> B{Theme Mode}
+    B -->|Light| C[Show Image 1]
+    B -->|Dark| D[Show Image 2]
+    C --> E[CSS: .hero-img-dark display:none]
+    D --> F[CSS: .hero-img-light display:none]
+    D --> G[DOM Reorder for LCP]
+      </pre>
+      <p><strong>LCP Optimization:</strong> When dark mode is active, the dark image is moved first in DOM order so the browser's LCP detection eagerly loads the visible image, not the hidden light image.</p>
+
+      <h3>2. Tagline Auto-Detection</h3>
+      <p>The first <code>&lt;p&gt;</code> before the <code>&lt;h1&gt;</code> is automatically classified as a tagline:</p>
+      <pre><code class="language-javascript">const children = [...contentDiv.children];
+const h1Index = children.indexOf(h1);
+
+for (let i = 0; i < h1Index; i += 1) {
+  if (children[i].tagName === 'P' && !children[i].classList.contains('button-container')) {
+    children[i].classList.add('hero-tagline');
+    break;
+  }
+}</code></pre>
+      <p>This allows authors to add an optional tagline without special markup.</p>
+
+      <h3>3. Gradient Fade Effect</h3>
+      <p>A CSS pseudo-element creates a cinematic fade from transparent to the background color:</p>
+      <pre><code class="language-css">.hero > div:first-child::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  height: 65%;
+  background: linear-gradient(to bottom, transparent 0%, var(--color-parchment) 100%);
+}</code></pre>
+      <p>This ensures text remains readable while creating a seamless transition.</p>
+
+      <h3>4. Staggered Animations</h3>
+      <p>Text elements animate in sequence with delays:</p>
+      <ul>
+        <li><strong>Tagline:</strong> 0.05s delay</li>
+        <li><strong>Heading:</strong> 0.12s delay</li>
+        <li><strong>Button:</strong> 0.3s delay</li>
+      </ul>
+      <p>This creates a polished, professional entrance effect respecting <code>prefers-reduced-motion</code>.</p>
+    </section>
+
+    <section>
+      <h2 id="variants">Color Variants</h2>
+      <p>Authors can apply color variants by adding them to the block name:</p>
+
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr>
+              <th>Hero (rust)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><img src="https://placehold.co/1200x400/b7410e/f5f5dc?text=Hero+with+Rust+Background" alt="Hero" style="max-width: 100%; height: auto;"></td></tr>
+            <tr>
+              <td>
+                <h1>Rust Background Hero</h1>
+                <p>Text appears in parchment color for contrast</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Available Variants</h3>
+      <ul>
+        <li><strong>rust:</strong> Rust background, parchment text</li>
+        <li><strong>gold:</strong> Gold background, ink text</li>
+        <li><strong>ink:</strong> Ink background, parchment text</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="performance">Performance Optimization</h2>
+
+      <h3>LCP (Largest Contentful Paint)</h3>
+      <p>The hero image is typically the LCP element. Optimizations:</p>
+      <ul>
+        <li><strong>Eager loading:</strong> Hero images are eagerly loaded by default</li>
+        <li><strong>DOM order:</strong> Dark image moved first in dark mode for correct LCP detection</li>
+        <li><strong>Optimized images:</strong> Use WebP format with appropriate dimensions (1920x580px max)</li>
+        <li><strong>Above-fold:</strong> Hero loads in the "eager" phase before other blocks</li>
+      </ul>
+
+      <h3>Animation Performance</h3>
+      <ul>
+        <li><strong>GPU acceleration:</strong> Animations use <code>transform</code> and <code>opacity</code> (GPU-accelerated)</li>
+        <li><strong>Reduced motion:</strong> Animations disabled if <code>prefers-reduced-motion: reduce</code></li>
+        <li><strong>Cubic bezier easing:</strong> <code>cubic-bezier(0.22, 1, 0.36, 1)</code> for natural motion</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="testing">Testing</h2>
+
+      <h3>Visual Testing Checklist</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Test Case</th>
+              <th>Expected Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Single image hero</td>
+              <td>Image displays, text overlay positioned correctly</td>
+            </tr>
+            <tr>
+              <td>Dual image hero (light mode)</td>
+              <td>First image visible, second hidden</td>
+            </tr>
+            <tr>
+              <td>Dual image hero (dark mode)</td>
+              <td>Second image visible, first hidden, dark image first in DOM</td>
+            </tr>
+            <tr>
+              <td>No image hero</td>
+              <td>Centered text layout, no overlay positioning</td>
+            </tr>
+            <tr>
+              <td>With tagline</td>
+              <td>First <code>&lt;p&gt;</code> has uppercase gold styling</td>
+            </tr>
+            <tr>
+              <td>Without tagline</td>
+              <td>Heading appears first, no errors</td>
+            </tr>
+            <tr>
+              <td>Gradient fade</td>
+              <td>Smooth transition from transparent to background color</td>
+            </tr>
+            <tr>
+              <td>Text animations</td>
+              <td>Sequential fade-in with slight upward movement</td>
+            </tr>
+            <tr>
+              <td>Reduced motion</td>
+              <td>No animations, text appears immediately</td>
+            </tr>
+            <tr>
+              <td>Mobile (< 600px)</td>
+              <td>Body text hidden, smaller heading</td>
+            </tr>
+            <tr>
+              <td>Tablet (600-900px)</td>
+              <td>Body text visible, medium heading</td>
+            </tr>
+            <tr>
+              <td>Desktop (> 900px)</td>
+              <td>Full layout, largest heading, generous padding</td>
+            </tr>
+            <tr>
+              <td>Color variants</td>
+              <td>Background and text colors match variant</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Performance Testing</h3>
+      <p>AEM Edge Delivery projects automatically run PageSpeed Insights on every pull request. Check your PR for the automated PSI score report.</p>
+
+      <p><strong>Expected results:</strong></p>
+      <ul>
+        <li><strong>Performance Score:</strong> 90+ (ideally 100)</li>
+        <li><strong>LCP (Largest Contentful Paint):</strong> &lt; 2.5s for "Good" rating</li>
+        <li><strong>LCP Element:</strong> Hero image should be identified as the LCP element</li>
+      </ul>
+
+      <p><strong>For deeper analysis:</strong> Use <a href="https://pagespeed.web.dev/" target="_blank" style="color: var(--color-rust);">PageSpeed Insights</a> to manually test your preview URL and get detailed diagnostics.</p>
+
+      <p><strong>Common issues:</strong></p>
+      <ul>
+        <li>If LCP is slow: Optimize image size, use WebP format, ensure eager loading</li>
+        <li>If wrong LCP element: Check DOM order (dark image should be first in dark mode)</li>
+        <li>If CLS issues: Set explicit width/height on images</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="troubleshooting">Troubleshooting</h2>
+
+      <h3>Dark image not showing in dark mode</h3>
+      <ul>
+        <li>Verify two <code>&lt;picture&gt;</code> elements exist in first row</li>
+        <li>Check that <code>.dark-scheme</code> or <code>data-theme='dark'</code> is set on <code>&lt;html&gt;</code> or <code>&lt;body&gt;</code></li>
+        <li>Inspect CSS - ensure <code>.hero .hero-img-dark</code> has <code>display: block</code> in dark mode</li>
+      </ul>
+
+      <h3>Tagline not styled</h3>
+      <ul>
+        <li>Ensure <code>&lt;p&gt;</code> appears BEFORE <code>&lt;h1&gt;</code> in authored content</li>
+        <li>Check it's not a button container (<code>.button-container</code> excluded)</li>
+        <li>Verify <code>.hero-tagline</code> class is applied via JavaScript</li>
+      </ul>
+
+      <h3>Text not overlaying image</h3>
+      <ul>
+        <li>Check that <code>.hero > div:last-child</code> has <code>position: absolute</code></li>
+        <li>Verify <code>z-index: 2</code> is higher than gradient overlay (<code>z-index: 1</code>)</li>
+        <li>Inspect parent positioning - ensure no conflicting styles</li>
+      </ul>
+
+      <h3>Poor LCP score</h3>
+      <ul>
+        <li>Optimize image size - target 100-200KB for hero images</li>
+        <li>Use WebP format with quality 80-85</li>
+        <li>Ensure image dimensions match display size (no oversized images)</li>
+        <li>Verify image is eagerly loaded (not lazy)</li>
+        <li>Check network waterfall - hero image should load early</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="customization">Customization Ideas</h2>
+
+      <h3>1. Video variant (already in the demo)</h3>
+      <p>The <code>scdemos/demo</code> hero ships with a <code>.video</code> variant. <code>blocks/hero/hero.js</code> branches on <code>block.classList.contains('video')</code> and matches a light/dark pair of <code>&lt;video&gt;</code> elements (<code>.hero-vid-light</code> / <code>.hero-vid-dark</code>) instead of pictures. The corresponding CSS lives in <a href="https://github.com/scdemos/demo/blob/main/blocks/hero/hero.css" target="_blank"><code>blocks/hero/hero.css</code></a> (search for <code>.hero.video</code>). UE: <a href="https://github.com/scdemos/demo/blob/main/ue/models/blocks/hero.json" target="_blank"><code>ue/models/blocks/hero.json</code></a> defines a <code>hero-video</code> model with three rows.</p>
+      <p>Common shape:</p>
+      <pre><code class="language-javascript">if (block.classList.contains('video')) {
+  const videos = block.querySelectorAll('video');
+  videos.forEach((v) => {
+    v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
+  });
+  // first row → light scheme, second row → dark scheme
+}</code></pre>
+
+      <h3>2. Parallax Scroll Effect</h3>
+      <pre><code class="language-javascript">export default function decorate(block) {
+  // ... existing code
+
+  const img = block.querySelector('.hero picture img');
+  if (img) {
+    window.addEventListener('scroll', () => {
+      const scrolled = window.scrollY;
+      img.style.transform = `translateY(${scrolled * 0.5}px)`;
+    });
+  }
+}</code></pre>
+
+      <h3>3. Multiple CTAs</h3>
+      <pre><code class="language-css">/* Style for multiple buttons */
+.hero .button-container {
+  display: flex;
+  gap: var(--space-s);
+  flex-wrap: wrap;
+}
+
+.hero .button-container a {
+  flex: 0 1 auto;
+}
+
+.hero .button-container a:nth-child(2) {
+  /* Secondary button style */
+  background: transparent;
+  border: 2px solid currentColor;
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="best-practices">Best Practices</h2>
+
+      <h3>Content</h3>
+      <ul>
+        <li><strong>Concise headings:</strong> Keep H1 under 10 words for readability</li>
+        <li><strong>Strong contrast:</strong> Ensure text is readable over image (test with multiple images)</li>
+        <li><strong>Meaningful taglines:</strong> Use taglines to provide context, not decoration</li>
+        <li><strong>Clear CTAs:</strong> One primary action, descriptive button text</li>
+      </ul>
+
+      <h3>Images</h3>
+      <ul>
+        <li><strong>Optimal dimensions:</strong> 1920x580px for desktop, 800x600px for mobile</li>
+        <li><strong>File size:</strong> Target < 200KB per image</li>
+        <li><strong>Format:</strong> WebP first choice, JPEG fallback</li>
+        <li><strong>Alt text:</strong> Descriptive alt text for accessibility</li>
+        <li><strong>Focal point:</strong> Ensure subject is visible at all breakpoints</li>
+      </ul>
+
+      <h3>Accessibility</h3>
+      <ul>
+        <li><strong>Color contrast:</strong> Min 4.5:1 ratio for text over image</li>
+        <li><strong>Heading hierarchy:</strong> H1 should be first/only H1 on page</li>
+        <li><strong>Reduced motion:</strong> Respect user preference, no forced animations</li>
+        <li><strong>Keyboard navigation:</strong> Ensure CTA buttons are keyboard accessible</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="resources">Additional Resources</h2>
+      <ul>
+        <li><a href="https://www.aem.live/developer/block-collection" target="_blank" style="color: var(--color-rust);">AEM Block Collection</a></li>
+        <li><a href="https://web.dev/lcp/" target="_blank" style="color: var(--color-rust);">Web.dev: Largest Contentful Paint</a></li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/prefers-reduced-motion" target="_blank" style="color: var(--color-rust);">MDN: prefers-reduced-motion</a></li>
+        <li><a href="https://cubic-bezier.com/" target="_blank" style="color: var(--color-rust);">Cubic Bezier Easing Generator</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

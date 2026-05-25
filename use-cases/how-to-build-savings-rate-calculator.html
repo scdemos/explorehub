@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Build Savings Rate Calculator Block - AEM Edge Delivery Services</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Savings Rate Calculator</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Savings Rate Calculator Block</h1>
+      <p class="subtitle">Interactive calculator measuring the percentage of income saved for financial independence planning</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Interactive</span>
+        <span class="tag">Advanced</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>The Savings Rate Calculator helps users understand what percentage of their income they're saving and how that impacts their path to financial independence. It calculates savings rate from income, spending, and contributions, with optional Chart.js visualization showing the relationship between savings rate and years to financial independence.</p>
+
+      <p><strong>Key Features:</strong></p>
+      <ul>
+        <li>Real-time savings rate calculation</li>
+        <li>Multiple input modes: total spending or category breakdown (housing, food, transportation, etc.)</li>
+        <li>Accounts for various income sources (salary, rental, investment, business)</li>
+        <li>Tracks retirement contributions (RRSP, TFSA, employer match)</li>
+        <li>Years-to-financial-independence estimation</li>
+        <li>Optional Chart.js visualization (savings rate vs. years to FI)</li>
+        <li>Color-coded savings rate assessment (poor, good, excellent)</li>
+        <li>Responsive layout with sidebar form</li>
+        <li>CAD currency and percentage formatting</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>How It Works</h2>
+      <p>The calculator follows this workflow:</p>
+
+      <div class="mermaid">
+        graph TD
+          A[User Inputs Income & Spending] --> B[Calculate Total Income]
+          B --> C[Calculate Total Spending]
+          C --> D[Calculate Savings Amount]
+          D --> E[Savings Rate = Savings / Income × 100]
+          E --> F{Include Chart?}
+          F -->|Yes| G[Load Chart.js]
+          G --> H[Plot Savings Rate Curve]
+          F -->|No| I[Display Metrics Only]
+          H --> J[Estimate Years to FI]
+          I --> J
+          J --> K[Color-Code Assessment]
+      </div>
+
+      <p><strong>Calculation Logic:</strong></p>
+      <ol>
+        <li><strong>Total Income:</strong> Sum of salary, rental income, investment income, business income, and other</li>
+        <li><strong>Total Spending:</strong> Sum of all expense categories (or direct total if not using categories)</li>
+        <li><strong>Savings Amount:</strong> Total Income - Total Spending</li>
+        <li><strong>Savings Rate:</strong> (Savings Amount / Total Income) × 100</li>
+        <li><strong>Years to Financial Independence:</strong> Based on savings rate using standard FIRE calculations (4% rule)</li>
+      </ol>
+
+      <p><strong>Years to FI Formula:</strong></p>
+      <p>The calculator uses the formula: <code>yearsToFI = log(1 + (savingsRate / (1 - savingsRate)) × (1 / withdrawalRate)) / log(1 + investmentReturn)</code></p>
+      <p>This estimates how many years of saving at the current rate would lead to financial independence, assuming a 7% investment return and 4% safe withdrawal rate.</p>
+    </section>
+
+    <section>
+      <h2>Implementation</h2>
+
+      <h3>JavaScript (savings-rate-calculator.js)</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>blocks/savings-rate-calculator/savings-rate-calculator.js</code></p>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/savings-rate-calculator/savings-rate-calculator.js"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <pre><code class="language-javascript">import { createTag, loadChartJs, createChart } from '../../scripts/shared.js';
+
+const DEFAULTS = {
+  monthlyAfterTaxIncome: 7000,
+  monthlyRentalIncome: 0,
+  monthlyInvestmentIncome: 0,
+  monthlyBusinessIncome: 0,
+  monthlyOtherIncome: 0,
+  monthlySpending: 4200,
+  useDetailedSpending: false,
+  showChart: true,
+};
+
+function money(value) {
+  return new Intl.NumberFormat('en-CA', {
+    style: 'currency',
+    currency: 'CAD',
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
+
+function percent(value, digits = 1) {
+  return \`\${(value || 0).toFixed(digits)}%\`;
+}
+
+function calculate(values) {
+  const afterTaxIncome = Math.max(0, toNumber(values.monthlyAfterTaxIncome, DEFAULTS.monthlyAfterTaxIncome));
+  const rentalIncome = Math.max(0, toNumber(values.monthlyRentalIncome, DEFAULTS.monthlyRentalIncome));
+  const investmentIncome = Math.max(0, toNumber(values.monthlyInvestmentIncome, DEFAULTS.monthlyInvestmentIncome));
+  const businessIncome = Math.max(0, toNumber(values.monthlyBusinessIncome, DEFAULTS.monthlyBusinessIncome));
+  const otherIncome = Math.max(0, toNumber(values.monthlyOtherIncome, DEFAULTS.monthlyOtherIncome));
+
+  const totalMonthlyIncome = afterTaxIncome + rentalIncome + investmentIncome + businessIncome + otherIncome;
+  const totalMonthlySpending = Math.max(0, toNumber(values.monthlySpending, DEFAULTS.monthlySpending));
+
+  const monthlySavings = totalMonthlyIncome - totalMonthlySpending;
+  const savingsRate = totalMonthlyIncome > 0 ? (monthlySavings / totalMonthlyIncome) * 100 : 0;
+
+  // Years to FI calculation (simplified)
+  const investmentReturn = 0.07; // 7% annual return
+  const withdrawalRate = 0.04; // 4% safe withdrawal rate
+  const yearsToFI = savingsRate > 0
+    ? Math.log(1 + (savingsRate / 100 / (1 - savingsRate / 100)) * (1 / withdrawalRate)) / Math.log(1 + investmentReturn)
+    : Infinity;
+
+  let assessment = 'Poor';
+  if (savingsRate >= 50) assessment = 'Excellent';
+  else if (savingsRate >= 20) assessment = 'Good';
+  else if (savingsRate >= 10) assessment = 'Fair';
+
+  return {
+    totalMonthlyIncome,
+    totalMonthlySpending,
+    monthlySavings,
+    savingsRate,
+    yearsToFI: isFinite(yearsToFI) ? yearsToFI : null,
+    assessment,
+  };
+}
+
+function buildChartData() {
+  const data = [];
+  for (let rate = 5; rate <= 75; rate += 5) {
+    const investmentReturn = 0.07;
+    const withdrawalRate = 0.04;
+    const years = Math.log(1 + (rate / 100 / (1 - rate / 100)) * (1 / withdrawalRate)) / Math.log(1 + investmentReturn);
+    data.push({ savingsRate: rate, yearsToFI: years });
+  }
+  return data;
+}
+
+function drawChartWithChartJs(canvas) {
+  if (!canvas) return undefined;
+  const chartData = buildChartData();
+  const labels = chartData.map((d) => \`\${d.savingsRate}%\`);
+  const yearsData = chartData.map((d) => d.yearsToFI);
+
+  const config = {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Years to Financial Independence',
+        data: yearsData,
+        backgroundColor: 'rgba(57, 96, 119, 0.2)',
+        borderColor: 'rgb(57, 96, 119)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 2.3,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label(ctx) {
+              return \`\${ctx.raw.toFixed(1)} years to FI\`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: { title: { display: true, text: 'Savings Rate (%)' } },
+        y: {
+          title: { display: true, text: 'Years to FI' },
+          beginAtZero: true,
+          reverse: true,
+        },
+      },
+    },
+  };
+  return createChart(canvas, config);
+}
+
+export default function decorate(block) {
+  block.textContent = '';
+  block.classList.add('savings-rate-calculator');
+
+  const layout = createTag('div', { class: 'savings-rate-calculator-layout' });
+  const form = createTag('form', { class: 'savings-rate-calculator-form' });
+  const output = createTag('section', {
+    class: 'savings-rate-calculator-output',
+    'aria-live': 'polite',
+  });
+
+  // Build form inputs (simplified for guide - see full implementation in source)
+  // Sections: Income sources, Spending categories, Optional chart toggle
+
+  layout.append(form, output);
+  block.append(layout);
+
+  function render() {
+    const result = calculate(values());
+    output.textContent = '';
+
+    // Render metrics and optional chart
+    // (Full render logic in source code)
+  }
+
+  form.addEventListener('input', render);
+  form.addEventListener('change', render);
+  render();
+}</code></pre>
+
+      <h3>CSS (savings-rate-calculator.css)</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>blocks/savings-rate-calculator/savings-rate-calculator.css</code></p>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/savings-rate-calculator/savings-rate-calculator.css"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <pre><code class="language-css">main .savings-rate-calculator {
+  max-width: var(--grid-container-width);
+  margin: 0 auto;
+  padding: var(--space-m) var(--content-padding-inline);
+}
+
+main .savings-rate-calculator .savings-rate-calculator-layout {
+  display: grid;
+  gap: var(--space-s);
+}
+
+main .savings-rate-calculator .savings-rate-calculator-form {
+  display: grid;
+  gap: var(--space-xs);
+  border: var(--border-heritage);
+  border-radius: 16px;
+  padding: var(--space-m);
+  background: light-dark(var(--color-parchment), var(--color-card-dark));
+}
+
+main .savings-rate-calculator input[type='number'] {
+  inline-size: 100%;
+  border: 1px solid light-dark(var(--color-gray-300), var(--color-gray-600));
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  color: inherit;
+  background: light-dark(var(--color-light), rgb(25 29 35));
+}
+
+main .savings-rate-calculator .savings-rate-calculator-metric {
+  border: 1px solid light-dark(var(--color-gray-200), rgb(245 242 237 / 10%));
+  border-radius: 12px;
+  padding: var(--space-m);
+  background: light-dark(var(--color-light), var(--color-card-dark));
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+main .savings-rate-calculator .savings-rate-calculator-chart {
+  width: 100%;
+  max-width: 100%;
+  display: block;
+}
+
+@media (width >= 900px) {
+  main .savings-rate-calculator .savings-rate-calculator-layout {
+    grid-template-columns: minmax(300px, 390px) 1fr;
+    align-items: start;
+  }
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Document Authoring</h2>
+      <p>The Savings Rate Calculator block requires no configuration from content authors. Simply add the block name, and the calculator will render with default values.</p>
+
+      <details>
+        <summary>Expand to view and copy block structure</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th style="background-color: #f0f0f0;">Savings Rate Calculator</th></tr>
+            </thead>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2>Financial Independence (FIRE) Context</h2>
+      <p>The savings rate is the most important metric in the Financial Independence / Retire Early (FIRE) movement. This calculator helps users understand:</p>
+
+      <ul>
+        <li><strong>Higher savings rate = Faster path to FI:</strong> A 50% savings rate means FI in ~17 years, while 70% achieves FI in ~8.5 years</li>
+        <li><strong>Non-linear relationship:</strong> Small increases in savings rate dramatically reduce years to FI</li>
+        <li><strong>Income vs. Spending:</strong> Highlights that reducing spending has double benefit (more to save + lower FI target)</li>
+        <li><strong>Safe Withdrawal Rate:</strong> Assumes 4% rule (can withdraw 4% of portfolio annually in retirement)</li>
+      </ul>
+
+      <p><strong>Savings Rate Benchmarks:</strong></p>
+      <ul>
+        <li>&lt;10%: Poor (typical consumer, will work full career)</li>
+        <li>10-20%: Fair (traditional retirement planning)</li>
+        <li>20-50%: Good (accelerated path to FI)</li>
+        <li>50%+: Excellent (FIRE achievable in 10-17 years)</li>
+        <li>70%+: Exceptional (FI in under 10 years)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Chart.js Visualization</h2>
+      <p>The optional chart shows the relationship between savings rate and years to financial independence. Key insights:</p>
+
+      <ul>
+        <li><strong>Steep curve at low rates:</strong> Going from 10% to 20% saves ~15 years</li>
+        <li><strong>Diminishing returns at high rates:</strong> Going from 60% to 70% saves ~4 years</li>
+        <li><strong>Visual motivation:</strong> Users see immediate impact of increasing savings</li>
+        <li><strong>Lazy-loaded:</strong> Chart.js loaded asynchronously to avoid blocking page render</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Accessibility Features</h2>
+      <ul>
+        <li><strong>ARIA Live Region:</strong> Output announces results to screen readers</li>
+        <li><strong>Semantic HTML:</strong> Proper form, label, and input elements</li>
+        <li><strong>Keyboard Navigation:</strong> Full keyboard support for all inputs</li>
+        <li><strong>Toggle for Detailed View:</strong> Checkbox to expand spending categories</li>
+        <li><strong>Color-Coded Assessment:</strong> Visual + text indicators for savings rate quality</li>
+        <li><strong>Canvas Label:</strong> Chart has aria-label describing content</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Best Practices</h2>
+      <ul>
+        <li><strong>Real-Time Feedback:</strong> Update savings rate on every input change</li>
+        <li><strong>Multiple Income Sources:</strong> Account for side income, rentals, dividends</li>
+        <li><strong>Optional Detail:</strong> Let users choose simple (total spending) or detailed (category breakdown)</li>
+        <li><strong>Visual Feedback:</strong> Color-code assessment (red/yellow/green)</li>
+        <li><strong>Educational Content:</strong> Explain what savings rate means and why it matters</li>
+        <li><strong>Chart Toggle:</strong> Let users hide chart if they prefer numbers only</li>
+        <li><strong>Mobile-First:</strong> Stacked layout on mobile, sidebar on desktop</li>
+        <li><strong>Currency Formatting:</strong> Use Intl.NumberFormat for locale-aware display</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Quick Start</h2>
+      <ol>
+        <li>
+          <strong>Create block files:</strong>
+          <pre><code class="language-bash">mkdir -p blocks/savings-rate-calculator
+touch blocks/savings-rate-calculator/savings-rate-calculator.js
+touch blocks/savings-rate-calculator/savings-rate-calculator.css</code></pre>
+        </li>
+        <li>
+          <strong>Add shared utilities</strong> (createTag, loadChartJs, createChart) to scripts/shared.js
+        </li>
+        <li>
+          <strong>Copy implementation code</strong> from the Implementation section above
+        </li>
+        <li>
+          <strong>Test locally:</strong>
+          <pre><code class="language-bash">aem up</code></pre>
+          Navigate to a test page with the Savings Rate Calculator block
+        </li>
+        <li>
+          <strong>Verify calculations:</strong> Test with different income/spending values
+        </li>
+        <li>
+          <strong>Deploy:</strong> Push to preview and test before going live
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2024 AEM Edge Delivery Services Developer Guides</p>
+    </div>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

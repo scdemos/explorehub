@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Build Compound Interest Calculator Block - AEM Edge Delivery Services</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Compound Interest Calculator</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Compound Interest Calculator Block</h1>
+      <p class="subtitle">Interactive financial calculator with Chart.js visualization and real-time calculations</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Interactive</span>
+        <span class="tag">Advanced</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>The Compound Interest Calculator is an interactive financial planning tool that helps users project investment growth over time. It calculates compound interest with periodic contributions, displays results with a stacked area chart using Chart.js, and provides optional yearly breakdowns.</p>
+
+      <p><strong>Key Features:</strong></p>
+      <ul>
+        <li>Real-time calculation as users adjust inputs</li>
+        <li>Configurable initial investment and regular contributions (monthly, biweekly, weekly, annually)</li>
+        <li>Multiple compounding frequencies (daily, monthly, annually)</li>
+        <li>Optional inflation adjustment to show "real" purchasing power</li>
+        <li>Stacked area chart visualization showing investment value vs. interest earned</li>
+        <li>Optional yearly breakdown table with sortable columns</li>
+        <li>Responsive layout with form on left and results on right (desktop)</li>
+        <li>Accessible with ARIA live regions and keyboard support</li>
+        <li>CAD currency formatting (easily customizable for other locales)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>How It Works</h2>
+      <p>The calculator follows this workflow:</p>
+
+      <div class="mermaid">
+        graph TD
+          A[User Adjusts Inputs] --> B[Read Form Values]
+          B --> C[Calculate Monthly Compounding]
+          C --> D[Build Data Points]
+          D --> E{Show Breakdown?}
+          E -->|Yes| F[Render Yearly Table]
+          E -->|No| G[Load Chart.js]
+          G --> H[Render Stacked Area Chart]
+          F --> I[Update Output ARIA Live]
+          H --> I
+          I --> J[Display Metrics]
+          J --> K[User Changes Input]
+          K --> A
+      </div>
+
+      <p><strong>Calculation Logic:</strong></p>
+      <ol>
+        <li><strong>Convert to Monthly Rate:</strong> Convert annual rate and compounding frequency to effective monthly rate</li>
+        <li><strong>Monthly Simulation:</strong> Iterate month-by-month, applying interest and adding contributions</li>
+        <li><strong>Track Balance:</strong> Keep cumulative balance, contributions, and interest</li>
+        <li><strong>Inflation Adjustment:</strong> If enabled, divide final balance by (1 + inflation)^years to get "real" value</li>
+        <li><strong>Chart Data:</strong> Sample data points (max 120 points) for Chart.js visualization</li>
+        <li><strong>Yearly Snapshots:</strong> If breakdown enabled, capture balance at each year-end</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Implementation</h2>
+
+      <h3>JavaScript (compound-interest-calculator.js)</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>blocks/compound-interest-calculator/compound-interest-calculator.js</code></p>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/compound-interest-calculator/compound-interest-calculator.js"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <pre><code class="language-javascript">import { createTag, loadChartJs, createChart } from '../../scripts/shared.js';
+
+const DEFAULTS = {
+  initialInvestment: 10000,
+  regularContribution: 500,
+  contributionFrequency: 'monthly',
+  annualRate: 5,
+  compoundingFrequency: 'monthly',
+  years: 10,
+  adjustForInflation: false,
+  inflationRate: 2,
+  showYearlyBreakdown: false,
+};
+
+const CONTRIB_FREQ_PER_YEAR = {
+  monthly: 12, biweekly: 26, weekly: 52, annually: 1,
+};
+const COMPOUND_PER_YEAR = {
+  annually: 1, monthly: 12, daily: 365,
+};
+
+function toNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function money(value) {
+  return new Intl.NumberFormat('en-CA', {
+    style: 'currency',
+    currency: 'CAD',
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
+
+function moneyDecimals(value, decimals = 2) {
+  return new Intl.NumberFormat('en-CA', {
+    style: 'currency',
+    currency: 'CAD',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value ?? 0);
+}
+
+// Compound interest calculation with periodic contributions
+function calculate(values) {
+  const initial = Math.max(0, toNumber(values.initialInvestment, DEFAULTS.initialInvestment));
+  const contribution = Math.max(0, toNumber(values.regularContribution, DEFAULTS.regularContribution));
+  const contribFreq = values.contributionFrequency || DEFAULTS.contributionFrequency;
+  const annualRate = toNumber(values.annualRate, DEFAULTS.annualRate) / 100;
+  const compoundFreq = values.compoundingFrequency || DEFAULTS.compoundingFrequency;
+  const years = Math.max(0.5, Math.min(50, toNumber(values.years, DEFAULTS.years)));
+  const adjustInflation = Boolean(values.adjustForInflation);
+  const inflationRate = toNumber(values.inflationRate, DEFAULTS.inflationRate) / 100;
+  const showBreakdown = Boolean(values.showYearlyBreakdown);
+
+  const periodsPerYear = COMPOUND_PER_YEAR[compoundFreq] ?? 12;
+  const monthlyRate = periodsPerYear === 1
+    ? (1 + annualRate) ** (1 / 12) - 1
+    : (1 + annualRate / periodsPerYear) ** (periodsPerYear / 12) - 1;
+
+  const contribsPerYear = CONTRIB_FREQ_PER_YEAR[contribFreq] ?? 12;
+  const contributionPerMonth = (contribution * contribsPerYear) / 12;
+
+  let balance = initial;
+  let cumulativeContrib = initial;
+  const monthsTotal = Math.round(years * 12);
+  const yearlySnapshots = showBreakdown ? [] : null;
+  const maxChartPoints = 120;
+  const chartStep = Math.max(1, Math.floor(monthsTotal / maxChartPoints));
+  const chartData = [];
+  const contributionsPerYear = 12 * contributionPerMonth;
+
+  for (let m = 0; m < monthsTotal; m += 1) {
+    balance = balance * (1 + monthlyRate) + contributionPerMonth;
+    cumulativeContrib += contributionPerMonth;
+    if (showBreakdown && (m + 1) % 12 === 0) {
+      yearlySnapshots.push({
+        year: (m + 1) / 12,
+        balance,
+        totalInvestment: cumulativeContrib,
+      });
+    }
+    if (m % chartStep === 0 || m === monthsTotal - 1) {
+      chartData.push({
+        month: m + 1,
+        valueOfInvestment: cumulativeContrib,
+        totalValue: balance,
+        interestEarned: balance - cumulativeContrib,
+      });
+    }
+  }
+
+  const totalContributions = cumulativeContrib;
+  const totalInterest = balance - totalContributions;
+  const realFinalBalance = adjustInflation && inflationRate > 0
+    ? balance / (1 + inflationRate) ** years
+    : null;
+
+  return {
+    finalBalance: balance,
+    totalContributions,
+    totalInterest,
+    realFinalBalance,
+    yearlyBreakdown: yearlySnapshots,
+    yearlyBreakdownInitial: initial,
+    yearlyBreakdownContributionsPerYear: contributionsPerYear,
+    chartData,
+    monthsTotal,
+    years,
+  };
+}
+
+// Build and render Chart.js stacked area chart
+function drawChartWithChartJs(canvas, chartData) {
+  if (!chartData.length || !canvas) return undefined;
+  const labels = chartData.map((d) => d.month);
+  const valueOfInvestmentData = chartData.map((d) => d.valueOfInvestment);
+  const interestData = chartData.map((d) => d.totalValue - d.valueOfInvestment);
+  const config = {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Value of investment',
+          data: valueOfInvestmentData,
+          backgroundColor: 'rgba(184, 217, 235, 0.7)',
+          borderColor: 'rgb(126, 184, 218)',
+          borderWidth: 0,
+          fill: true,
+          tension: 0.2,
+        },
+        {
+          label: 'Total interest earned',
+          data: interestData,
+          backgroundColor: 'rgba(57, 96, 119, 0.7)',
+          borderColor: 'rgb(90, 138, 158)',
+          borderWidth: 0,
+          fill: true,
+          tension: 0.2,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 2.3,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: true, position: 'top' },
+        tooltip: {
+          callbacks: {
+            label(ctx) {
+              const v = ctx.raw;
+              return \`\${ctx.dataset.label}: \${money(v)}\`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Months' },
+          stacked: true,
+        },
+        y: {
+          title: { display: true, text: 'Total value' },
+          stacked: true,
+          beginAtZero: true,
+          ticks: {
+            callback(value) {
+              return money(value);
+            },
+          },
+        },
+      },
+    },
+  };
+  return createChart(canvas, config);
+}
+
+export default function decorate(block) {
+  block.textContent = '';
+  block.classList.add('compound-interest-calculator');
+
+  const legend = createTag('details', { class: 'compound-interest-calculator-legend' });
+  legend.append(
+    createTag('summary', {}, 'How to read this calculator'),
+    createTag('div', { class: 'compound-interest-calculator-legend-content' }, [
+      createTag('ul', {}, [
+        createTag('li', {}, 'Final balance = initial investment plus contributions, compounded at the chosen rate and frequency.'),
+        createTag('li', {}, 'Total interest = final balance minus (initial investment + all regular contributions).'),
+        createTag('li', {}, 'Compounding frequency affects growth: more frequent compounding yields slightly higher results.'),
+        createTag('li', {}, 'Inflation-adjusted (real) value shows purchasing power in today\\'s dollars.'),
+      ]),
+      createTag('p', { class: 'compound-interest-calculator-disclaimer' }, 'Estimates only. Not financial advice.'),
+    ]),
+  );
+
+  const layout = createTag('div', { class: 'compound-interest-calculator-layout' });
+  const form = createTag('form', { class: 'compound-interest-calculator-form' });
+  const group = createTag('div', { class: 'compound-interest-calculator-group' });
+  form.append(group);
+
+  const output = createTag('section', {
+    class: 'compound-interest-calculator-output',
+    'aria-live': 'polite',
+    'aria-atomic': 'true',
+  });
+  layout.append(form, output);
+  block.append(legend, layout);
+
+  // Build form inputs (simplified for guide - see full implementation in source)
+  // Input fields: initial investment, contribution, frequency, rate, compounding, years, toggles
+
+  function render() {
+    // Destroy previous chart if exists
+    if (block.compoundInterestChart) {
+      block.compoundInterestChart.destroy();
+      block.compoundInterestChart = null;
+    }
+
+    const result = calculate(values());
+    output.textContent = '';
+
+    // Render metrics, chart, and optional yearly breakdown
+    // (Full render logic in source code)
+  }
+
+  form.addEventListener('input', render);
+  form.addEventListener('change', render);
+  render();
+}</code></pre>
+
+      <h3>CSS (compound-interest-calculator.css)</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>blocks/compound-interest-calculator/compound-interest-calculator.css</code></p>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/compound-interest-calculator/compound-interest-calculator.css"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <pre><code class="language-css">main .compound-interest-calculator {
+  max-width: var(--grid-container-width);
+  margin: 0 auto;
+  padding: var(--space-m) var(--content-padding-inline);
+}
+
+main .compound-interest-calculator .compound-interest-calculator-legend {
+  margin: 0 0 var(--space-s);
+  border: 1px dashed light-dark(var(--color-gray-300), var(--color-gray-600));
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+main .compound-interest-calculator .compound-interest-calculator-layout {
+  display: grid;
+  gap: var(--space-s);
+}
+
+main .compound-interest-calculator .compound-interest-calculator-form {
+  display: grid;
+  gap: var(--space-xs);
+  border: var(--border-heritage);
+  border-radius: 16px;
+  padding: var(--space-m);
+  background: light-dark(var(--color-parchment), var(--color-card-dark));
+}
+
+main .compound-interest-calculator input[type='number'],
+main .compound-interest-calculator select {
+  inline-size: 100%;
+  border: 1px solid light-dark(var(--color-gray-300), var(--color-gray-600));
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  color: inherit;
+  background: light-dark(var(--color-light), rgb(25 29 35));
+}
+
+main .compound-interest-calculator .compound-interest-calculator-metric {
+  border: 1px solid light-dark(var(--color-gray-200), rgb(245 242 237 / 10%));
+  border-radius: 12px;
+  padding: var(--space-m);
+  background: light-dark(var(--color-light), var(--color-card-dark));
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+main .compound-interest-calculator .compound-interest-calculator-metric:hover {
+  border-color: light-dark(var(--color-gold), rgb(197 160 89 / 35%));
+  box-shadow: 0 8px 24px light-dark(rgb(161 79 43 / 10%), rgb(197 160 89 / 8%));
+}
+
+main .compound-interest-calculator .compound-interest-calculator-chart {
+  width: 100%;
+  max-width: 100%;
+  display: block;
+  color: light-dark(var(--color-gray-800), var(--color-gray-200));
+}
+
+main .compound-interest-calculator .compound-interest-calculator-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--body-font-size-s);
+  border: 1px solid light-dark(var(--color-gray-200), var(--color-gray-700));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+@media (width >= 900px) {
+  main .compound-interest-calculator .compound-interest-calculator-layout {
+    grid-template-columns: minmax(260px, 390px) 1fr;
+    align-items: start;
+  }
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Document Authoring</h2>
+      <p>The Compound Interest Calculator block requires no configuration from content authors. Simply add the block name as a header row in the document, and the calculator will render with default values.</p>
+
+      <details>
+        <summary>Expand to view and copy block structure</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th style="background-color: #f0f0f0;">Compound Interest Calculator</th></tr>
+            </thead>
+          </table>
+        </div>
+      </details>
+
+      <p><strong>Block Behavior:</strong></p>
+      <ul>
+        <li>No content rows needed - the block is self-contained</li>
+        <li>All configuration happens through the interactive form UI</li>
+        <li>Calculator initializes with sensible defaults (10K initial, $500/mo contribution, 5% rate, 10 years)</li>
+        <li>Users adjust inputs to see real-time results</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Chart.js Integration</h2>
+      <p>The calculator uses shared Chart.js utilities from <code>scripts/shared.js</code> to keep Chart.js off the critical loading path:</p>
+
+      <pre><code class="language-javascript">// shared.js exports loadChartJs() and createChart()
+import { loadChartJs, createChart } from '../../scripts/shared.js';
+
+// Lazy-load Chart.js when chart container is built
+loadChartJs()
+  .then(() => {
+    const chart = drawChartWithChartJs(canvas, chartData);
+    block.compoundInterestChart = chart; // Store for cleanup on re-render
+  })
+  .catch(() => {
+    // Fallback message if Chart.js fails to load
+    wrap.append(createTag('p', { class: 'chart-fallback' }, 'Chart unavailable.'));
+  });</code></pre>
+
+      <p><strong>Chart Configuration:</strong></p>
+      <ul>
+        <li><strong>Type:</strong> Stacked area chart (line chart with fill)</li>
+        <li><strong>Datasets:</strong> Value of investment (contributions) + Total interest earned</li>
+        <li><strong>Colors:</strong> Light blue for contributions, dark blue for interest</li>
+        <li><strong>Scales:</strong> X-axis shows months, Y-axis shows currency values with CAD formatting</li>
+        <li><strong>Performance:</strong> Max 120 data points to keep chart rendering fast even with 50-year projections</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Accessibility Features</h2>
+      <ul>
+        <li><strong>ARIA Live Region:</strong> Output section announces results to screen readers when calculations update</li>
+        <li><strong>Semantic HTML:</strong> Proper <code>&lt;form&gt;</code>, <code>&lt;label&gt;</code>, and <code>&lt;input&gt;</code> elements</li>
+        <li><strong>Keyboard Navigation:</strong> All inputs accessible via keyboard (tab, arrow keys for select/number inputs)</li>
+        <li><strong>Tooltips:</strong> Info icons with title attributes explain each field</li>
+        <li><strong>Canvas Label:</strong> Chart canvas has <code>aria-label</code> describing its content</li>
+        <li><strong>Legend:</strong> Collapsible <code>&lt;details&gt;</code> element explains how to use the calculator</li>
+        <li><strong>Color Contrast:</strong> All text meets WCAG AA standards with light-dark() CSS for theme support</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Best Practices</h2>
+      <ul>
+        <li><strong>Real-Time Feedback:</strong> Calculate on every input change for immediate feedback</li>
+        <li><strong>Sensible Limits:</strong> Constrain years (0.5-50) and rates to prevent unrealistic projections</li>
+        <li><strong>Chart Cleanup:</strong> Destroy previous Chart.js instance before creating new one to prevent memory leaks</li>
+        <li><strong>Currency Formatting:</strong> Use <code>Intl.NumberFormat</code> for locale-aware currency display</li>
+        <li><strong>Lazy Loading:</strong> Load Chart.js asynchronously to avoid blocking page load</li>
+        <li><strong>Fallback Handling:</strong> Gracefully handle Chart.js load failures with fallback message</li>
+        <li><strong>Responsive Design:</strong> Mobile-first with stacked layout, side-by-side on desktop (900px+)</li>
+        <li><strong>User Guidance:</strong> Provide legend/disclaimer explaining calculator limitations</li>
+        <li><strong>Performance:</strong> Limit chart data points to keep rendering fast</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Quick Start</h2>
+      <ol>
+        <li>
+          <strong>Create block files:</strong>
+          <pre><code class="language-bash">mkdir -p blocks/compound-interest-calculator
+touch blocks/compound-interest-calculator/compound-interest-calculator.js
+touch blocks/compound-interest-calculator/compound-interest-calculator.css</code></pre>
+        </li>
+        <li>
+          <strong>Add shared utilities to scripts/shared.js:</strong>
+          <pre><code class="language-javascript">export function createTag(tag, attributes = {}, children = []) {
+  const el = document.createElement(tag);
+  Object.entries(attributes).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) el.setAttribute(key, value);
+  });
+  if (typeof children === 'string') el.textContent = children;
+  else if (Array.isArray(children)) el.append(...children);
+  else if (children instanceof Node) el.append(children);
+  return el;
+}
+
+export async function loadChartJs() {
+  if (window.Chart) return window.Chart;
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+  document.head.append(script);
+  return new Promise((resolve, reject) => {
+    script.onload = () => resolve(window.Chart);
+    script.onerror = reject;
+  });
+}
+
+export function createChart(canvas, config) {
+  if (!window.Chart) return undefined;
+  return new window.Chart(canvas, config);
+}</code></pre>
+        </li>
+        <li>
+          <strong>Copy implementation code</strong> from the Implementation section above
+        </li>
+        <li>
+          <strong>Test locally:</strong>
+          <pre><code class="language-bash">aem up</code></pre>
+          Navigate to your test page with the Compound Interest Calculator block
+        </li>
+        <li>
+          <strong>Create block in document:</strong> Add a table with "Compound Interest Calculator" header
+        </li>
+        <li>
+          <strong>Verify calculations:</strong> Test with different inputs to ensure accuracy
+        </li>
+        <li>
+          <strong>Deploy:</strong> Push to preview and test before going live
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2024 AEM Edge Delivery Services Developer Guides</p>
+    </div>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>JSON2HTML — dynamic pages | EDS Reference Playbook</title>
+  <meta name="description" content="One JSON source + Mustache template = unlimited list and detail pages. mhast fallback in the CDN worker handles .json 404s.">
+
+  <meta property="og:title" content="JSON2HTML — dynamic pages | EDS Reference Playbook">
+  <meta property="og:description" content="One JSON source + Mustache template = unlimited list and detail pages. mhast fallback in the CDN worker handles .json 404s.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="../assets/screenshots/json2html-dynamic-pages.png">
+  <meta name="twitter:image" content="../assets/screenshots/json2html-dynamic-pages.png">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css">
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Playbooks &amp; Recipes</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">JSON2HTML — dynamic pages</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-playbook">Playbook</span>
+      <h1>Structured JSON → dynamic HTML experiences</h1>
+      <p class="subtitle">Author a single JSON source (events, articles, products), bind it to a Mustache template, and let EDS render N pages with shared structure. The CDN worker's <code>mhast</code> fallback handles <code>.json</code> 404s so headless consumers keep working.</p>
+      <div class="metadata">
+        <span class="tag">JSON2HTML</span>
+        <span class="tag">Templates</span>
+        <span class="tag">mhast</span>
+        <span class="tag">html2json</span>
+      </div>
+    </header>
+
+    <section id="problem" class="chapter-section">
+      <h2>Problem</h2>
+      <p>You have a list of "things" — events, articles, products, team members — that share structure. Authors shouldn't hand-write a page per item, and devs shouldn't ship a CMS-flavored framework on top of EDS. You also have a parallel headless surface (a mobile app, an embed widget) that wants the same content as JSON.</p>
+    </section>
+
+    <section id="live-example" class="chapter-section">
+      <h2>Live example</h2>
+      <p>Two patterns in <code>scdemos/demo</code>:</p>
+      <ul>
+        <li>
+          <a href="https://demo.bbird.live/about/upcoming-events" target="_blank">Upcoming events list page</a> →
+          <a href="https://demo.bbird.live/about/upcoming-events/quarterly-investor-meeting-2024" target="_blank">a generated event detail page</a>
+          (template: <code>templates/events/events.html</code>)
+        </li>
+        <li>
+          <a href="https://demo.bbird.live/learn/" target="_blank">Articles index</a> →
+          <a href="https://demo.bbird.live/learn/fire/whats-fire" target="_blank">an article detail page</a>
+          (template: <code>templates/article.html</code>)
+        </li>
+      </ul>
+      <p>Append <code>.json</code> to any path to see the headless representation. If the path was never published as a <code>.json</code>, the CDN worker falls back to <a href="https://github.com/adobe/helix-html-pipeline" target="_blank">mhast</a> to convert HTML → JSON on the fly.</p>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>High-level architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Author["Author (DA)
+  master JSON or
+  page-per-item"]
+  Tpl["templates/&lt;name&gt;/
+  *.html + *.js + *.css"]
+  Pipeline["AEM HTML pipeline
+  injects template script"]
+  Author --> Pipeline
+  Tpl --> Pipeline
+  Pipeline --> CDN["CDN Worker
+  workers/cdn"]
+  CDN -->|HTML| Browser
+  Browser -.json.-> CDN
+  CDN -->|404 fallback| Mhast["mhast
+  html2json"]
+  Mhast -->|JSON| Browser
+      </pre>
+      <p>EDS reads the page's <code>&lt;meta name="template"&gt;</code> and runs the matching <code>templates/&lt;name&gt;/&lt;name&gt;.js</code> on the main element. The CDN worker keeps the same content available as JSON via mhast's html2json bridge.</p>
+    </section>
+
+    <section id="snippets" class="chapter-section">
+      <h2>Code snippets</h2>
+
+      <h3>1. Mustache-style HTML template</h3>
+      <p>Templates live under <code>templates/&lt;name&gt;/&lt;name&gt;.html</code> and use double-mustache placeholders. AEM resolves <code>{{title}}</code> against the JSON for that page.</p>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>templates/events/events.html</code> (head)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/templates/events/events.html" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-html">&lt;head&gt;
+  &lt;title&gt;{{title}} | Upcoming Events&lt;/title&gt;
+  &lt;meta name="description" content="{{description}}"&gt;
+  &lt;meta name="date" content="{{occurrenceDate}}"&gt;
+  &lt;meta name="keywords" content="events, upcoming-events"&gt;
+  &lt;meta name="template" content="events"&gt;
+  &lt;script type="application/ld+json"&gt;
+  {
+    "@context": "https://schema.org",
+    "@graph": [{
+      "@type": "Event",
+      "name": "{{title}}",
+      "startDate": "{{occurrenceDate}}",
+      "location": { "@type": "Place", "name": "{{location}}" }
+    }]
+  }
+  &lt;/script&gt;
+&lt;/head&gt;</code></pre>
+      </div>
+
+      <p>Notice the <code>application/ld+json</code> block — the same template that builds the page also wires up structured data per item, all from the same JSON source.</p>
+
+      <h3>2. Article template uses Universal-Editor element paths</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>templates/article.html</code></span>
+          <a href="https://github.com/scdemos/demo/blob/main/templates/article.html" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-html">&lt;title&gt;{{properties.elements.title.value}}&lt;/title&gt;
+&lt;meta name="author" content="{{properties.elements.author.value}}"&gt;
+&lt;meta name="description" content="{{properties.elements.summary.value}}"&gt;
+&lt;meta name="image" content="{{{properties.elements.image.value}}}"&gt;
+...
+&lt;img src="{{{properties.elements.image.value}}}" alt="{{properties.elements.title.value}}"&gt;
+&lt;h1&gt;{{properties.elements.title.value}}&lt;/h1&gt;</code></pre>
+      </div>
+
+      <p>The triple-mustache <code>{{{ ... }}}</code> bypasses HTML escaping — needed for image URLs that contain query strings.</p>
+
+      <h3>3. Template loading from <code>scripts.js</code></h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>scripts/scripts.js</code> (loadTemplate)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/scripts/scripts.js#L178-L190" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">async function loadTemplate(main, template) {
+  try {
+    if (template) {
+      const mod = await import(`../templates/${template}/${template}.js`);
+      loadCSS(`${window.hlx.codeBasePath}/templates/${template}/${template}.css`);
+      if (mod.default) {
+        await mod.default(main);
+      }
+    }
+  } catch (error) {
+    console.error('template loading failed', error);
+  }
+}
+
+// In loadLazy:
+const templateName = getMetadata('template');
+if (templateName) {
+  document.body.classList.add(templateName);
+  await loadTemplate(doc, templateName);
+}</code></pre>
+      </div>
+
+      <p>The matching <code>templates/&lt;name&gt;/&lt;name&gt;.js</code> can decorate the rendered HTML (e.g. fetch related events, format dates, attach interactivity).</p>
+
+      <h3>4. CDN worker — mhast fallback for <code>.json</code> 404s</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>workers/cdn/index.js</code> (html2json fallback)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/workers/cdn/index.js#L130-L150" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">// Paths that should NOT fall back to html2json (mhast) on .json 404.
+const HTML2JSON_EXCLUDE_PATTERNS = [
+  /^\/products\/[^/]+\/.+/,       // product detail paths use authored JSON
+];
+
+const buildHTML2JSONURL = (requestURL) =&gt; {
+  const pagePath = requestURL.pathname.replace(/\.json$/, '');
+  return new URL(
+    `https://mhast-html-to-json.adobeaem.workers.dev/scdemos/demo${pagePath}`,
+  );
+};
+
+// In handleRequest():
+if (
+  request.method === 'GET'
+  &amp;&amp; extension === 'json'
+  &amp;&amp; resp.status === 404
+  &amp;&amp; !isHtml2JsonExcluded(requestURL.pathname)
+) {
+  const html2jsonResp = await fetch(buildHTML2JSONURL(requestURL), {
+    headers: { accept: 'application/json' },
+    cf: { cacheEverything: true },
+  });
+  if (html2jsonResp.ok) {
+    resp = html2jsonResp;          // serve mhast JSON instead of 404
+  }
+}</code></pre>
+      </div>
+
+      <p>This makes <em>every</em> HTML page on the site available as JSON, even ones that don't have a hand-published <code>.json</code>. Path-pattern exclusions opt specific routes (e.g. <code>/products/&lt;cat&gt;/&lt;sku&gt;</code>) out of the fallback because they have their own authored JSON shape.</p>
+    </section>
+
+    <section id="gotchas" class="chapter-section">
+      <h2>Notes &amp; gotchas</h2>
+      <ul>
+        <li><strong>Two ways to bind JSON to a template.</strong> Either author one file per item (each page has its own JSON) — straightforward but lots of files. Or author one master JSON and use mustache loops inside a list template, with the CDN worker / DA serving generated paths for detail pages.</li>
+        <li><strong>Triple-mustache for URLs.</strong> Always use <code>{{{ ... }}}</code> for fields that contain ampersands, quotes, or HTML. <code>&amp;width=750&amp;format=webp</code> in an image URL gets entity-escaped under <code>{{ ... }}</code>.</li>
+        <li><strong>Template metadata is required.</strong> The template only runs because <code>&lt;meta name="template" content="events"&gt;</code> is in the head. If you forget it, the page renders but no template JS runs.</li>
+        <li><strong>mhast is opt-out.</strong> By default any <code>.json</code> 404 falls through to mhast. Use <code>HTML2JSON_EXCLUDE_PATTERNS</code> for routes that need a different JSON shape, otherwise they'll silently return a generic mhast tree.</li>
+        <li><strong>Schema.org from one source.</strong> Putting JSON-LD inside the template is the cleanest way to get rich-result eligibility for every generated page — Google reads it from the rendered HTML.</li>
+        <li><strong>Cache implications.</strong> Each generated page is a separate cache key on the AEM side. Update the master JSON and you may need to publish or invalidate every detail page; consider a small worker that triggers preview/publish via the AEM Admin API on JSON updates.</li>
+      </ul>
+    </section>
+
+    <section id="adapt" class="chapter-section">
+      <h2>How to adapt into my project</h2>
+      <ol>
+        <li><strong>Decide on JSON shape first.</strong> Pick the smallest set of fields you can hide-link out from the list view. Authors will fight you about field names later — name them like content, not like database columns (e.g. <code>occurrenceDate</code>, not <code>event_dt</code>).</li>
+        <li><strong>Author a master JSON</strong> in DA / DA Sheet. Establish the publishing workflow first; rendering is the easy part.</li>
+        <li><strong>Build the template.</strong> Start with the head + hero + body sections. Use mustache placeholders, not block tables — block tables are for content authoring, templates are for structure.</li>
+        <li><strong>Add the template JS</strong> if you need any decoration (related-items panel, format helpers, lazy loaders). Keep it small — the heavy lifting should be on the data side.</li>
+        <li><strong>Verify the JSON surface.</strong> Hit <code>/your-path.json</code> in the browser. If the worker fallback is wired correctly you'll get a JSON tree even when no <code>.json</code> was published.</li>
+        <li><strong>Wire structured data (JSON-LD)</strong> from the same template. Free SEO win.</li>
+      </ol>
+    </section>
+
+    <section id="links" class="chapter-section">
+      <h2>Links</h2>
+      <ul>
+        <li><a href="https://www.aem.live/developer/json-rendering" target="_blank">AEM — JSON rendering</a></li>
+        <li><a href="https://github.com/adobe/helix-html-pipeline" target="_blank">helix-html-pipeline (mhast)</a></li>
+        <li><a href="https://github.com/scdemos/demo/tree/main/templates" target="_blank">scdemos/demo — templates folder</a></li>
+        <li><a href="https://github.com/scdemos/demo/blob/main/workers/cdn/index.js" target="_blank">scdemos/demo — workers/cdn (html2json fallback)</a></li>
+        <li><a href="search-and-discovery.html">Related playbook: Search &amp; discovery (consumes query-index)</a></li>
+        <li><a href="rss-and-feeds.html">Related playbook: RSS / JSON Feed syndication</a></li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/playbooks/json2html-dynamic-pages.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

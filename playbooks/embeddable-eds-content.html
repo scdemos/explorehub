@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Embeddable EDS content | EDS Reference Playbook</title>
+  <meta name="description" content="Mount any Edge Delivery page or fragment inside a foreign host (legacy CMS, micro-frontend, partner site) with a single web component and full block / CSS isolation via shadow DOM.">
+
+  <meta property="og:title" content="Embeddable EDS content | EDS Reference Playbook">
+  <meta property="og:description" content="Mount any Edge Delivery page or fragment inside a foreign host (legacy CMS, micro-frontend, partner site) with a single web component and full block / CSS isolation via shadow DOM.">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css">
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Playbooks &amp; Recipes</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Embeddable EDS content</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-playbook">Playbook</span>
+      <h1>Embeddable EDS content</h1>
+      <p class="subtitle">A single web component (<code>&lt;aem-embed url="..."&gt;</code>) drops an entire EDS page, header, or footer into any host site — including legacy CMSs, partner portals, and micro-frontend shells — with shadow-DOM CSS isolation.</p>
+      <div class="metadata">
+        <span class="tag">Web component</span>
+        <span class="tag">Shadow DOM</span>
+        <span class="tag">Migration</span>
+        <span class="tag">Headless</span>
+        <span class="tag">.plain.html</span>
+      </div>
+    </header>
+
+    <section id="problem" class="chapter-section">
+      <h2>Problem</h2>
+      <p>Customers rarely flip an entire site from a legacy CMS to EDS overnight. The realistic migration path is incremental: ship a new EDS hero / nav / fragment, embed it inside the legacy page, prove the win, expand. Iframes break SEO and styling; copy-pasting HTML loses block decoration. The web component pattern gives you both block decoration <em>and</em> CSS isolation in a tag the host CMS can render verbatim.</p>
+    </section>
+
+    <section id="live-example" class="chapter-section">
+      <h2>Live example</h2>
+      <p>The embed-tester tool inside the demo lets you mount any URL from <code>main--demo--scdemos.aem.live</code> as <code>main</code>, <code>header</code>, or <code>footer</code>:</p>
+      <p>
+        <a class="btn btn-primary" target="_blank" href="https://main--demo--scdemos.aem.page/tools/embed-tester/embed.html">Embed tester (live)</a>
+        <a class="btn btn-secondary" target="_blank" href="https://github.com/scdemos/demo/blob/main/scripts/aem-embed.js">scripts/aem-embed.js</a>
+      </p>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>High-level architecture</h2>
+      <pre class="mermaid">
+flowchart TD
+  Host["Host page
+  any CMS or origin"]
+  -->|includes aem-embed| Embed["aem-embed
+  web component"]
+  Embed --> Suppress["hlx.suppressLoadPage
+  skip default boot"]
+  Embed --> Fetch["fetch url.plain.html"]
+  Fetch --> Pseudo["pseudoDecorateMain"]
+  Pseudo --> Scripts["import scripts.js
+  decorateMain main"]
+  Pseudo --> LoadBlocks["loadBlock per block"]
+  LoadBlocks --> Shadow["render in shadowRoot"]
+  Shadow --> Done["body appear class"]
+      </pre>
+      <p>The component fetches <code>.plain.html</code> from EDS (the block markup without page chrome), runs the project's real <code>decorateMain</code>, and mounts the result into a shadow DOM. Block CSS is loaded inside the shadow root so it can't leak in or out.</p>
+    </section>
+
+    <section id="snippets" class="chapter-section">
+      <h2>Code snippets</h2>
+
+      <h3>1. Suppress the default page-load boot</h3>
+      <p>The same <code>scripts.js</code> drives both the standalone EDS site and the embed. The component sets a flag before importing it, so the default <code>loadEager → loadLazy → loadDelayed</code> chain doesn't fire when you only want a fragment:</p>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>scripts/aem-embed.js</code></span>
+          <a href="https://github.com/scdemos/demo/blob/main/scripts/aem-embed.js#L17-L21" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">window.hlx = window.hlx || {};
+window.hlx.suppressLoadPage = true;
+[window.hlx.codeBasePath] = new URL(import.meta.url).pathname.split('/scripts/');</code></pre>
+      </div>
+
+      <p>The host project's <code>scripts.js</code> must honor that flag:</p>
+      <pre><code class="language-javascript">// scripts/scripts.js — last lines
+if (!window.hlx?.suppressLoadPage) {
+  loadPage();
+}</code></pre>
+
+      <h3>2. Fetch <code>.plain.html</code> + reuse <code>decorateMain</code></h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>scripts/aem-embed.js</code> (pseudoDecorateMain)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/scripts/aem-embed.js#L97-L149" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">async pseudoDecorateMain(htmlText, body, origin) {
+  const main = document.createElement('main');
+  body.append(main);
+  main.innerHTML = htmlText;
+
+  const scriptsModule = await import(`${origin}${window.hlx.codeBasePath}/scripts/scripts.js`);
+  if (scriptsModule.decorateMain) {
+    await scriptsModule.decorateMain(main, true);
+  }
+
+  const blockElements = main.querySelectorAll('.block');
+  for (let i = 0; i &lt; blockElements.length; i += 1) {
+    const block = blockElements[i];
+    const blockName = block.classList.item(0);
+    await this.loadBlock(body, block, blockName, origin);
+  }
+
+  // Optional project hook for post-decoration (dynamic blocks, etc.)
+  if (scriptsModule.decorateEmbed) {
+    await scriptsModule.decorateEmbed(main);
+  }
+}</code></pre>
+      </div>
+
+      <h3>3. Per-block CSS + JS, isolated in the shadow root</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>scripts/aem-embed.js</code> (loadBlock)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/scripts/aem-embed.js#L23-L52" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">async loadBlock(body, block, blockName, origin) {
+  const blockCss = `${origin}${window.hlx.codeBasePath}/blocks/${blockName}/${blockName}.css`;
+  if (!body.querySelector(`link[href="${blockCss}"]`)) {
+    const link = document.createElement('link');
+    link.setAttribute('rel', 'stylesheet');
+    link.setAttribute('href', blockCss);
+    body.appendChild(link);
+    await new Promise((resolve) =&gt; { link.onload = resolve; link.onerror = resolve; });
+  }
+  const blockScriptUrl = `${origin}${window.hlx.codeBasePath}/blocks/${blockName}/${blockName}.js`;
+  const decorateBlock = await import(blockScriptUrl);
+  if (decorateBlock.default) await decorateBlock.default(block);
+}</code></pre>
+      </div>
+
+      <h3>4. Three mount types: main / header / footer</h3>
+      <pre><code class="language-html">&lt;!-- Mount any EDS page --&gt;
+&lt;aem-embed url="https://main--demo--scdemos.aem.live/learn/fire/whats-fire" type="main"&gt;&lt;/aem-embed&gt;
+
+&lt;!-- Mount the EDS header on top of a legacy page --&gt;
+&lt;aem-embed url="https://main--demo--scdemos.aem.live/" type="header"&gt;&lt;/aem-embed&gt;
+
+&lt;!-- Mount the EDS footer at the bottom --&gt;
+&lt;aem-embed url="https://main--demo--scdemos.aem.live/" type="footer"&gt;&lt;/aem-embed&gt;</code></pre>
+    </section>
+
+    <section id="gotchas" class="chapter-section">
+      <h2>Notes &amp; gotchas</h2>
+      <ul>
+        <li><strong>The host site loads two stylesheets per embed</strong> (the project <code>styles.css</code> + the per-block CSS files). They live in the shadow root so they don't pollute the host, but they do count against your network budget. Embed selectively — full home pages have heavy blocks.</li>
+        <li><strong>Image paths get rewritten.</strong> <code>./media/...</code> → <code>{origin}/media/...</code> so optimized image delivery still works. If you author <code>/content/dam/...</code> paths, add similar rewrite logic.</li>
+        <li><strong>Decoration runs cross-origin.</strong> The component imports <code>scripts/scripts.js</code> from the EDS origin. CORS must allow it (Helix returns the right headers by default; reverse-proxy origins may not).</li>
+        <li><strong>Add a <code>decorateEmbed</code> hook</strong> in your <code>scripts.js</code> to handle anything that normally runs in <code>loadLazy</code> (dynamic blocks, fragments, target propositions). It's the embed-mode equivalent of <code>loadLazy</code>.</li>
+        <li><strong>Hash routing won't navigate the host.</strong> If the embedded page deep-links via hash, the embed's tabs / accordions still respond, but the parent URL doesn't change. Decide whether you want to bridge that.</li>
+        <li><strong>RUM gets attributed to the embed origin.</strong> Page-views fire under <code>main--demo--scdemos.aem.live</code>, not the host. If you need host-side analytics, use <code>postMessage</code> to bubble events out.</li>
+        <li><strong>Auth-gated content won't decrypt</strong> inside the host. Cloudflare Access only protects requests that hit the EDS origin under your custom CDN. If you embed a gated page, the user has to be signed in to the EDS origin first.</li>
+      </ul>
+    </section>
+
+    <section id="adapt" class="chapter-section">
+      <h2>How to adapt into my project</h2>
+      <ol>
+        <li><strong>Copy <code>scripts/aem-embed.js</code></strong> from <code>scdemos/demo</code>. It depends only on <code>scripts/aem.js</code> + <code>scripts/scripts.js</code> being importable from the same origin.</li>
+        <li><strong>Honor <code>window.hlx.suppressLoadPage</code></strong> in your <code>scripts.js</code> entrypoint. Wrap the standalone <code>loadPage()</code> call in <code>if (!window.hlx?.suppressLoadPage)</code>.</li>
+        <li><strong>(Optional) export <code>decorateEmbed</code></strong> for runtime patterns that normally live in lazy phase — dynamic blocks, fragments, personalization.</li>
+        <li><strong>Set CORS</strong> on your EDS origin to permit the host(s). Helix Admin API does this for the .live / .page hosts; if you're behind a CDN, configure CORS there.</li>
+        <li><strong>Drop <code>&lt;aem-embed url="..."&gt;</code></strong> tags into the host. Verify shadow-DOM isolation by inspecting in DevTools — host CSS rules should not affect the embedded content, and vice versa.</li>
+        <li><strong>Plan the migration runway:</strong> embed → measure → expand. Pick small, high-traffic surfaces first (nav, hero) so the win is visible.</li>
+      </ol>
+    </section>
+
+    <section id="links" class="chapter-section">
+      <h2>Links</h2>
+      <ul>
+        <li><a href="https://www.aem.live/developer/embedding" target="_blank">AEM — Embedding patterns</a></li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM" target="_blank">MDN — Using shadow DOM</a></li>
+        <li><a href="https://github.com/scdemos/demo/blob/main/scripts/aem-embed.js" target="_blank" rel="noopener">scdemos/demo — aem-embed.js</a></li>
+        <li><a href="../use-cases/how-to-build-fragment-block.html">Cookbook: Fragment block</a></li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/playbooks/embeddable-eds-content.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

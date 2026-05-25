@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Worker-backed forms | EDS Reference Playbook</title>
+  <meta name="description" content="JSON-defined forms that POST through a Cloudflare Worker into Slack, n8n, or any downstream system. Hide secrets server-side.">
+
+  <meta property="og:title" content="Worker-backed forms | EDS Reference Playbook">
+  <meta property="og:description" content="JSON-defined forms that POST through a Cloudflare Worker into Slack, n8n, or any downstream system. Hide secrets server-side.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="../assets/screenshots/worker-backed-forms.png">
+  <meta name="twitter:image" content="../assets/screenshots/worker-backed-forms.png">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css">
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Playbooks &amp; Recipes</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Worker-backed forms</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-playbook">Playbook</span>
+      <h1>Worker-backed forms</h1>
+      <p class="subtitle">A JSON form definition fetched at decoration time, a Cloudflare Worker that proxies the submission, and a downstream system (Slack, n8n, CRM) that holds the secrets. Authors get a no-code form, devs keep secrets out of the browser.</p>
+      <div class="metadata">
+        <span class="tag">Forms</span>
+        <span class="tag">Workers</span>
+        <span class="tag">Slack</span>
+        <span class="tag">Secrets</span>
+      </div>
+    </header>
+
+    <section id="problem" class="chapter-section">
+      <h2>Problem</h2>
+      <p>Marketing wants a contact form on the site. The form data needs to land in Slack (or n8n, or a CRM, or a Salesforce lead). The Slack webhook is a secret — you can't paste it into the page source. You also don't want to ship a different block per integration.</p>
+    </section>
+
+    <section id="live-example" class="chapter-section">
+      <h2>Live example</h2>
+      <p>The contact form on the demo site posts through a Cloudflare Worker that fans out to Slack:</p>
+      <p>
+        <a class="btn btn-primary" target="_blank" href="https://demo.bbird.live/about/contact">Contact form (live)</a>
+        <a class="btn btn-secondary" target="_blank" href="https://github.com/scdemos/demo/tree/main/workers/contact_us">Contact-us worker source</a>
+      </p>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>High-level architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Author["Author authors a
+  block table with form JSON path"]
+  --> FormBlock["blocks/form/form.js
+  fetches JSON, builds DOM"]
+  --> Browser
+  Browser -->|"POST { data: payload }"| Worker["Cloudflare Worker
+  workers/contact_us"]
+  Worker -->|"Slack webhook"| Slack
+  Worker -->|"or n8n webhook"| N8N
+  Worker -->|"or CRM API"| CRM
+      </pre>
+      <p>Two interchangeable form blocks ship in the demo: <code>blocks/form/form.js</code> (full JSON-driven builder) and <code>blocks/n8n-form/n8n-form.js</code> (table-driven, simpler). Both follow the same architecture — the only differences are the schema and where the submit URL points.</p>
+    </section>
+
+    <section id="snippets" class="chapter-section">
+      <h2>Code snippets</h2>
+
+      <h3>1. Form block — fetches JSON definition</h3>
+      <p>Authors point the block at a JSON file in the same content tree (or a published spreadsheet). The block fetches it during decoration, builds the DOM, and applies HTML5 validation.</p>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>blocks/form/form.js</code> (excerpt)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/blocks/form/form.js#L530-L595" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">async function handleSubmit(form) {
+  const status = form.querySelector('.form-status');
+  try {
+    const payload = generatePayload(form);
+    const body = { data: payload };       // wrap for the worker
+    toggleForm(form);                     // disable inputs
+    setStatus('Sending...');
+
+    const response = await fetch(form.dataset.action, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+    if (form.dataset.confirmation) {
+      await replaceWithThankYou(form, form.dataset.confirmation);
+    } else {
+      setStatus('Thanks! Your message has been sent.');
+      form.reset();
+    }
+  } catch (e) {
+    setStatus('Unable to submit right now. Please try again.');
+  } finally {
+    toggleForm(form, false);
+  }
+}</code></pre>
+      </div>
+
+      <p>The submit URL (<code>form.dataset.action</code>) comes from the JSON definition's <code>submit</code> field — either an absolute URL to a worker, or a same-origin path that hits the worker through the CDN.</p>
+
+      <h3>2. Cloudflare Worker — proxy with secrets</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>workers/contact_us/index.js</code></span>
+          <a href="https://github.com/scdemos/demo/blob/main/workers/contact_us/index.js" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+export default {
+  async fetch(request, env) {
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: corsHeaders });
+    }
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405, headers: corsHeaders });
+    }
+    if (!env.SLACK_WEBHOOK_URL) {
+      return new Response('Worker not configured', { status: 500, headers: corsHeaders });
+    }
+
+    let body;
+    try { body = await request.json(); }
+    catch { return new Response('Invalid JSON body', { status: 400, headers: corsHeaders }); }
+
+    // Accept { data: { name, message } } (form block) or { name, message } (flat)
+    const payload = body?.data || body || {};
+    const { name, message } = payload;
+    if (!name || !message) return new Response('Missing fields', { status: 400, headers: corsHeaders });
+
+    const slackPayload = { text: `📩 New Contact Form Submission\n*Name:* ${name}\n*Message:* ${message}` };
+    const webhookResponse = await fetch(env.SLACK_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(slackPayload),
+    });
+    return new Response('OK', { status: webhookResponse.ok ? 200 : 500, headers: corsHeaders });
+  },
+};</code></pre>
+      </div>
+
+      <p>The Slack webhook URL is a Cloudflare Workers secret — set with <code>npx wrangler secret put SLACK_WEBHOOK_URL</code> and never exposed to the page.</p>
+
+      <h3>3. Variant — n8n-form for simpler table-driven authoring</h3>
+      <p>For lighter use cases, the <code>n8n-form</code> block reads its config straight from the block table (no JSON file). It POSTs <code>application/x-www-form-urlencoded</code> to any URL — typically an <a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.formtrigger/" target="_blank">n8n Form Trigger</a>:</p>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>blocks/n8n-form/n8n-form.js</code> (excerpt)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/blocks/n8n-form/n8n-form.js#L122-L170" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+if (bearerToken &amp;&amp; bearerToken.trim()) {
+  headers.Authorization = `Bearer ${bearerToken.trim()}`;
+}
+const response = await fetch(submitUrl, { method: 'POST', body: formData, headers });</code></pre>
+      </div>
+
+      <p>The Bearer token can be set via <code>data-bearer-token</code> on the block or <code>window.n8nFormBearerToken</code>. For an authenticated workflow, fetch a short-lived token from a worker in <code>scripts/delayed.js</code> and assign it before the form decorates.</p>
+    </section>
+
+    <section id="gotchas" class="chapter-section">
+      <h2>Notes &amp; gotchas</h2>
+      <ul>
+        <li><strong>Don't put secrets in the page.</strong> The whole point of the worker is to keep credentials out of <code>main.html</code>. If you find yourself thinking "I'll just write the webhook URL in a config block" — stop, route through a worker.</li>
+        <li><strong>Body shape matters.</strong> The form block sends <code>{ data: payload }</code>. The worker accepts both <code>{ data: ... }</code> and a flat object so you can swap clients without changing the worker.</li>
+        <li><strong>CORS preflight.</strong> Browsers send <code>OPTIONS</code> first when the body is JSON or when a custom header is present. Always handle <code>OPTIONS</code> with <code>204</code> + CORS headers — the demo worker shows the canonical pattern.</li>
+        <li><strong>Validation lives in two places.</strong> Client-side HTML5 validation is for UX (<code>form.reportValidity()</code>); the worker re-validates required fields server-side because the client check is bypassable.</li>
+        <li><strong>Spam &amp; abuse.</strong> A public worker endpoint is a goldmine for bots. Add <a href="https://developers.cloudflare.com/turnstile/" target="_blank">Cloudflare Turnstile</a>: render the widget inside the form, attach the token to the payload, and verify in the worker before forwarding.</li>
+        <li><strong>Rate limiting &amp; observability.</strong> Add a Workers KV / Durable Object counter for per-IP throttling, and use <code>console.log</code> + Workers Analytics for traffic baselines.</li>
+      </ul>
+    </section>
+
+    <section id="adapt" class="chapter-section">
+      <h2>How to adapt into my project</h2>
+      <ol>
+        <li><strong>Pick the form variant.</strong> If authors author a JSON file, use <code>blocks/form</code>. If they prefer a block table with 3-4 fields, use <code>blocks/n8n-form</code>.</li>
+        <li><strong>Copy <code>workers/contact_us</code></strong> as your starting point. Replace the Slack-specific payload-building with whatever your downstream API expects (n8n, Salesforce, HubSpot, custom webhook, queue producer).</li>
+        <li><strong>Set worker secrets:</strong> <code>npx wrangler secret put SLACK_WEBHOOK_URL</code> (and any others). Never bake them into <code>wrangler.jsonc</code> or env vars in code.</li>
+        <li><strong>Route from the page.</strong> Either set <code>submit</code> in the form JSON to <code>https://your-worker.&lt;account&gt;.workers.dev</code>, or front the worker behind a CDN route so it shares your origin and CORS becomes trivial.</li>
+        <li><strong>Add Turnstile + rate limiting.</strong> Skip this only if traffic is internal-network or behind Access. For public pages, treat it as required.</li>
+      </ol>
+    </section>
+
+    <section id="links" class="chapter-section">
+      <h2>Links</h2>
+      <ul>
+        <li><a href="https://developers.cloudflare.com/workers/" target="_blank">Cloudflare Workers — docs</a></li>
+        <li><a href="https://developers.cloudflare.com/workers/configuration/secrets/" target="_blank">Cloudflare Workers — secrets</a></li>
+        <li><a href="https://developers.cloudflare.com/turnstile/" target="_blank">Cloudflare Turnstile — bot protection</a></li>
+        <li><a href="https://github.com/scdemos/demo/tree/main/workers/contact_us" target="_blank">scdemos/demo — workers/contact_us</a></li>
+        <li><a href="../use-cases/how-to-forms.html">Cookbook: Form block</a></li>
+        <li><a href="../use-cases/how-to-build-n8n-form.html">Cookbook: N8N Form block</a></li>
+        <li><a href="gated-content.html">Related playbook: Gated content (also worker-fronted)</a></li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/playbooks/worker-backed-forms.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

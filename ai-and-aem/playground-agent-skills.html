@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Playground agent skills | EDS Reference Playbook</title>
+  <meta name="description" content="Install demo-playground and scdemos/demo agent skills in Cursor, Claude Code, or Codex — global playbook router plus per-project task procedures.">
+
+  <meta property="og:title" content="Playground agent skills | EDS Reference Playbook">
+  <meta property="og:description" content="Wire demo-playground and scdemos/demo skills into your IDE for EDS development.">
+  <meta property="og:type" content="article">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">AI and AEM</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Playground agent skills</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-ai">AI &amp; AEM</span>
+      <h1>Playground agent skills</h1>
+      <p class="subtitle">Wire <strong>demo-playground</strong> (this site) and <strong>scdemos/demo</strong> into your IDE: a global meta skill for patterns and playbooks, plus per-project task skills for import, CDD, build, and review.</p>
+      <div class="metadata">
+        <span class="tag">demo-playground</span>
+        <span class="tag">Cursor</span>
+        <span class="tag">Claude Code</span>
+        <span class="tag">Codex</span>
+      </div>
+    </header>
+
+    <section class="chapter-section">
+      <h2>What you are installing</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Skill</th>
+            <th>Where it lives</th>
+            <th>Install scope</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><a href="https://github.com/scdemos/demo-playground/blob/main/.skills/eds-reference-playbook/SKILL.md" target="_blank" rel="noopener">eds-reference-playbook</a></th>
+            <td><a href="https://github.com/scdemos/demo-playground" target="_blank" rel="noopener">demo-playground</a> <code>.skills/</code></td>
+            <td><strong>Global</strong> — one copy for all EDS customer repos</td>
+          </tr>
+          <tr>
+            <th scope="row">17 task skills (CDD, import, build, …)</th>
+            <td><a href="https://github.com/scdemos/demo/tree/main/.skills" target="_blank" rel="noopener">scdemos/demo</a> <code>.skills/</code></td>
+            <td><strong>Per project</strong> — each EDS site you develop</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>The meta skill answers <em>which pattern to follow</em> (playbook chapter, cookbook, demo permalinks, aem.live). Task skills answer <em>how to execute</em> the work. See the full <a href="skills.html">AEM Skills catalog</a>.</p>
+    </section>
+
+    <section class="chapter-section">
+      <h2>Step 1 — Meta skill (global)</h2>
+      <p>Clone or download <a href="https://github.com/scdemos/demo-playground" target="_blank" rel="noopener">scdemos/demo-playground</a>, then copy the meta skill folder into your agent runtime:</p>
+
+      <h3>Cursor</h3>
+      <pre><code>mkdir -p ~/.cursor/skills
+cp -R /path/to/demo-playground/.skills/eds-reference-playbook ~/.cursor/skills/</code></pre>
+      <p>Verify in <strong>Cursor → Settings → Rules, Skills, … → Skills</strong>. The description should mention the EDS Reference Playbook and <code>scdemos/demo</code>.</p>
+
+      <h3>Claude Code</h3>
+      <pre><code>mkdir -p ~/.claude/skills
+cp -R /path/to/demo-playground/.skills/eds-reference-playbook ~/.claude/skills/</code></pre>
+      <p>Alternatively place under <code>.claude/skills/</code> in a workspace if you only want it for one monorepo.</p>
+
+      <h3>Codex CLI</h3>
+      <pre><code>mkdir -p ~/.codex/skills
+cp -R /path/to/demo-playground/.skills/eds-reference-playbook ~/.codex/skills/</code></pre>
+
+      <p><strong>Tip:</strong> Use a symlink instead of <code>cp -R</code> if you keep demo-playground updated via <code>git pull</code>.</p>
+    </section>
+
+    <section class="chapter-section">
+      <h2>Step 2 — Task skills (your EDS project)</h2>
+      <p>In each customer or internal EDS repo (usually forked from <a href="https://github.com/adobe/aem-boilerplate" target="_blank" rel="noopener">aem-boilerplate</a>):</p>
+      <pre><code># From your EDS project root
+mkdir -p .cursor/skills
+cp -R /path/to/scdemos/demo/.skills/* .cursor/skills/</code></pre>
+      <p>For Claude Code, use <code>.claude/skills/</code> instead of <code>.cursor/skills/</code>. The demo repo includes a thin <code>eds-reference-playbook</code> stub that points back to the canonical meta skill in demo-playground.</p>
+      <p>You do <strong>not</strong> need to fork <code>scdemos/demo</code> — copy only the <code>.skills/</code> directory (and customize descriptions if your team uses different vocabulary).</p>
+    </section>
+
+    <section class="chapter-section">
+      <h2>Step 3 — Optional: demo-playground in the workspace</h2>
+      <p>For best results, add <strong>demo-playground</strong> to the same Cursor / VS Code workspace as your EDS project (multi-root). The agent can then read:</p>
+      <ul>
+        <li><code>scripts/search-index.json</code> — pick the right chapter without guessing URLs</li>
+        <li>Playbook and cookbook HTML locally while you develop</li>
+      </ul>
+      <p>If the playbook is not in the workspace, the meta skill still works via GitHub links in <a href="https://github.com/scdemos/demo-playground/blob/main/.skills/eds-reference-playbook/SKILL.md" target="_blank" rel="noopener">SKILL.md</a>.</p>
+    </section>
+
+    <section class="chapter-section">
+      <h2>How to use it day to day</h2>
+      <ol>
+        <li><strong>Start with intent</strong> — e.g. “Add gated content like the scdemos demo” or “Review this block against demo-playground patterns.”</li>
+        <li><strong>Let the meta skill route</strong> — it should open <code>playbooks/gated-content.html</code> (or the matching cookbook) and follow commit-pinned links into <code>scdemos/demo</code>.</li>
+        <li><strong>Delegate to a task skill</strong> — for code changes, say “use content-driven-development”; for migration, “import this URL”; before PR, “run code-review.”</li>
+        <li><strong>Adapt, don’t fork</strong> — playbook snippets are reference-only; fit auth, workers, and schemas to your project.</li>
+      </ol>
+
+      <h3>Example prompts</h3>
+      <ul>
+        <li><em>Using demo-playground — how does scdemos implement worker-backed forms? Show me what to copy into this repo.</em></li>
+        <li><em>Review my tabs block against the demo cookbook and scdemos/demo, then suggest fixes.</em></li>
+        <li><em>Before we build — which playbook chapter covers JSON2HTML for event listings?</em></li>
+      </ul>
+      <p>More prompts: <a href="prompts.html">Sample prompts</a>.</p>
+    </section>
+
+    <section class="chapter-section">
+      <h2>Troubleshooting</h2>
+      <ul>
+        <li><strong>Skill never loads</strong> — Check the <code>description</code> in frontmatter; agents match on that string, not the folder name. Restart the IDE after copying files.</li>
+        <li><strong>Agent invents architecture</strong> — Explicitly say “use eds-reference-playbook” or “check demo-playground first.”</li>
+        <li><strong>Stale procedures</strong> — Pull latest <code>demo-playground</code> and <code>scdemos/demo</code>; symlinked skills update automatically.</li>
+        <li><strong>Wrong repo</strong> — Meta skill is global; task skills must live in the <em>project</em> you are editing so paths resolve correctly.</li>
+      </ul>
+    </section>
+
+    <section class="chapter-section read-next-grid-wrapper">
+      <h2>Read next</h2>
+      <div class="card-grid read-next-grid">
+        <article class="guide-card">
+          <h3><a href="skills.html">AEM Skills catalog</a></h3>
+          <p>All 18 skills with links to canonical <code>SKILL.md</code> files.</p>
+        </article>
+        <article class="guide-card">
+          <h3><a href="../getting-started/boilerplate-vs-author-kit-vs-playbooks.html">Boilerplate vs Playbooks</a></h3>
+          <p>When to fork boilerplate vs read this playbook.</p>
+        </article>
+      </div>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/ai-and-aem/playground-agent-skills.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

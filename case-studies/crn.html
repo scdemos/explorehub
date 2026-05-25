@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>crn.com | Case studies | EDS Reference Playbook</title>
+  <meta name="description" content="Sample case study: CRN on AEM Edge Delivery Services — B2B publishing, homepage templates, and search at scale.">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Case studies</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">crn.com</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip">Case study</span>
+      <h1>crn.com</h1>
+      <p class="subtitle">CRN — channel industry news and analysis on AEM Edge Delivery Services (The Channel Company portfolio).</p>
+      <div class="metadata">
+        <span class="tag">B2B publishing</span>
+        <span class="tag">Editorial</span>
+      </div>
+      <p><a class="btn btn-primary" href="https://www.crn.com/" target="_blank" rel="noopener">Visit live site</a></p>
+    </header>
+
+    <p class="case-study-draft"><strong>Draft / sample content.</strong> Publishing patterns described here are illustrative — align with customer-approved architecture docs before sharing externally.</p>
+
+    <section id="overview" class="chapter-section">
+      <h2>Overview</h2>
+      <p>CRN operates a high-velocity editorial property where homepage composition, article templates, and search are first-class concerns. EDS supports rapid publishing, taxonomy-driven rails, and shared theming across related brands in the portfolio (sample).</p>
+      <p>Reference when scoping <strong>B2B media</strong>: homepage factories, author tooling, faceted search, and RSS/syndication.</p>
+    </section>
+
+    <section id="snapshot" class="chapter-section">
+      <h2>Customer snapshot</h2>
+      <dl class="case-study-facts">
+        <dt>Industry</dt><dd>B2B technology publishing</dd>
+        <dt>Primary domain</dt><dd>crn.com</dd>
+        <dt>EDS scope</dt><dd>News, analysis, events, resource hubs (sample)</dd>
+        <dt>Authoring</dt><dd>Document Authoring + import tooling (sample)</dd>
+        <dt>Scale signal</dt><dd>Large article corpus, multi-brand themes (sample)</dd>
+        <dt>Search</dt><dd>Index-backed search &amp; recommendations (sample)</dd>
+      </dl>
+    </section>
+
+    <section id="challenge" class="chapter-section">
+      <h2>Business challenge</h2>
+      <p>Editorial teams publish continuously; homepage and category pages must refresh without developer involvement. Search must stay relevant across years of archives while sponsorship zones remain manageable.</p>
+      <ul>
+        <li>Composable homepage templates per brand theme.</li>
+        <li>Fast article detail pages with related content and SEO metadata.</li>
+        <li>Search and faceting that scale to large indexes (sample).</li>
+        <li>Feeds for partners and syndication (sample).</li>
+      </ul>
+    </section>
+
+    <section id="solution" class="chapter-section">
+      <h2>Solution on EDS</h2>
+      <p>Articles and hubs are authored as structured content, published through EDS, and surfaced via blocks for rails, top stories, and related modules. Query-index powers on-site search; workers may expose RSS/JSON feeds for syndication.</p>
+      <ul>
+        <li>Homepage builder patterns with reusable “top stories” and category rails.</li>
+        <li>Article template with author bylines, taxonomy, and related articles block.</li>
+        <li>Search results template with filters tied to index metadata (sample).</li>
+      </ul>
+    </section>
+
+    <section id="highlights" class="chapter-section">
+      <h2>Technical highlights</h2>
+      <div class="case-study-highlights">
+        <article class="case-study-highlight">
+          <h3>Homepage templates</h3>
+          <p>Theme-specific homepage assembly — inspect section/block ordering on crn.com vs sibling properties (sample).</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Query-index search</h3>
+          <p>Faceted search UI over generated index — <a href="../playbooks/search-and-discovery.html">Search &amp; discovery</a> playbook.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Related content rails</h3>
+          <p>Recommendation blocks on article footers — <a href="../use-cases/how-to-build-related-articles.html">Related articles</a> cookbook.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Feeds &amp; syndication (sample)</h3>
+          <p>RSS/JSON endpoints for partners — <a href="../playbooks/rss-and-feeds.html">RSS / JSON feeds</a> playbook.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>Architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Editors[Editors] --> DA[DA]
+  DA --> Publish[Publish pipeline]
+  Publish --> Site[crn.com]
+  Publish --> Index[query-index]
+  Index --> SearchUI[Search blocks]
+  Index --> Worker[Feed worker]
+  Worker --> Partners[Syndication]
+      </pre>
+      <p>Publishing updates both HTML and machine-readable indexes; search UI and optional feed workers consume the same index (sample).</p>
+    </section>
+
+    <section id="outcomes" class="chapter-section">
+      <h2>Outcomes</h2>
+      <p><em>Sample metrics — replace when verified.</em></p>
+      <div class="case-study-metrics">
+        <div class="case-study-metric"><strong>100+</strong><span>Articles per week without dev deploys (sample)</span></div>
+        <div class="case-study-metric"><strong>&lt;1s</strong><span>Search results interaction target (sample)</span></div>
+        <div class="case-study-metric"><strong>5</strong><span>Brand themes on shared platform (sample)</span></div>
+      </div>
+    </section>
+
+    <section id="lessons" class="chapter-section">
+      <h2>Lessons &amp; what to inspect</h2>
+      <ul>
+        <li>Homepage: sponsored zones vs editorial rails — block boundaries in devtools.</li>
+        <li>Article template metadata (author, date, taxonomy) in page source.</li>
+        <li>Search page: facet state in URL, index-driven pagination.</li>
+      </ul>
+    </section>
+
+    <section id="related" class="chapter-section">
+      <h2>Related playbook &amp; cookbook</h2>
+      <ul>
+        <li><a href="../playbooks/search-and-discovery.html">Search &amp; discovery</a></li>
+        <li><a href="../playbooks/rss-and-feeds.html">RSS / JSON feeds</a></li>
+        <li><a href="../use-cases/how-to-author-search-page.html">Search page</a></li>
+        <li><a href="../use-cases/how-to-build-related-articles.html">Related articles</a></li>
+      </ul>
+    </section>
+
+    <section id="resources" class="chapter-section">
+      <h2>Resources</h2>
+      <ul>
+        <li><a href="https://www.crn.com/" target="_blank" rel="noopener">Production site — crn.com</a></li>
+        <li><a href="../playbooks/hosted-demo-map.html">Demo Site - Library</a></li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/case-studies/crn.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

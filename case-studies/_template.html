@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<!--
+  Case study page template — copy to case-studies/<slug>.html and replace placeholders.
+
+  Schema (keep section order):
+    1. Overview
+    2. Customer snapshot (.case-study-facts)
+    3. Business challenge
+    4. Solution on EDS
+    5. Technical highlights (.case-study-highlights)
+    6. Architecture (Mermaid, ≤8 nodes)
+    7. Outcomes (.case-study-metrics) — replace sample numbers when verified
+    8. Lessons & what to inspect
+    9. Related playbook & cookbook links
+    10. Resources
+
+  Remove .case-study-draft banner when content is production-ready.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>[Site name] | Case studies | EDS Reference Playbook</title>
+  <meta name="description" content="[1-sentence case study summary.]">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Case studies</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">[Site name]</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip">Case study</span>
+      <h1>[Site name]</h1>
+      <p class="subtitle">[One-line customer + industry on EDS.]</p>
+      <div class="metadata">
+        <span class="tag">[Industry]</span>
+        <span class="tag">[Region]</span>
+      </div>
+      <p>
+        <a class="btn btn-primary" href="[live-url]" target="_blank" rel="noopener">Visit live site</a>
+      </p>
+    </header>
+
+    <p class="case-study-draft"><strong>Draft / sample content.</strong> Structure is in place for a full case study — replace placeholders with verified customer details, metrics, and repo links.</p>
+
+    <section id="overview" class="chapter-section">
+      <h2>Overview</h2>
+      <p>[2-3 sentences: who they are, what they shipped on EDS, why it matters as a reference.]</p>
+    </section>
+
+    <section id="snapshot" class="chapter-section">
+      <h2>Customer snapshot</h2>
+      <dl class="case-study-facts">
+        <dt>Industry</dt><dd>[…]</dd>
+        <dt>Primary domain</dt><dd>[…]</dd>
+        <dt>EDS scope</dt><dd>[Marketing site / microsites / …]</dd>
+        <dt>Authoring</dt><dd>[DA / Universal Editor / …]</dd>
+        <dt>Scale signal</dt><dd>[Pages, locales, authors — sample]</dd>
+      </dl>
+    </section>
+
+    <section id="challenge" class="chapter-section">
+      <h2>Business challenge</h2>
+      <p>[Problem framing.]</p>
+      <ul>
+        <li>[Constraint 1]</li>
+        <li>[Constraint 2]</li>
+      </ul>
+    </section>
+
+    <section id="solution" class="chapter-section">
+      <h2>Solution on EDS</h2>
+      <p>[What they built — blocks, workers, integrations.]</p>
+    </section>
+
+    <section id="highlights" class="chapter-section">
+      <h2>Technical highlights</h2>
+      <div class="case-study-highlights">
+        <article class="case-study-highlight">
+          <h3>[Highlight 1]</h3>
+          <p>[Description.]</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>Architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Author[Authors] --> DA[Document Authoring]
+  DA --> EDS[EDS delivery]
+  EDS --> CDN[CDN / edge]
+  CDN --> Visitor[Visitors]
+      </pre>
+      <p>[Interpret the diagram.]</p>
+    </section>
+
+    <section id="outcomes" class="chapter-section">
+      <h2>Outcomes</h2>
+      <p><em>Sample metrics below — replace with customer-approved figures.</em></p>
+      <div class="case-study-metrics">
+        <div class="case-study-metric"><strong>—</strong><span>[Metric label]</span></div>
+      </div>
+    </section>
+
+    <section id="lessons" class="chapter-section">
+      <h2>Lessons &amp; what to inspect</h2>
+      <ul>
+        <li>[Inspectable pattern on live site]</li>
+      </ul>
+    </section>
+
+    <section id="related" class="chapter-section">
+      <h2>Related playbook &amp; cookbook</h2>
+      <ul>
+        <li><a href="../playbooks/index.html">Playbooks</a></li>
+      </ul>
+    </section>
+
+    <section id="resources" class="chapter-section">
+      <h2>Resources</h2>
+      <ul>
+        <li><a href="[live-url]" target="_blank" rel="noopener">Production site</a></li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/case-studies/_template.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

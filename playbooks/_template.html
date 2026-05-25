@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<!--
+  Canonical playbook chapter template (7-block schema).
+  Copy this file to playbooks/<your-slug>.html and fill in each section.
+  Do NOT add new top-level sections — keep the schema lean.
+
+  Required:
+    1. Problem statement
+    2. Live example
+    3. High-level architecture (one Mermaid diagram, ≤8 nodes)
+    4. Code snippets / integration pattern (each with permalink-card → commit-pinned link)
+    5. Notes / gotchas
+    6. How to adapt into my project
+    7. Links
+
+  Caution banner pinned at the bottom.
+  Edit this page on GitHub link in the footer.
+
+  IMPORTANT: GitHub permalinks should pin to a specific commit, e.g.
+    https://github.com/scdemos/demo/blob/<COMMIT_SHA>/path/to/file.js#L10-L25
+  Once you stabilize a playbook, replace `main` with the commit SHA so links don't drift.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>[Playbook Title] | EDS Reference Playbook</title>
+  <meta name="description" content="[1-sentence description, 140 chars.]">
+
+  <meta property="og:title" content="[Playbook Title] | EDS Reference Playbook">
+  <meta property="og:description" content="[Same as meta description]">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css">
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Playbooks &amp; Recipes</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">[Playbook Title]</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-playbook">Playbook</span>
+      <h1>[Playbook Title]</h1>
+      <p class="subtitle">[1-sentence problem statement framed as a customer outcome.]</p>
+      <div class="metadata">
+        <span class="tag">[Primary tag]</span>
+        <span class="tag">[Secondary tag]</span>
+        <span class="tag">[Tertiary tag]</span>
+      </div>
+    </header>
+
+    <!-- 1. Problem statement -->
+    <section id="problem" class="chapter-section">
+      <h2>Problem</h2>
+      <p>[2-3 sentences. The business or developer pain. Avoid jargon. Speak to a builder reading this on Slack.]</p>
+      <p>[Optional: list the user types who hit this problem.]</p>
+    </section>
+
+    <!-- 2. Live example -->
+    <section id="live-example" class="chapter-section">
+      <h2>Live example</h2>
+      <p>See it running on the canonical demo:</p>
+      <p>
+        <a class="btn btn-primary" target="_blank" href="https://main--demo--scdemos.aem.live/[path]">View live demo</a>
+        <a class="btn btn-secondary" target="_blank" href="https://github.com/scdemos/demo/tree/main/[dir]">Browse source on GitHub</a>
+      </p>
+      <p>[Optional: 2 sentences of context. What to look at on the demo. Add screenshot if helpful.]</p>
+    </section>
+
+    <!-- 3. High-level architecture -->
+    <section id="architecture" class="chapter-section">
+      <h2>High-level architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Author[Author / DA] --> Edge[EDS / Workers]
+  Edge --> Render[Browser]
+  Render --> User[End user]
+      </pre>
+      <p>[2-3 sentences interpreting the diagram. What goes where, what's authored vs runtime, where the trust boundary sits.]</p>
+    </section>
+
+    <!-- 4. Code snippets / integration pattern -->
+    <section id="snippets" class="chapter-section">
+      <h2>Code snippets</h2>
+      <p>[1-2 sentences orienting the reader: which files, in what order.]</p>
+
+      <h3>[Snippet 1 — purpose]</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>[path/to/file.js]</code></span>
+          <a href="https://github.com/scdemos/demo/blob/main/[path]#L1-L20" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">// Inline excerpt — 5-20 lines max. Truncate with `// ...` if needed.
+[code here]</code></pre>
+      </div>
+
+      <h3>[Snippet 2 — purpose]</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>[path/to/another.js]</code></span>
+          <a href="https://github.com/scdemos/demo/blob/main/[path]#L1-L20" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">[code here]</code></pre>
+      </div>
+
+      <p><strong>Aim for 3-5 snippets total.</strong> Each one should answer "where is the magic?" — not reproduce the full file.</p>
+    </section>
+
+    <!-- 5. Notes & gotchas -->
+    <section id="gotchas" class="chapter-section">
+      <h2>Notes &amp; gotchas</h2>
+      <ul>
+        <li>[Gotcha 1 — something the demo author learned the hard way.]</li>
+        <li>[Gotcha 2.]</li>
+        <li>[Gotcha 3.]</li>
+        <li>[Gotcha 4.]</li>
+        <li>[Gotcha 5.]</li>
+      </ul>
+      <p><strong>Cap at 6 items.</strong> If you need more, split into a follow-up playbook.</p>
+    </section>
+
+    <!-- 6. How to adapt -->
+    <section id="adapt" class="chapter-section">
+      <h2>How to adapt into my project</h2>
+      <ol>
+        <li><strong>[Step 1 — copy what?]</strong> [What files to clone or generalize.]</li>
+        <li><strong>[Step 2 — change what?]</strong> [The 1-2 things you almost always have to swap: secrets, JSON shape, branding.]</li>
+        <li><strong>[Step 3 — wire what?]</strong> [Where to register the block / worker / route in your own project.]</li>
+        <li><strong>[Step 4 — test what?]</strong> [The 2-3 critical paths to validate before shipping.]</li>
+      </ol>
+      <p>[Optional: a one-line warning about what NOT to change.]</p>
+    </section>
+
+    <!-- 7. Links -->
+    <section id="links" class="chapter-section">
+      <h2>Links</h2>
+      <ul>
+        <li><a href="https://www.aem.live/docs/" target="_blank">AEM Edge Delivery — official docs</a></li>
+        <li><a href="https://docs.da.live/developers" target="_blank">Document Authoring — developer docs</a></li>
+        <li><a href="../cookbook/index.html#blocks">Related cookbook entries</a></li>
+        <li>[Other authoritative external links.]</li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/playbooks/[FILENAME].html" target="_blank">
+      ✎ Edit this page on GitHub
+    </a>
+  </main>
+
+  <footer>
+    <p>&copy; AEM Edge Delivery Reference Playbook.</p>
+  </footer>
+
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

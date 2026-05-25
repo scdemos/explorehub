@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Developer Guide: Experimentation, Audiences & Campaigns | AEM Edge Delivery Services</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Experimentation, Audiences & Campaigns</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Use Experimentation, Audiences & Campaigns</h1>
+      <p class="subtitle">Complete implementation guide for A/B testing, audience targeting, and campaign personalization</p>
+
+      <div class="metadata">
+        <span class="tag">Feature</span>
+        <span class="tag">Plugin</span>
+        <span class="tag">Advanced</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>The AEM Experimentation plugin enables privacy-first A/B testing, audience segmentation, and campaign targeting without requiring code changes. Authors control all configuration through page metadata, and simulation tools provide instant previewing of all variants.</p>
+
+      <div class="links">
+        <a href="https://main--demo--scdemos.aem.page/experimentation/" class="btn" target="_blank">View Live Demo</a>
+        <a href="https://demo.bbird.live/demo-docs/usecases/how-to-use-experimentation" class="btn btn-secondary" target="_blank">Author Perspective</a>
+        <a href="https://github.com/adobe/aem-experimentation" class="btn btn-secondary" target="_blank">Plugin Repository</a>
+      </div>
+      <h3>Three Core Capabilities</h3>
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>What It Does</th>
+            <th>Triggered By</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Experiments</strong></td>
+            <td>A/B test content variants with traffic splitting</td>
+            <td>Automatic (random split)</td>
+          </tr>
+          <tr>
+            <td><strong>Audiences</strong></td>
+            <td>Serve content based on user segment (mobile, geo, etc.)</td>
+            <td>Automatic (conditions defined in code)</td>
+          </tr>
+          <tr>
+            <td><strong>Campaigns</strong></td>
+            <td>Serve content based on marketing campaigns</td>
+            <td>URL parameter (?campaign= or ?utm_campaign=)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Architecture</h2>
+
+      <div class="mermaid">
+graph TB
+    A[Page Load] --> B{Experimentation<br/>Enabled?}
+    B -->|No| Z[Normal Rendering]
+    B -->|Yes| C[Load Plugin]
+
+    C --> D[Eager Phase]
+    D --> E{Check Metadata}
+
+    E -->|Experiment| F[Experiment Logic]
+    E -->|Audience| G[Audience Resolution]
+    E -->|Campaign| H[Campaign Check]
+
+    F --> I[Traffic Split]
+    I --> J[Select Variant]
+
+    G --> K[Evaluate Conditions]
+    K --> L[Match Audience]
+
+    H --> M[Check URL Params]
+    M --> N[Load Campaign Page]
+
+    J --> O[Load Variant Content]
+    L --> O
+    N --> O
+
+    O --> P[Lazy Phase]
+    P --> Q[Load Overlay Pill]
+    Q --> R[Enable Simulation]
+
+    style C fill:#0066cc,color:#fff
+    style O fill:#008060,color:#fff
+      </div>
+
+      <h3>Plugin Integration Points</h3>
+      <div class="blocks-list">
+        <div class="block-card">
+          <h4>scripts.js</h4>
+          <p>Defines audiences and loads plugin in eager/lazy phases</p>
+          <code>scripts/scripts.js</code>
+        </div>
+
+        <div class="block-card">
+          <h4>Experimentation Plugin</h4>
+          <p>Core logic for experiments, audiences, and campaigns</p>
+          <code>plugins/experimentation/src/index.js</code>
+        </div>
+
+        <div class="block-card">
+          <h4>Page Metadata</h4>
+          <p>Author-controlled configuration via metadata blocks</p>
+          <code>Experiment, Audience, Campaign metadata</code>
+        </div>
+
+        <div class="block-card">
+          <h4>RUM Integration</h4>
+          <p>Real User Monitoring tracks experiment performance</p>
+          <code>window.hlx.rum</code>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Installation</h2>
+
+      <h3>Step 1: Add Plugin to Project</h3>
+      <p>Add the experimentation plugin as a git subtree:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">Terminal</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-bash">git subtree add --squash --prefix plugins/experimentation \
+  git@github.com:adobe/aem-experimentation.git main</code></pre>
+      </div>
+
+      <h3>Step 2: Define Audiences</h3>
+      <p>Add audience definitions at the top of <code>scripts/scripts.js</code>:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">scripts.js - Audience definitions</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">// Define audiences that can be referenced in page metadata
+const AUDIENCES = {
+  // Device-based audiences
+  mobile: () => window.innerWidth < 600,
+  desktop: () => window.innerWidth >= 600,
+
+  // Add custom audiences as needed:
+  // tablet: () => window.innerWidth >= 600 && window.innerWidth < 900,
+  // us: () => navigator.language.startsWith('en-US'),
+  // eu: () => ['en-GB', 'fr-FR', 'de-DE'].some(l => navigator.language.startsWith(l)),
+  // returning: () => document.cookie.includes('visited=true'),
+};</code></pre>
+      </div>
+
+      <div class="alert alert-warning">
+        <strong>Important:</strong> Audiences are defined by developers but referenced by authors. Keep audience names simple and descriptive (e.g., "mobile", "us", "returning").
+      </div>
+
+      <h3>Step 3: Create Plugin Context</h3>
+      <p>Create a context object that provides required utilities to the plugin:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">scripts.js - Plugin context</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">import {
+  getMetadata,
+  loadCSS,
+  loadScript,
+  sampleRUM,
+  toCamelCase,
+  toClassName,
+} from './aem.js';
+
+import { getAllMetadata } from './shared.js';
+
+function getExperimentationContext() {
+  return {
+    getAllMetadata,
+    getMetadata,
+    loadCSS,
+    loadScript,
+    sampleRUM,
+    toCamelCase,
+    toClassName,
+  };
+}</code></pre>
+      </div>
+
+      <h3>Step 4: Check if Experimentation is Enabled</h3>
+      <p>Create a helper to detect if experimentation features are configured on the current page:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">scripts.js - Detection helper</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">function isExperimentationEnabled() {
+  return getMetadata('experiment')                   // Has experiment metadata
+    || Object.keys(getAllMetadata('campaign')).length // Has campaign metadata
+    || Object.keys(getAllMetadata('audience')).length; // Has audience metadata
+}</code></pre>
+      </div>
+
+      <h3>Step 5: Load Plugin in Eager Phase</h3>
+      <p>Load the plugin early to avoid content flash. This must happen before content decoration:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">scripts.js - Eager phase integration</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">async function loadEager(doc) {
+  // ... other eager phase code ...
+
+  // Load experimentation plugin EARLY to prevent content flash
+  if (isExperimentationEnabled()) {
+    const { loadEager: runEager } = await import('../plugins/experimentation/src/index.js');
+    await runEager(
+      document,
+      { audiences: AUDIENCES },      // Pass audience definitions
+      getExperimentationContext()    // Pass utility context
+    );
+  }
+
+  // ... continue with decoration, blocks, etc ...
+}</code></pre>
+      </div>
+      <h3>Step 6: Load Overlay in Lazy Phase</h3>
+      <p>Load the simulation overlay after the page content is ready:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">scripts.js - Lazy phase integration</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">async function loadLazy(doc) {
+  // ... other lazy phase code ...
+
+  // Load experimentation overlay (non-blocking, for authoring)
+  if (isExperimentationEnabled()) {
+    const { loadLazy: runLazy } = await import('../plugins/experimentation/src/index.js');
+    await runLazy(
+      document,
+      { audiences: AUDIENCES },
+      getExperimentationContext()
+    );
+  }
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Feature 1: Experiments (A/B Testing)</h2>
+      <p>Experiments allow authors to test content variations with random traffic splitting. No code changes required - everything is configured via metadata.</p>
+
+      <h3>How It Works</h3>
+      <ol>
+        <li>Author creates variant pages (duplicates with content changes)</li>
+        <li>Author adds experiment metadata to control page</li>
+        <li>Plugin randomly assigns visitors to control or variant</li>
+        <li>Assignment stored in session storage (no cookies)</li>
+        <li>RUM tracks performance metrics for each variant</li>
+      </ol>
+
+      <h3>Content Structure</h3>
+      <p>Authors add experiment metadata to the control page:</p>
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Metadata Key</th>
+            <th>Value</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Experiment</code></td>
+            <td><code>hero-test</code></td>
+            <td>Experiment name (used in RUM)</td>
+          </tr>
+          <tr>
+            <td><code>Experiment Variants</code></td>
+            <td><code>/variant-1</code></td>
+            <td>URL(s) of variant pages (comma-separated)</td>
+          </tr>
+          <tr>
+            <td><code>Experiment Split</code></td>
+            <td><code>30</code></td>
+            <td>Variant traffic % (control gets remainder)</td>
+          </tr>
+          <tr>
+            <td><code>Experiment Status</code></td>
+            <td><code>Active</code></td>
+            <td>Active or Inactive</td>
+          </tr>
+          <tr>
+            <td><code>Experiment Start Date</code></td>
+            <td><code>2026-04-01</code></td>
+            <td>When experiment begins</td>
+          </tr>
+          <tr>
+            <td><code>Experiment End Date</code></td>
+            <td><code>2026-04-30</code></td>
+            <td>When experiment ends</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Example: Hero A/B Test</h3>
+      <details>
+        <summary>Complete Implementation</summary>
+        <div class="details-content">
+          <p><strong>Step 1: Create variant page</strong></p>
+          <p>Duplicate the control page and make changes. For example:</p>
+          <ul>
+            <li>Control: <code>/my-page</code> (original hero)</li>
+            <li>Variant: <code>/my-page-variant-1</code> (new hero)</li>
+          </ul>
+
+          <p><strong>Step 2: Add metadata to control page</strong></p>
+          <details>
+            <summary>Expand to view and copy metadata block</summary>
+            <div class="details-content">
+              <button class="copy-btn" onclick="copyTable(this)"
+                      style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+                Copy
+              </button>
+              <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                  <tr><th colspan="2" style="background-color: #f0f0f0;">Metadata</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="width: 40%;">Experiment</td>
+                    <td>hero-test</td>
+                  </tr>
+                  <tr>
+                    <td>Experiment Variants</td>
+                    <td>/my-page-variant-1</td>
+                  </tr>
+                  <tr>
+                    <td>Experiment Status</td>
+                    <td>Active</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+
+          <p><strong>Step 3: Preview and simulate</strong></p>
+          <p>On <code>.aem.page</code> preview, click the overlay pill at the bottom of the page. You'll see:</p>
+          <ul>
+            <li>Experiment name: <strong>hero-test</strong></li>
+            <li>Control (50%): <code>/my-page</code> [Simulate]</li>
+            <li>Variant 1 (50%): <code>/my-page-variant-1</code> [Simulate]</li>
+          </ul>
+
+          <p><strong>Step 4: Customize traffic split</strong></p>
+          <p>To give variant 1 only 30% of traffic:</p>
+          <details>
+            <summary>Expand to view and copy custom split metadata</summary>
+            <div class="details-content">
+              <button class="copy-btn" onclick="copyTable(this)"
+                      style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+                Copy
+              </button>
+              <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                  <tr><th colspan="2" style="background-color: #f0f0f0;">Metadata</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="width: 40%;">Experiment Split</td>
+                    <td>30</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+          <p>Now control gets 70%, variant gets 30%.</p>
+
+          <p><strong>Step 5: Time-bound experiment</strong></p>
+          <details>
+            <summary>Expand to view and copy time-bound metadata</summary>
+            <div class="details-content">
+              <button class="copy-btn" onclick="copyTable(this)"
+                      style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+                Copy
+              </button>
+              <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                  <tr><th colspan="2" style="background-color: #f0f0f0;">Metadata</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="width: 40%;">Experiment Start Date</td>
+                    <td>2026-04-01</td>
+                  </tr>
+                  <tr>
+                    <td>Experiment End Date</td>
+                    <td>2026-04-30</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </details>
+
+      <h3>Multiple Variants</h3>
+      <p>Test more than two options by listing multiple variant URLs:</p>
+      <details>
+        <summary>Expand to view and copy multiple variants metadata</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">Metadata</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width: 40%;">Experiment Variants</td>
+                <td>/variant-1, /variant-2, /variant-3</td>
+              </tr>
+              <tr>
+                <td>Experiment Split</td>
+                <td>25, 25, 25</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <p>Each variant gets 25%, control gets the remainder (25%).</p>
+
+      <h3>Runtime Access</h3>
+      <p>Access experiment data in JavaScript for analytics integration:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">JavaScript API</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">// Check if experiment is active
+if (window.hlx.experiment) {
+  console.log('Experiment:', window.hlx.experiment.id);
+  console.log('Variant:', window.hlx.experiment.selectedVariant);
+
+  // Send to analytics
+  dataLayer.push({
+    event: 'experiment_view',
+    experiment_id: window.hlx.experiment.id,
+    variant: window.hlx.experiment.selectedVariant
+  });
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Feature 2: Audiences (Personalization)</h2>
+      <p>Audiences let you serve different content to different user segments automatically - no URL parameters needed.</p>
+
+      <h3>How It Works</h3>
+      <ol>
+        <li>Developer defines audience conditions in <code>scripts.js</code> (e.g., mobile, desktop, geo)</li>
+        <li>Author creates audience-specific content pages</li>
+        <li>Author references audience names in metadata</li>
+        <li>Plugin evaluates conditions on page load</li>
+        <li>Matching audience page is served automatically</li>
+      </ol>
+
+      <h3>Built-in Audiences</h3>
+      <p>From the installation section, recall these default audiences:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">Default audiences (scripts.js)</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">const AUDIENCES = {
+  mobile: () => window.innerWidth < 600,
+  desktop: () => window.innerWidth >= 600,
+};</code></pre>
+      </div>
+
+      <h3>Custom Audience Examples</h3>
+      <details>
+        <summary>Advanced Audience Definitions</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Custom audiences (scripts.js)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">const AUDIENCES = {
+  // Device-based
+  mobile: () => window.innerWidth < 600,
+  desktop: () => window.innerWidth >= 600,
+  tablet: () => window.innerWidth >= 600 && window.innerWidth < 900,
+
+  // Geography-based (simplified - use IP geolocation for production)
+  us: () => navigator.language.startsWith('en-US'),
+  eu: () => ['en-GB', 'fr-FR', 'de-DE'].some(l => navigator.language.startsWith(l)),
+
+  // Visitor type (requires cookie)
+  returning: () => document.cookie.includes('visited=true'),
+  new: () => !document.cookie.includes('visited=true'),
+
+  // Connection speed
+  slow: () => navigator.connection?.effectiveType === '2g' || navigator.connection?.effectiveType === 'slow-2g',
+  fast: () => navigator.connection?.effectiveType === '4g',
+
+  // Time-based
+  weekday: () => new Date().getDay() >= 1 && new Date().getDay() <= 5,
+  weekend: () => new Date().getDay() === 0 || new Date().getDay() === 6,
+};</code></pre>
+          </div>
+
+          <div class="alert alert-warning">
+            <strong>Privacy Note:</strong> Avoid audiences that rely on personal data (cookies, tracking, etc.) unless you have proper consent mechanisms.
+          </div>
+        </div>
+      </details>
+
+      <h3>Content Structure</h3>
+      <p>Authors reference audience names in metadata:</p>
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Metadata Format</th>
+            <th>Example</th>
+            <th>Works?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Audience: Mobile</code></td>
+            <td><code>/mobile-page</code></td>
+            <td>✅ Yes</td>
+          </tr>
+          <tr>
+            <td><code>Audience (Mobile)</code></td>
+            <td><code>/mobile-page</code></td>
+            <td>✅ Yes</td>
+          </tr>
+          <tr>
+            <td><code>Audience Mobile</code></td>
+            <td><code>/mobile-page</code></td>
+            <td>✅ Yes</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Example: Mobile/Desktop Targeting</h3>
+      <details>
+        <summary>Complete Implementation</summary>
+        <div class="details-content">
+          <p><strong>Step 1: Create audience-specific pages</strong></p>
+          <ul>
+            <li>Default: <code>/my-page</code></li>
+            <li>Mobile: <code>/my-page-mobile</code> (simplified layout, larger CTAs)</li>
+            <li>Desktop: <code>/my-page-desktop</code> (rich layout, multi-column)</li>
+          </ul>
+
+          <p><strong>Step 2: Add metadata to default page</strong></p>
+          <details>
+            <summary>Expand to view and copy audience metadata</summary>
+            <div class="details-content">
+              <button class="copy-btn" onclick="copyTable(this)"
+                      style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+                Copy
+              </button>
+              <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                  <tr><th colspan="2" style="background-color: #f0f0f0;">Metadata</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="width: 40%;">Audience: Mobile</td>
+                    <td>/my-page-mobile</td>
+                  </tr>
+                  <tr>
+                    <td>Audience: Desktop</td>
+                    <td>/my-page-desktop</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+
+          <p><strong>Step 3: Test automatic resolution</strong></p>
+          <p>When users visit <code>/my-page</code>:</p>
+          <ul>
+            <li>Mobile users (width < 600px) see <code>/my-page-mobile</code></li>
+            <li>Desktop users (width >= 600px) see <code>/my-page-desktop</code></li>
+          </ul>
+
+          <p><strong>Step 4: Simulate audiences</strong></p>
+          <p>On <code>.aem.page</code> preview, click overlay pill and click "Simulate" next to any audience. This adds <code>?audience=mobile</code> to URL for easy sharing with stakeholders.</p>
+        </div>
+      </details>
+
+      <h3>Runtime Access</h3>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">JavaScript API</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">// Check which audience matched
+if (window.hlx.audience) {
+  console.log('Audience:', window.hlx.audience);
+
+  // Send to analytics
+  dataLayer.push({
+    event: 'audience_resolved',
+    audience: window.hlx.audience
+  });
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Feature 3: Campaigns (Link-Driven Targeting)</h2>
+      <p>Campaigns serve different content based on URL parameters - perfect for email and social campaigns with UTM tracking.</p>
+
+      <h3>How It Works</h3>
+      <ol>
+        <li>Author creates campaign-specific landing pages</li>
+        <li>Author adds campaign metadata to main page</li>
+        <li>Marketing appends <code>?campaign=name</code> or <code>?utm_campaign=name</code> to links</li>
+        <li>Plugin checks URL parameters on load</li>
+        <li>Matching campaign page is served</li>
+      </ol>
+
+      <h3>Content Structure</h3>
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Metadata Key</th>
+            <th>Value</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Campaign: Holiday</code></td>
+            <td><code>/holiday-landing</code></td>
+            <td>Campaign name and variant URL</td>
+          </tr>
+          <tr>
+            <td><code>Campaign Audience</code></td>
+            <td><code>mobile</code></td>
+            <td>Optional: restrict to audience</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Example: Holiday Campaign</h3>
+      <details>
+        <summary>Complete Implementation</summary>
+        <div class="details-content">
+          <p><strong>Step 1: Create campaign landing page</strong></p>
+          <ul>
+            <li>Default: <code>/products</code></li>
+            <li>Holiday: <code>/products-holiday</code> (seasonal banner, special offer)</li>
+          </ul>
+
+          <p><strong>Step 2: Add campaign metadata</strong></p>
+          <details>
+            <summary>Expand to view and copy campaign metadata</summary>
+            <div class="details-content">
+              <button class="copy-btn" onclick="copyTable(this)"
+                      style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+                Copy
+              </button>
+              <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                  <tr><th colspan="2" style="background-color: #f0f0f0;">Metadata</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="width: 40%;">Campaign: Holiday</td>
+                    <td>/products-holiday</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+
+          <p><strong>Step 3: Create campaign links</strong></p>
+          <p>Marketing team uses these URLs in emails/social:</p>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Campaign URLs</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-markup">https://www.example.com/products?campaign=holiday
+https://www.example.com/products?utm_campaign=holiday</code></pre>
+          </div>
+
+          <p><strong>Step 4: Multiple campaigns</strong></p>
+          <p>Support multiple campaigns on the same page:</p>
+          <details>
+            <summary>Expand to view and copy multiple campaigns metadata</summary>
+            <div class="details-content">
+              <button class="copy-btn" onclick="copyTable(this)"
+                      style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+                Copy
+              </button>
+              <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                  <tr><th colspan="2" style="background-color: #f0f0f0;">Metadata</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="width: 40%;">Campaign: Holiday</td>
+                    <td>/products-holiday</td>
+                  </tr>
+                  <tr>
+                    <td>Campaign: Back2School</td>
+                    <td>/products-back2school</td>
+                  </tr>
+                  <tr>
+                    <td>Campaign: BlackFriday</td>
+                    <td>/products-blackfriday</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </details>
+
+      <h3>Campaign + Audience Targeting</h3>
+      <p>Restrict campaigns to specific audiences:</p>
+      <details>
+        <summary>Expand to view and copy campaign with audience metadata</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">Metadata</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width: 40%;">Campaign: MobileOffer</td>
+                <td>/mobile-offer</td>
+              </tr>
+              <tr>
+                <td>Campaign Audience</td>
+                <td>mobile</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <p>Only mobile visitors who click <code>?campaign=mobileOffer</code> see the variant. Desktop visitors get the default page.</p>
+
+      <h3>Runtime Access</h3>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">JavaScript API</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">// Check which campaign is active
+if (window.hlx.campaign) {
+  console.log('Campaign:', window.hlx.campaign);
+
+  // Send to analytics
+  dataLayer.push({
+    event: 'campaign_view',
+    campaign: window.hlx.campaign
+  });
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Combining Features</h2>
+      <p>Experiments, audiences, and campaigns can be combined for advanced use cases:</p>
+
+      <h3>Experiment + Audience</h3>
+      <p>Run an A/B test only for mobile users:</p>
+      <details>
+        <summary>Expand to view and copy experiment with audience metadata</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">Metadata</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width: 40%;">Experiment</td>
+                <td>mobile-hero-test</td>
+              </tr>
+              <tr>
+                <td>Experiment Variants</td>
+                <td>/variant-mobile</td>
+              </tr>
+              <tr>
+                <td>Experiment Audience</td>
+                <td>mobile</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <h3>Campaign + Audience</h3>
+      <p>Show holiday campaign only to US visitors:</p>
+      <details>
+        <summary>Expand to view and copy geo-restricted campaign metadata</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">Metadata</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width: 40%;">Campaign: Holiday</td>
+                <td>/holiday-us</td>
+              </tr>
+              <tr>
+                <td>Campaign Audience</td>
+                <td>us</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <h3>Experiment with Multiple Audiences</h3>
+      <p>Test across multiple segments:</p>
+      <details>
+        <summary>Expand to view and copy multi-audience experiment metadata</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">Metadata</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width: 40%;">Experiment</td>
+                <td>cross-segment-test</td>
+              </tr>
+              <tr>
+                <td>Experiment Variants</td>
+                <td>/variant-a, /variant-b</td>
+              </tr>
+              <tr>
+                <td>Experiment Audience</td>
+                <td>mobile, us</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2>Analytics Integration</h2>
+      <p>The plugin exposes global objects that analytics platforms can consume:</p>
+
+      <h3>Adobe Analytics (Web SDK)</h3>
+      <details>
+        <summary>Implementation Example</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Adobe Web SDK integration</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">if (window.hlx.experiment && window.alloy) {
+  alloy("sendEvent", {
+    xdm: {
+      eventType: "decisioning.propositionDisplay",
+      _experience: {
+        decisioning: {
+          propositions: [{
+            id: window.hlx.experiment.id,
+            scope: "page",
+            items: [{
+              id: window.hlx.experiment.selectedVariant
+            }]
+          }]
+        }
+      }
+    },
+    data: {
+      __adobe: {
+        analytics: {
+          eVar1: window.hlx.experiment.id,
+          eVar2: window.hlx.experiment.selectedVariant,
+          events: "event1"
+        }
+      }
+    }
+  });
+}</code></pre>
+          </div>
+        </div>
+      </details>
+
+      <h3>Google Analytics / GTM</h3>
+      <details>
+        <summary>Implementation Example</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Google Analytics integration</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">// Push to dataLayer for GTM
+if (window.hlx.experiment) {
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: 'experiment_view',
+    experiment_id: window.hlx.experiment.id,
+    experiment_variant: window.hlx.experiment.selectedVariant
+  });
+}
+
+if (window.hlx.audience) {
+  window.dataLayer.push({
+    event: 'audience_resolved',
+    audience: window.hlx.audience
+  });
+}
+
+if (window.hlx.campaign) {
+  window.dataLayer.push({
+    event: 'campaign_view',
+    campaign: window.hlx.campaign
+  });
+}</code></pre>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2>Simulation & Testing</h2>
+      <p>The experimentation overlay provides built-in simulation for all variants:</p>
+
+      <h3>Overlay Features</h3>
+      <ul>
+        <li><strong>Experiment View:</strong> Shows all variants with traffic splits and "Simulate" links</li>
+        <li><strong>Audience View:</strong> Shows all audiences with current match status</li>
+        <li><strong>Campaign View:</strong> Shows all campaigns with activation links</li>
+        <li><strong>Direct URLs:</strong> Simulation appends URL parameters for easy sharing</li>
+      </ul>
+
+      <h3>Simulation Parameters</h3>
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Example</th>
+            <th>Effect</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>?experiment=variant-name</code></td>
+            <td><code>?experiment=challenger-1</code></td>
+            <td>Force specific variant</td>
+          </tr>
+          <tr>
+            <td><code>?audience=name</code></td>
+            <td><code>?audience=mobile</code></td>
+            <td>Force specific audience</td>
+          </tr>
+          <tr>
+            <td><code>?campaign=name</code></td>
+            <td><code>?campaign=holiday</code></td>
+            <td>Activate campaign</td>
+          </tr>
+          <tr>
+            <td><code>?utm_campaign=name</code></td>
+            <td><code>?utm_campaign=holiday</code></td>
+            <td>Activate campaign (UTM)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="alert alert-success">
+        <strong>Pro Tip:</strong> Share simulation URLs with stakeholders to preview variants without publishing.
+      </div>
+    </section>
+
+    <section>
+      <h2>Performance Considerations</h2>
+
+      <h3>Eager Phase Impact</h3>
+      <ul>
+        <li>Plugin loads early to prevent content flash</li>
+        <li>Adds ~50-100ms to LCP on pages with experimentation</li>
+        <li>Essential trade-off to avoid showing wrong variant</li>
+        <li>Only impacts pages with experimentation metadata</li>
+      </ul>
+
+      <h3>RUM Sampling</h3>
+      <p>The plugin increases RUM sampling for faster data collection:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">Default RUM sampling</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">// Normal pages: 1% sampling (1 out of 100)
+// Experimentation pages: 10% sampling (1 out of 10)
+// Higher sampling = faster statistical significance</code></pre>
+      </div>
+
+      <h3>Session Storage</h3>
+      <p>Variant assignment persists in session storage:</p>
+      <ul>
+        <li>No cookies = privacy-compliant</li>
+        <li>Assignment cleared when browser closes</li>
+        <li>Fresh assignment on new session</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Common Questions</h2>
+
+      <details>
+        <summary>How does traffic splitting work?</summary>
+        <div class="details-content">
+          <p>By default, variants split traffic evenly. Control gets remaining percentage.</p>
+          <p><strong>Example with 3 variants:</strong></p>
+          <ul>
+            <li>No split specified: Control 25%, each variant 25%</li>
+            <li><code>Experiment Split: 20, 30</code>: Control 50%, variant1 20%, variant2 30%</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>Can I run multiple experiments on one page?</summary>
+        <div class="details-content">
+          <p>No - only one experiment per page. If testing multiple changes, combine them in variant pages.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>When do I see experiment results?</summary>
+        <div class="details-content">
+          <p>Results flow through RUM. You need:</p>
+          <ul>
+            <li>Domain key from <a href="https://aemcs-workspace.adobe.com" target="_blank">aemcs-workspace.adobe.com</a></li>
+            <li>Sufficient traffic for statistical significance</li>
+            <li>Gear icon in overlay shows inline results</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>Does this work on production?</summary>
+        <div class="details-content">
+          <p>Yes! Experiment/audience/campaign logic runs on all environments. The overlay only appears on preview (<code>.aem.page</code>) and localhost.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>What happens when an experiment ends?</summary>
+        <div class="details-content">
+          <p>Remove experiment metadata or set status to Inactive. Promote winning variant content to the main page manually.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Can campaigns trigger automatically?</summary>
+        <div class="details-content">
+          <p>No - campaigns require URL parameter. For automatic switching based on conditions (geo, device), use audiences instead.</p>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2>Video Tutorial</h2>
+      <div class="video-container">
+        <iframe src="https://content.da.live/scdemos/demo/demo-docs/usecases/.how-to-use-experimentation/screenreord_2.gif" allowfullscreen></iframe>
+      </div>
+      <p><strong>Tutorial Contents:</strong></p>
+      <ul>
+        <li>Creating experiment variants</li>
+        <li>Configuring metadata for experiments, audiences, and campaigns</li>
+        <li>Using the simulation overlay</li>
+        <li>Viewing results in RUM</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Related Guides</h2>
+      <div class="related-guides">
+        <a href="how-to-deliver-personalized-experiences.html" class="guide-card">
+          <h4>Adobe Target Integration</h4>
+          <p>Combine experimentation with Adobe Target for advanced personalization</p>
+        </a>
+
+        <a href="how-to-analytics-integration.html" class="guide-card">
+          <h4>Analytics Integration</h4>
+          <p>Send experiment data to Adobe Analytics, Google Analytics, or other platforms</p>
+        </a>
+
+        <a href="how-to-rum-tracking.html" class="guide-card">
+          <h4>RUM Tracking</h4>
+          <p>Understand Real User Monitoring and performance tracking</p>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

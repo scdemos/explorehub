@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <title>Explore Hub — EDS Reference Playbook</title>
+  <meta name="description" content="Search and browse use-case playbooks, block cookbook, and AI guides for AEM Edge Delivery Services.">
+  <link rel="stylesheet" href="styles/styles.css">
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <main>
+    <section class="hub-hero">
+      <div class="hub-brand">
+        <img src="assets/hub-logo.svg" alt="" width="56" height="56" class="hub-logo" decoding="async" />
+        <h1>Explore Hub</h1>
+      </div>
+
+      <div class="hub-search">
+        <input id="hub-search-input" type="search" placeholder="Search playbooks, blocks, skills…" autocomplete="off"
+          aria-label="Search the playbook" aria-controls="hub-results" />
+      </div>
+
+      <p class="hub-filter-hint">Filters apply when you search — pick a lane, then type a keyword.</p>
+      <div class="lane-filter-bar" role="tablist" aria-label="Filter search results by lane">
+        <button type="button" class="lane-chip lane-filter is-active" data-lane="all" role="tab" aria-selected="true">All</button>
+        <button type="button" class="lane-chip lane-filter" data-lane="playbook" role="tab" aria-selected="false">Playbooks &amp; Recipes</button>
+        <button type="button" class="lane-chip lane-filter" data-lane="cookbook" role="tab" aria-selected="false">Cookbook</button>
+        <button type="button" class="lane-chip lane-filter" data-lane="ai" role="tab" aria-selected="false">AI and AEM</button>
+        <button type="button" class="lane-chip lane-filter" data-lane="case-study" role="tab" aria-selected="false">Case studies</button>
+      </div>
+    </section>
+
+    <p id="hub-results-summary" class="results-summary" aria-live="polite"></p>
+    <div id="hub-results" class="hub-search-results" role="list" aria-label="Search results"></div>
+
+    <section id="hub-browse-section">
+      <h2 class="hub-browse-title">Browse by lane</h2>
+      <div class="lane-tiles lane-tiles-hub">
+        <a href="playbooks/index.html" class="lane-tile">
+          <span class="lane-chip lane-playbook">Playbooks &amp; Recipes</span>
+          <h3>Use-case playbooks</h3>
+          <p>Gated content, search, forms, JSON2HTML, feeds, embed — seven chapters with commit-pinned code.</p>
+        </a>
+        <a href="playbooks/hosted-demo-map.html" class="lane-tile">
+          <span class="lane-chip lane-cookbook">Demo Site Library</span>
+          <h3>Experience patterns &amp; cookbook</h3>
+          <p>Hosted demos on demo.bbird.live — adoption paths plus block-by-block cookbook guides.</p>
+        </a>
+        <a href="ai-and-aem/index.html" class="lane-tile">
+          <span class="lane-chip lane-ai">AI and AEM</span>
+          <h3>Agent skills &amp; prompts</h3>
+          <p>Playground skills, scdemos/demo procedures, MCP, and modernization patterns.</p>
+        </a>
+        <a href="case-studies/index.html" class="lane-tile">
+          <span class="lane-chip lane-case-study">Case studies</span>
+          <h3>Live customer sites</h3>
+          <p>cmegroup, revolt, volvo, crn, run disney, jet2 — production EDS references.</p>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="scripts/navigation.js"></script>
+</body>
+</html>

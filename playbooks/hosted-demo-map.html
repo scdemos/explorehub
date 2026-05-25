@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Demo Site - Library | EDS Reference Playbook</title>
+  <meta name="description" content="Demo Site - Library maps demo.bbird.live use cases to playbook chapters, cookbook blocks, and scdemos/demo — without duplicating SC demo scripts.">
+
+  <meta property="og:title" content="Demo Site - Library | EDS Reference Playbook">
+  <meta property="og:description" content="From demo.bbird.live use cases to playbook chapters, cookbook, and live walkthroughs.">
+  <meta property="og:type" content="article">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Playbook chapters</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Demo Site - Library</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-playbook">Playbooks</span>
+      <h1>Demo Site - Library</h1>
+      <p class="subtitle">The <a href="https://demo.bbird.live/demo-docs/usecase-showcase" target="_blank" rel="noopener">demo.bbird.live</a> use-case library — each entry links to <strong>playbook chapters</strong>, <strong>cookbook</strong> blocks, and <strong>live demos</strong>. Implementing? Start on the <a href="index.html">chapter list</a> instead.</p>
+      <div class="metadata">
+        <span class="tag">Hosted demo</span>
+        <span class="tag">20+ use cases</span>
+        <span class="tag">Adoption paths</span>
+      </div>
+    </header>
+
+    <div class="pattern-tier-diagram" role="list">
+      <div class="pattern-tier" role="listitem">
+        <strong>1. Demo Site - Library (here)</strong>
+        What the hosted demo shows + how to adopt it in one glance.
+      </div>
+      <div class="pattern-tier" role="listitem">
+        <strong>2. Playbook chapter</strong>
+        Adoption guide with architecture, snippets, and adapt steps.
+      </div>
+      <div class="pattern-tier" role="listitem">
+        <strong>3. Live demo script</strong>
+        <code>demo.bbird.live/demo-docs/…</code> — customer-facing walkthrough, not production docs.
+      </div>
+    </div>
+
+    <section id="experience-patterns" class="category-section">
+      <h2>Experience patterns</h2>
+      <p class="category-description">Cross-cutting visitor experiences — auth, discovery, decisioning.</p>
+
+      <article class="pattern-entry" id="gated-content">
+        <h3>Gated content &amp; member-only sections</h3>
+        <p class="pattern-summary">The hosted demo shows member-only slices of a public marketing site — no AEM session store.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> Authors mark pages with <code>gated</code> metadata and tag sections for <code>logged-in</code> vs <code>logged-out</code> audiences. A CDN worker rewrites HTML at the edge from Cloudflare Access cookies. Preview uses a client mirror so authors see both states without logging in.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Gating handler, auth worker, and <code>gated-content.js</code>. Put Cloudflare Access in front of protected routes only.</p>
+        <nav class="pattern-actions" aria-label="Gated content links">
+          <a class="pattern-btn pattern-btn-playbook" href="gated-content.html">Playbook</a>
+          <a class="pattern-btn" href="../use-cases/how-to-build-auth-toggle.html">Cookbook · Auth toggle</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-gated-content-experience" target="_blank" rel="noopener">Live demo</a>
+        </nav>
+      </article>
+
+      <article class="pattern-entry" id="login-flow">
+        <h3>Site login flow (Cloudflare Access)</h3>
+        <p class="pattern-summary">Login is the front door; gated sections are the content rewrite — same cookie signal end to end.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> A dedicated <code>/login</code> route sits behind Cloudflare Access. An auth worker issues session cookies that the CDN gating layer already understands.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Start from the gated-content playbook — implement login + gating together, not as separate experiments.</p>
+        <nav class="pattern-actions" aria-label="Login flow links">
+          <a class="pattern-btn pattern-btn-playbook" href="gated-content.html">Playbook</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-showcase-login-flow" target="_blank" rel="noopener">Live demo</a>
+        </nav>
+      </article>
+
+      <article class="pattern-entry" id="search">
+        <h3>Faceted search &amp; discovery</h3>
+        <p class="pattern-summary">Turn the site index into a filterable search experience — no server-side search app.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> <code>query-index.json</code> powers a Search block that filters, paginates, and reads facets from the URL. Related Articles adds recommendations from the same index.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Tune <code>helix-query.yaml</code>, ship Search + Related Articles blocks, align index fields with your facet model.</p>
+        <nav class="pattern-actions" aria-label="Search links">
+          <a class="pattern-btn pattern-btn-playbook" href="search-and-discovery.html">Playbook</a>
+          <a class="pattern-btn" href="../use-cases/how-to-author-search-page.html">Cookbook · Search</a>
+          <a class="pattern-btn" href="../use-cases/how-to-build-related-articles.html">Related articles</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-author-search-page" target="_blank" rel="noopener">Live demo</a>
+        </nav>
+      </article>
+
+      <article class="pattern-entry" id="experimentation">
+        <h3>Experimentation, audiences &amp; campaigns</h3>
+        <p class="pattern-summary">Run A/B tests and audiences from page metadata first — add Adobe Target only when marketing needs it.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> The experimentation plugin runs in the eager phase (metadata-driven, privacy-first). Martech loads Target/WebSDK in parallel so LCP is not blocked.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Ship the experimentation plugin for metadata tests; add martech when you need Target campaigns.</p>
+        <nav class="pattern-actions" aria-label="Experimentation links">
+          <a class="pattern-btn pattern-btn-playbook" href="experimentation-and-personalization.html">Playbook</a>
+          <a class="pattern-btn" href="../use-cases/how-to-use-experimentation.html">Cookbook</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-use-experimentation" target="_blank" rel="noopener">Live demo</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-use-deliver-personalized-experiences" target="_blank" rel="noopener">Target demo</a>
+        </nav>
+      </article>
+    </section>
+
+    <section id="dynamic-content" class="category-section">
+      <h2>Dynamic content &amp; workers</h2>
+      <p class="category-description">JSON-driven pages, feeds, runtime UI, and embeddable surfaces.</p>
+
+      <article class="pattern-entry" id="json2html">
+        <h3>JSON → dynamic HTML (events, articles)</h3>
+        <p class="pattern-summary">One JSON source becomes many list and detail URLs — templates, not hand-authored pages per item.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> Authors maintain structured JSON in DA. Mustache templates under <code>templates/</code> render pages. The CDN worker can expose <code>.json</code> via mhast when needed.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> One template per content type, one JSON folder, wire <code>loadTemplate</code> in <code>scripts.js</code>.</p>
+        <nav class="pattern-actions" aria-label="JSON2HTML links">
+          <a class="pattern-btn pattern-btn-playbook" href="json2html-dynamic-pages.html">Playbook</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-json2html" target="_blank" rel="noopener">json2html demo</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/events" target="_blank" rel="noopener">Events</a>
+        </nav>
+      </article>
+
+      <article class="pattern-entry" id="dynamic-blocks">
+        <h3>Dynamic blocks (tabs + modal)</h3>
+        <p class="pattern-summary">Tabs and modals without authoring a block table — section metadata and fragment links drive runtime UI.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> Section metadata (<code>tab-id</code>) and <code>/fragments/</code> links trigger <code>dynamicBlocks(main)</code> in the lazy phase — tabs UI plus dialog overlays.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Dynamic, tabs, and modal blocks; invoke from <code>loadLazy</code> after sections render.</p>
+        <nav class="pattern-actions" aria-label="Dynamic blocks links">
+          <a class="pattern-btn" href="../use-cases/how-to-build-tabs-block.html">Cookbook · Tabs</a>
+          <a class="pattern-btn" href="../use-cases/how-to-build-modal-block.html">Modal</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/library" target="_blank" rel="noopener">Block library</a>
+        </nav>
+      </article>
+
+      <article class="pattern-entry" id="rss">
+        <h3>RSS &amp; JSON Feed syndication</h3>
+        <p class="pattern-summary">Syndicate articles from the same index the site already publishes — feeds update without rebuilds.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> A feed worker reads <code>query-index.json</code>, filters article paths, and emits RSS 2.0 and JSON Feed 1.1.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Deploy the feed worker, map index fields to feed items, set cache TTL.</p>
+        <nav class="pattern-actions" aria-label="RSS links">
+          <a class="pattern-btn pattern-btn-playbook" href="rss-and-feeds.html">Playbook</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/rss.xml" target="_blank" rel="noopener">rss.xml</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/feed.json" target="_blank" rel="noopener">feed.json</a>
+        </nav>
+      </article>
+
+      <article class="pattern-entry" id="embed">
+        <h3>Embeddable EDS content</h3>
+        <p class="pattern-summary">Mount real EDS pages inside another site — same decorate pipeline, shadow DOM host.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> <code>&lt;aem-embed url="..."&gt;</code> loads <code>.plain.html</code> and runs <code>decorateMain</code> inside a web component.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> <code>aem-embed.js</code>, <code>suppressLoadPage</code> in scripts.js, and a <code>decorateEmbed</code> hook for lazy blocks.</p>
+        <nav class="pattern-actions" aria-label="Embed links">
+          <a class="pattern-btn pattern-btn-playbook" href="embeddable-eds-content.html">Playbook</a>
+          <a class="pattern-btn pattern-btn-live" href="https://main--demo--scdemos.aem.page/tools/embed-tester/embed.html" target="_blank" rel="noopener">Embed tester</a>
+        </nav>
+      </article>
+
+      <article class="pattern-entry" id="structured-content">
+        <h3>Structured content &amp; headless JSON API</h3>
+        <p class="pattern-summary">One authored JSON model feeds the site and headless consumers.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> Schema-driven DA forms produce JSON that blocks render on pages and workers can expose as APIs.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Model schemas in DA, map block rows to fields, expose reads via worker or mhast — see <code>blocks/product-grid</code> in the demo repo.</p>
+        <nav class="pattern-actions" aria-label="Structured content links">
+          <a class="pattern-btn" href="../use-cases/how-to-build-product-grid.html">Cookbook · Product grid</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-reuse-structured-content" target="_blank" rel="noopener">Live demo</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/products" target="_blank" rel="noopener">Products</a>
+        </nav>
+      </article>
+
+      <article class="pattern-entry" id="cf-overlay">
+        <h3>Content Fragment overlay (AEM CF → EDS pages)</h3>
+        <p class="pattern-summary">Author in AEM CF; publish fully rendered EDS article pages — no duplicate HTML in DA.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> Content Fragment overlay pipes Sites-authored fragments into EDS templates and indexing.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Follow Adobe CF overlay documentation; wire article template + query index. Use the hosted demo as an integration checklist.</p>
+        <nav class="pattern-actions" aria-label="CF overlay links">
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-use-content-fragment-overlay" target="_blank" rel="noopener">Live demo</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/articles" target="_blank" rel="noopener">Articles</a>
+        </nav>
+      </article>
+    </section>
+
+    <section id="forms-workflows" class="category-section">
+      <h2>Forms &amp; workflows</h2>
+
+      <article class="pattern-entry" id="forms">
+        <h3>Worker-backed forms</h3>
+        <p class="pattern-summary">Author forms in DA; secrets stay in a worker — not in the browser.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> JSON form definitions POST to a Cloudflare Worker that forwards to Slack, n8n, or a CRM. The n8n block covers webhook-only flows.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Form block + contact worker; point the action URL at your worker — never ship API keys in client JS.</p>
+        <nav class="pattern-actions" aria-label="Forms links">
+          <a class="pattern-btn pattern-btn-playbook" href="worker-backed-forms.html">Playbook</a>
+          <a class="pattern-btn" href="../use-cases/how-to-forms.html">Cookbook · Form</a>
+          <a class="pattern-btn" href="../use-cases/how-to-build-n8n-form.html">N8N form</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-forms" target="_blank" rel="noopener">Live demo</a>
+        </nav>
+      </article>
+    </section>
+
+    <section id="authoring-da" class="category-section">
+      <h2>Authoring &amp; DA</h2>
+      <p class="category-description">Authoring affordances and site operations — many are DA-product flows; code adoption is lighter.</p>
+
+      <article class="pattern-entry" id="clone">
+        <h3>Repoless site cloning (CloneIt)</h3>
+        <p class="pattern-summary">Spin up a new DA site from a baseline without forking the GitHub repo.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> One code repo serves many DA folders. CloneIt + an IMS proxy worker copies content, config, and <code>query.yaml</code>.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Deploy the cloneit worker, configure the demosites sheet, lock down allowed origins.</p>
+        <nav class="pattern-actions" aria-label="CloneIt links">
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-clone-demo-site" target="_blank" rel="noopener">Live demo</a>
+          <a class="pattern-btn pattern-btn-live" href="https://main--demo--scdemos.aem.page/tools/cloneit/cloneit.html" target="_blank" rel="noopener">CloneIt tool</a>
+          <a class="pattern-btn" href="https://github.com/scdemos/demo/tree/main/tools/cloneit" target="_blank" rel="noopener">scdemos/demo</a>
+        </nav>
+      </article>
+
+      <article class="pattern-entry" id="localization">
+        <h3>Localization, MSM &amp; fragment locale resolution</h3>
+        <p class="pattern-summary">Locale trees and MSM rollouts — shared fragments resolve per language without duplicating every page.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> Locale folders in DA plus MSM for multi-site. The fragment loader can resolve <code>/fragments/foo</code> to <code>/es/fragments/foo</code> when it exists.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Mirror the locale tree, extend the fragment loader, validate merge vs overwrite in MSM walkthroughs.</p>
+        <nav class="pattern-actions" aria-label="Localization links">
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-manage-translations-and-rollouts" target="_blank" rel="noopener">Translations</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-use-msm" target="_blank" rel="noopener">MSM</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-localize-fragments" target="_blank" rel="noopener">Fragments</a>
+        </nav>
+      </article>
+
+      <article class="pattern-entry" id="da-authoring">
+        <h3>DA authoring, UE, Quick Edit, publish workflows</h3>
+        <p class="pattern-summary">Mostly DA product flows — light EDS code (Sidekick plugins and config).</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> Tree editing, Universal Editor, publish workflows, and asset pickers are configured in DA. EDS adds Sidekick plugins such as Quick Edit and Fragment Picker.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Configure the DA project and Sidekick; pull plugins from author-kit. Use hosted demos for narrative, official DA docs for workflow.</p>
+        <nav class="pattern-actions" aria-label="DA authoring links">
+          <a class="pattern-btn" href="../use-cases/how-to-build-quick-edit-tool.html">Cookbook · Quick Edit</a>
+          <a class="pattern-btn" href="../use-cases/how-to-build-fragment-picker-plugin.html">Fragment picker</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-use-document-authoring" target="_blank" rel="noopener">DA basics</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-author-ue" target="_blank" rel="noopener">Universal Editor</a>
+        </nav>
+      </article>
+
+      <article class="pattern-entry" id="media">
+        <h3>AEM Assets, Dynamic Media &amp; Media Library</h3>
+        <p class="pattern-summary">Centralized media in DA — blocks stay plain <code>&lt;picture&gt;</code> / img with optimized URLs.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> Pickers connect to AEM Assets, Dynamic Media, or the Media Library app inside DA.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Configure asset sources in DA; authors paste delivery URLs — no custom block pipeline required.</p>
+        <nav class="pattern-actions" aria-label="Media links">
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-use-aem-assets" target="_blank" rel="noopener">AEM Assets</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-use-dynamic-media" target="_blank" rel="noopener">Dynamic Media</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-use-media-library" target="_blank" rel="noopener">Media Library</a>
+        </nav>
+      </article>
+    </section>
+
+    <section id="commerce-interactive" class="category-section">
+      <h2>Commerce &amp; interactive</h2>
+
+      <article class="pattern-entry" id="commerce">
+        <h3>Edge Commerce (catalog &amp; PDPs)</h3>
+        <p class="pattern-summary">Commerce data in the bus; catalog and PDP rendering stay in EDS templates.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> Edge Commerce / Product Bus feeds structured JSON into product list and detail templates on the demo site.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Start from the product-grid cookbook; wire your commerce API to JSON sources (full playbook chapter planned).</p>
+        <nav class="pattern-actions" aria-label="Commerce links">
+          <a class="pattern-btn" href="../use-cases/how-to-build-product-grid.html">Cookbook · Product grid</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-use-edge-commerce" target="_blank" rel="noopener">Live demo</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/products" target="_blank" rel="noopener">Products</a>
+        </nav>
+      </article>
+
+      <article class="pattern-entry" id="calculators">
+        <h3>Interactive calculators (client-only)</h3>
+        <p class="pattern-summary">Rich calculators with no backend — Chart.js loads after idle so LCP stays clean.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> Block defaults + client-side math; <code>loadChartJs()</code> in shared.js loads charts only when needed.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Clone one calculator block, replace the math, keep the idle Chart.js loader.</p>
+        <nav class="pattern-actions" aria-label="Calculators links">
+          <a class="pattern-btn" href="../use-cases/how-to-build-savings-rate-calculator.html">Cookbook · Savings</a>
+          <a class="pattern-btn" href="../use-cases/how-to-build-compound-interest-calculator.html">Compound interest</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/tools" target="_blank" rel="noopener">Live demo</a>
+        </nav>
+      </article>
+    </section>
+
+    <section id="ai-modernization" class="category-section">
+      <h2>AI &amp; modernization</h2>
+
+      <article class="pattern-entry" id="xmod">
+        <h3>Experience modernization (theme reskin)</h3>
+        <p class="pattern-summary">Same blocks and repo, new DA content — a new vertical without a new GitHub project.</p>
+        <p class="pattern-body"><span class="pattern-kicker">How it works</span> The xmod modernization flow reskins content against the shared EDS codebase — often combined with DA site cloning for net-new verticals.</p>
+        <p class="pattern-body"><span class="pattern-kicker">What you copy</span> Use <a href="../ai-and-aem/modernization.html">AI modernization prompts</a>; see the CloneIt live demo on the hosted site for provisioning flows.</p>
+        <nav class="pattern-actions" aria-label="Modernization links">
+          <a class="pattern-btn" href="../ai-and-aem/modernization.html">AI prompts</a>
+          <a class="pattern-btn pattern-btn-live" href="https://demo.bbird.live/demo-docs/usecases/how-to-reskin-using-xmod" target="_blank" rel="noopener">Live demo</a>
+        </nav>
+      </article>
+    </section>
+
+    <section class="category-section">
+      <h2>Hosted demo hub pages</h2>
+      <p class="category-description">Entry points on <code>demo.bbird.live</code> — not implementation guides.</p>
+      <ul>
+        <li><a href="https://demo.bbird.live/demo-docs/" target="_blank" rel="noopener">Demo area home</a></li>
+        <li><a href="https://demo.bbird.live/demo-docs/usecase-showcase" target="_blank" rel="noopener">Use case showcase</a></li>
+        <li><a href="https://demo.bbird.live/demo-docs/library" target="_blank" rel="noopener">Block library (live)</a></li>
+        <li><a href="https://demo.bbird.live/demo-docs/how-to-reuse-demo-site" target="_blank" rel="noopener">Options for reusing the demo site</a></li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/playbooks/hosted-demo-map.html" target="_blank" rel="noopener">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+  <script>
+    document.querySelectorAll('.pattern-entry').forEach((entry) => {
+      const playbook = entry.querySelector('a.pattern-btn-playbook');
+      if (!playbook) return;
+      const link = document.createElement('a');
+      link.className = 'pattern-card-link';
+      link.href = playbook.href;
+      link.setAttribute('aria-label', `Open playbook: ${entry.querySelector('h3')?.textContent?.trim() || 'chapter'}`);
+      entry.classList.add('is-clickable');
+      entry.prepend(link);
+    });
+  </script>
+</body>
+</html>

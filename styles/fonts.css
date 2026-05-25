@@ -1,0 +1,5 @@
+/**
+ * Typography aligned with scdemos/demo (Montserrat + EB Garamond + JetBrains Mono).
+ * Self-hosted fonts can replace these @import URLs if you copy /demo/fonts into /fonts.
+ */
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=JetBrains+Mono:wght@400;500&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');

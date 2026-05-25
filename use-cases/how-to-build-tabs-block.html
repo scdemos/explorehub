@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="../favicon.ico" />
+  <title>How to Build a Tabs Block | AEM Edge Delivery Developer Guides</title>
+  <meta name="description" content="Section-metadata-driven tabs with horizontal scroll, hash navigation, and ARIA support." />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Tabs Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Tabs Block</h1>
+      <p class="subtitle">Section-metadata-driven tabs: each section becomes a tab panel, no nested authoring required</p>
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Navigation</span>
+        <span class="tag">Section Metadata</span>
+        <span class="tag">Dynamic Block</span>
+      </div>
+    </header>
+
+    <section>
+      <h2 id="overview">Overview</h2>
+      <p>
+        The tabs block in <code>scdemos/demo</code> is <strong>section-level</strong>, not block-level. Authors mark a sequence of sections with the same <code>data-tab-id</code>/<code>data-tab-title</code> metadata; a single empty <code>tabs</code> block placed at the start of the run collapses those sibling sections into one tabs UI at runtime.
+      </p>
+
+      <div class="info-box">
+        <strong>Where it diverges from the Block Collection tabs:</strong>
+        <ul>
+          <li>Authoring is at the <strong>section</strong> level — there is no inner table per tab.</li>
+          <li>Decoration <strong>walks sibling sections</strong> from the block's parent until it finds a non-tab section.</li>
+          <li>The block also exposes <code>createTabs(main)</code>, used by <a href="../use-cases/how-to-build-fragment-block.html"><code>blocks/dynamic/index.js</code></a> for runtime injection on any page that has tab sections.</li>
+        </ul>
+      </div>
+
+      <div class="links">
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/tabs/tabs.js" class="btn btn-secondary" target="_blank">tabs.js on GitHub</a>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/tabs/tabs.css" class="btn btn-secondary" target="_blank">tabs.css on GitHub</a>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/dynamic/index.js" class="btn btn-secondary" target="_blank">dynamic/index.js</a>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="authoring">Authoring Structure</h2>
+      <p>An author creates one section per tab and a single empty <code>tabs</code> block on the first tab section. Each section's metadata table looks like:</p>
+
+      <table class="authoring-table">
+        <thead><tr><th colspan="2">Section Metadata</th></tr></thead>
+        <tbody>
+          <tr><td>Style</td><td>Tabs</td></tr>
+          <tr><td>Tab Id</td><td>overview</td></tr>
+          <tr><td>Tab title</td><td>Overview</td></tr>
+        </tbody>
+      </table>
+
+      <p>The first section also contains the empty block table that triggers decoration:</p>
+
+      <table class="authoring-table">
+        <thead><tr><th>tabs</th></tr></thead>
+        <tbody><tr><td>(empty)</td></tr></tbody>
+      </table>
+
+      <p>Subsequent sections in the run repeat the metadata pattern with their own Tab Id / Tab title. Stop the run by adding a section <em>without</em> tab metadata.</p>
+    </section>
+
+    <section>
+      <h2 id="markup-flow">From Authoring to Rendering</h2>
+
+      <h3>Step 1 — Plain HTML the document service emits</h3>
+      <p>AEM converts each section's metadata into <code>data-tab-id</code> / <code>data-tab-title</code> attributes on the section <code>div</code>:</p>
+
+      <pre><code class="language-html">&lt;div class="section" data-tab-id="overview" data-tab-title="Overview"&gt;
+  &lt;div class="default-content-wrapper"&gt;
+    &lt;div class="tabs"&gt;&lt;div&gt;&lt;div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;p&gt;Overview content...&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" data-tab-id="features" data-tab-title="Features"&gt;
+  &lt;div class="default-content-wrapper"&gt;&lt;p&gt;Features content...&lt;/p&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" data-tab-id="pricing" data-tab-title="Pricing"&gt;
+  &lt;div class="default-content-wrapper"&gt;&lt;p&gt;Pricing content...&lt;/p&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+      <p>Note: only the <em>first</em> tab section contains a <code>tabs</code> block. The other sections are plain content.</p>
+
+      <h3>Step 2 — JavaScript collects siblings and rebuilds</h3>
+      <p>The block's <code>decorate()</code> climbs to <code>.section</code>, then walks <code>nextElementSibling</code> while sections still have <code>data-tab-id</code>:</p>
+
+      <pre><code class="language-javascript">function collectTabSections(currSection) {
+  const tabDefs = [];
+  let next = currSection.nextElementSibling;
+  while (next?.classList.contains('section')) {
+    const tabDef = getTabDefinition(next, tabDefs.length);
+    if (!tabDef) break;          // first non-tab section ends the run
+    tabDefs.push(tabDef);
+    next = next.nextElementSibling;
+  }
+  return tabDefs;
+}</code></pre>
+
+      <h3>Step 3 — Final DOM</h3>
+      <p>Each sibling section is moved into a panel under a single tabs wrapper:</p>
+
+      <pre><code class="language-html">&lt;div class="section tabs"&gt;
+  &lt;div class="tabs-wrapper"&gt;
+    &lt;div class="tabs-list" role="tablist" aria-orientation="horizontal"&gt;
+      &lt;button class="tabs-tab is-active"
+              role="tab" aria-selected="true"
+              aria-controls="desktop-panel-overview"&gt;Overview&lt;/button&gt;
+      &lt;button class="tabs-tab"
+              role="tab" aria-selected="false"
+              aria-controls="desktop-panel-features"&gt;Features&lt;/button&gt;
+      &lt;button class="tabs-tab"
+              role="tab" aria-selected="false"
+              aria-controls="desktop-panel-pricing"&gt;Pricing&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;div class="tabs-content"&gt;
+      &lt;div class="tab" role="tabpanel" aria-hidden="false"&gt;…overview section…&lt;/div&gt;
+      &lt;div class="tab" role="tabpanel" aria-hidden="true"&gt;…features section…&lt;/div&gt;
+      &lt;div class="tab" role="tabpanel" aria-hidden="true"&gt;…pricing section…&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+      <p>Inactive panels are hidden by CSS using <code>aria-hidden="true"</code> (not the HTML <code>hidden</code> attribute).</p>
+    </section>
+
+    <section>
+      <h2 id="implementation">Implementation</h2>
+
+      <h3>JavaScript — <code>blocks/tabs/tabs.js</code> (full source)</h3>
+      <pre><code class="language-javascript">import { toClassName, loadCSS } from '../../scripts/aem.js';
+
+let tabsStyleLoaded;
+
+function getTabDefinition(section, fallbackIdx = 0) {
+  const tabId = String(section.dataset?.tabId || '').trim();
+  if (!tabId) return null;
+  const title = String(section.dataset?.tabTitle || tabId).trim() || `Tab ${fallbackIdx + 1}`;
+  return {
+    id: toClassName(tabId) || `tab-${fallbackIdx + 1}`,
+    title,
+    section,
+  };
+}
+
+function collectTabSections(currSection) {
+  const tabDefs = [];
+  let next = currSection.nextElementSibling;
+  while (next?.classList.contains('section')) {
+    const tabDef = getTabDefinition(next, tabDefs.length);
+    if (!tabDef) break;
+    tabDefs.push(tabDef);
+    next = next.nextElementSibling;
+  }
+  return tabDefs;
+}
+
+function findTabGroups(main) {
+  const sections = [...main.querySelectorAll('.section[data-tab-id]')]
+    .filter((s) => !s.closest('.tabs-wrapper'));
+  return sections.length ? [sections] : [];
+}
+
+function updateTabState(tabDefs, selectedId, tabButtons, tabPanels) {
+  tabDefs.forEach((tabDef) => {
+    const isSelected = tabDef.id === selectedId;
+    const button = tabButtons[tabDef.id];
+    const panel = tabPanels[tabDef.id];
+    if (button) {
+      button.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      button.classList.toggle('is-active', isSelected);
+    }
+    if (panel) {
+      panel.setAttribute('aria-hidden', isSelected ? 'false' : 'true');
+    }
+  });
+}
+
+function scrollActiveTab(button, tabList) {
+  const listRect = tabList.getBoundingClientRect();
+  const btnRect = button.getBoundingClientRect();
+  const btnStart = btnRect.left - listRect.left + tabList.scrollLeft;
+  const offset = btnStart - (tabList.clientWidth - button.offsetWidth) / 2;
+  tabList.scrollLeft = Math.max(0, offset);
+}
+
+function buildTabsUI(tabDefs, tabsContainer, sectionId = '') {
+  const hash = window.location.hash.replace('#', '').toLowerCase();
+  const selectedId = tabDefs.find((tabDef) => tabDef.id === hash)?.id || tabDefs[0]?.id;
+
+  const tabsWrapper = document.createElement('div');
+  tabsWrapper.className = 'tabs-wrapper';
+
+  const tabList = document.createElement('div');
+  tabList.className = 'tabs-list';
+  tabList.setAttribute('role', 'tablist');
+  tabList.setAttribute('aria-orientation', 'horizontal');
+
+  const tabContent = document.createElement('div');
+  tabContent.className = 'tabs-content';
+
+  const tabButtons = {};
+  const tabPanels = {};
+
+  tabDefs.forEach((tabDef) => {
+    const baseId = `${tabDef.id}${sectionId ? `-${sectionId}` : ''}`;
+    const buttonId = `desktop-${baseId}`;
+    const panelId = `desktop-panel-${baseId}`;
+    const isSelected = tabDef.id === selectedId;
+
+    const button = document.createElement('button');
+    button.className = 'tabs-tab';
+    button.id = buttonId;
+    button.type = 'button';
+    button.role = 'tab';
+    button.setAttribute('aria-controls', panelId);
+    button.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+    button.classList.toggle('is-active', isSelected);
+    button.textContent = tabDef.title;
+
+    const panel = document.createElement('div');
+    panel.className = 'tab';
+    panel.id = panelId;
+    panel.role = 'tabpanel';
+    panel.setAttribute('aria-labelledby', buttonId);
+    panel.setAttribute('aria-hidden', isSelected ? 'false' : 'true');
+    panel.append(tabDef.section);
+
+    button.addEventListener('click', () => {
+      updateTabState(tabDefs, tabDef.id, tabButtons, tabPanels);
+      scrollActiveTab(button, tabList);
+      window.history.pushState({}, '', `${window.location.pathname}#${tabDef.id}`);
+    });
+
+    tabButtons[tabDef.id] = button;
+    tabPanels[tabDef.id] = panel;
+    tabList.append(button);
+    tabContent.append(panel);
+  });
+
+  tabsWrapper.append(tabList, tabContent);
+  const activeButton = tabButtons[selectedId];
+  if (activeButton) {
+    requestAnimationFrame(() => scrollActiveTab(activeButton, tabList));
+  }
+  return tabsWrapper;
+}
+
+export default function decorate(block) {
+  const currSection = block.closest('.section');
+  if (!currSection) return;
+  const tabDefs = collectTabSections(currSection);
+  if (!tabDefs.length) return;
+  currSection.classList.add('tabs');
+  tabDefs.forEach((def) => def.section.classList.remove('tabs'));
+  const tabsUI = buildTabsUI(tabDefs, currSection, currSection.id || '');
+  block.replaceChildren(tabsUI);
+}
+
+export async function createTabs(main) {
+  if (!main) return;
+  if (!tabsStyleLoaded) {
+    tabsStyleLoaded = loadCSS(`${window.hlx.codeBasePath}/blocks/tabs/tabs.css`);
+  }
+  await tabsStyleLoaded;
+  const tabGroups = findTabGroups(main);
+  tabGroups.forEach((group) => buildTabsFromSections(group));
+}
+
+function buildTabsFromSections(tabSections) {
+  if (!tabSections.length) return;
+  const first = tabSections[0];
+  const parent = first.parentNode;
+  if (!parent) return;
+  const tabDefs = tabSections
+    .map((section, index) => getTabDefinition(section, index))
+    .filter(Boolean);
+  if (!tabDefs.length) return;
+  tabDefs.forEach((def) => def.section.classList.remove('tabs'));
+  const tabsContainer = document.createElement('div');
+  tabsContainer.className = 'section tabs';
+  parent.insertBefore(tabsContainer, first);
+  const tabsUI = buildTabsUI(tabDefs, tabsContainer, first.id || '');
+  tabsContainer.append(tabsUI);
+}</code></pre>
+
+      <h3>CSS — Heritage Elite styling</h3>
+      <p>The full CSS lives in <a href="https://github.com/scdemos/demo/blob/main/blocks/tabs/tabs.css" target="_blank">blocks/tabs/tabs.css</a>. The headline rules:</p>
+
+      <pre><code class="language-css">/* Break out of constrained content area to span viewport */
+main .section.tabs,
+main .section .tabs {
+  width: 100vw;
+  max-width: none;
+  margin-inline: calc(50% - 50vw);
+}
+
+/* Tab list — uppercase, gold underline, horizontal scroll */
+.tabs .tabs-list {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: var(--border-heritage);
+  max-width: 900px;
+  margin: 0 auto var(--space-l);
+}
+
+.tabs .tabs-list button {
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: light-dark(var(--color-ink), var(--color-muted));
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 16px 18px;
+  opacity: 0.5;
+  transition: opacity 0.35s, color 0.35s, border-color 0.35s;
+  white-space: nowrap;
+}
+
+.tabs .tabs-list button.is-active,
+.tabs .tabs-list button[aria-selected='true'] {
+  color: light-dark(var(--color-rust), var(--color-rust-bright));
+  opacity: 1;
+  border-bottom-color: light-dark(var(--color-rust), var(--color-rust-bright));
+}
+
+/* Panel visibility uses aria-hidden, not [hidden] */
+.tabs .tab[role='tabpanel'] { display: none; }
+.tabs .tab[role='tabpanel'][aria-hidden='false'] { display: block; }</code></pre>
+    </section>
+
+    <section>
+      <h2 id="how-it-works">How It Works</h2>
+
+      <pre class="mermaid">
+flowchart TD
+  Author["Author marks sections<br/>Style: Tabs"]
+  --> Plain[".plain.html<br/>data-tab-id on .section"]
+  --> Decorate["blocks/tabs/tabs.js<br/>decorate() collects siblings"]
+  --> UI[buildTabsUI]
+  UI --> Hash{URL hash<br/>matches tab id?}
+  Hash -->|yes| SelHash[Select that tab]
+  Hash -->|no| SelFirst[Select first tab]
+  SelHash --> Render[Render tabs-wrapper]
+  SelFirst --> Render
+  Render --> Click[user clicks tab]
+  Click --> State[updateTabState<br/>aria-selected / aria-hidden]
+  State --> Push[history.pushState<br/>#tab-id]
+  State --> Scroll[scrollActiveTab<br/>center in tabs-list]
+      </pre>
+
+      <h3>Two entry points</h3>
+      <ul>
+        <li><strong><code>decorate(block)</code></strong> — runs when the author placed an explicit empty <code>tabs</code> block in the first tab section.</li>
+        <li><strong><code>createTabs(main)</code></strong> — exported helper. Loaded by <code>blocks/dynamic/index.js</code> in <code>loadEager</code>; converts any orphan run of <code>.section[data-tab-id]</code> into tabs even without an authored block.</li>
+      </ul>
+
+      <h3>State updates</h3>
+      <ul>
+        <li>Active panel is shown via <code>aria-hidden="false"</code> + a CSS rule. Inactive panels keep <code>aria-hidden="true"</code> and are hidden by CSS.</li>
+        <li>Click handlers run <code>history.pushState</code> with the tab id. There is <strong>no</strong> <code>popstate</code> listener — back/forward does not change the active tab.</li>
+        <li>On initial load the matching hash (if any) selects that tab and <code>requestAnimationFrame</code> centers it in the scroll list.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="testing">Testing</h2>
+      <table>
+        <thead><tr><th>Test Case</th><th>Expected Result</th></tr></thead>
+        <tbody>
+          <tr><td>Load page</td><td>First tab selected, panel visible, others <code>aria-hidden="true"</code></td></tr>
+          <tr><td>Load <code>?path#features</code></td><td>Features tab selected and centered in the scroll list</td></tr>
+          <tr><td>Click any tab</td><td>Tab gains <code>is-active</code>, panel becomes visible, URL hash updates via <code>pushState</code></td></tr>
+          <tr><td>Many tabs</td><td>Tab list scrolls horizontally; clicked tab is centered</td></tr>
+          <tr><td>Keyboard focus</td><td>Buttons reachable via Tab key, gold <code>:focus-visible</code> outline</td></tr>
+          <tr><td>Add a non-tab section after the run</td><td>Tabs stop at the boundary; following content renders normally</td></tr>
+          <tr><td>Run without an authored <code>tabs</code> block</td><td><code>createTabs(main)</code> in <code>blocks/dynamic/index.js</code> still wires it up</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2 id="customization">Customization Ideas</h2>
+      <ul>
+        <li><strong>Arrow-key navigation</strong> — the demo source does not implement it; if needed, listen for <code>ArrowLeft</code>/<code>ArrowRight</code> on <code>.tabs-list</code> and call the existing <code>updateTabState</code> + <code>scrollActiveTab</code>.</li>
+        <li><strong>Browser back/forward sync</strong> — add a <code>window.addEventListener('popstate', ...)</code> handler that re-runs <code>updateTabState</code> from <code>location.hash</code>.</li>
+        <li><strong>Tab icons</strong> — read an extra <code>data-tab-icon</code> from the section metadata and prepend an <code>&lt;span class="icon icon-..."&gt;</code> to the button.</li>
+        <li><strong>Vertical orientation</strong> — add a <code>.tabs.vertical</code> variant and rotate the flex direction; remove the viewport breakout.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="best-practices">Notes &amp; Gotchas</h2>
+      <ul>
+        <li>Tabs are a <strong>section-level</strong> pattern. Authors do not nest content inside a single block table.</li>
+        <li>Inactive panels are still in the DOM — they are visually hidden but assistive tech can reach them. Use <code>aria-hidden</code> rather than <code>hidden</code> to allow CSS transitions if you add them.</li>
+        <li><code>createTabs(main)</code> is also called by <code>blocks/dynamic/index.js</code>, so a plain page with sibling tab sections gets tabbed even with no authored block.</li>
+        <li>The CSS uses <code>margin-inline: calc(50% - 50vw)</code> to break out of the constrained section width. Beware of horizontal-overflow on the parent container.</li>
+        <li>UE: <a href="https://github.com/scdemos/demo/blob/main/ue/models/blocks/tabs.json" target="_blank"><code>ue/models/blocks/tabs.json</code></a> models the empty block; section-level metadata is configured via <a href="https://github.com/scdemos/demo/blob/main/ue/models/section.json" target="_blank"><code>section.json</code></a> (Style/Tab Id/Tab title fields).</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="resources">Additional Resources</h2>
+      <ul>
+        <li><a href="https://www.aem.live/developer/markup-sections-blocks" target="_blank">AEM: sections &amp; blocks</a></li>
+        <li><a href="https://www.w3.org/WAI/ARIA/apg/patterns/tabs/" target="_blank">WAI-ARIA Tabs Pattern</a></li>
+        <li><a href="../use-cases/how-to-build-modal-block.html">Modal Block (also routed through dynamic/index.js)</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>run disney | Case studies | EDS Reference Playbook</title>
+  <meta name="description" content="Sample case study: runDisney on AEM Edge Delivery Services — events, registration, and seasonal campaigns.">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Case studies</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">run disney</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip">Case study</span>
+      <h1>run disney</h1>
+      <p class="subtitle">runDisney — race events, registration journeys, and seasonal campaigns on AEM Edge Delivery Services.</p>
+      <div class="metadata">
+        <span class="tag">Events</span>
+        <span class="tag">Registration</span>
+      </div>
+      <p><a class="btn btn-primary" href="https://www.rundisney.com/" target="_blank" rel="noopener">Visit live site</a></p>
+    </header>
+
+    <p class="case-study-draft"><strong>Draft / sample content.</strong> Event and form flows described are structural placeholders for a future polished case study.</p>
+
+    <section id="overview" class="chapter-section">
+      <h2>Overview</h2>
+      <p>runDisney promotes marathons and experiences tied to Disney parks. The site mixes inspirational storytelling, event detail pages, and registration flows that spike traffic around race calendars. EDS lets marketing rotate campaigns while forms and integrations stay maintainable (sample).</p>
+      <p>Reference for <strong>event-led consumer brands</strong>: seasonal heroes, countdown modules, and worker-backed forms.</p>
+    </section>
+
+    <section id="snapshot" class="chapter-section">
+      <h2>Customer snapshot</h2>
+      <dl class="case-study-facts">
+        <dt>Industry</dt><dd>Events / travel experiences</dd>
+        <dt>Primary domain</dt><dd>rundisney.com</dd>
+        <dt>EDS scope</dt><dd>Event hubs, registration, training content (sample)</dd>
+        <dt>Authoring</dt><dd>Document Authoring (sample)</dd>
+        <dt>Scale signal</dt><dd>Seasonal traffic peaks, campaign swaps (sample)</dd>
+        <dt>Integrations</dt><dd>Registration backends, email, analytics (sample)</dd>
+      </dl>
+    </section>
+
+    <section id="challenge" class="chapter-section">
+      <h2>Business challenge</h2>
+      <p>Teams launch races on predictable calendars but need agility for creative campaigns, pricing changes, and sold-out states. Registration must feel on-brand while posting data securely to downstream systems.</p>
+      <ul>
+        <li>Swap homepage and event heroes without redeploying code.</li>
+        <li>Capture registrations with validation and bot protection (sample).</li>
+        <li>Personalize promos by audience or geography (sample).</li>
+      </ul>
+    </section>
+
+    <section id="solution" class="chapter-section">
+      <h2>Solution on EDS</h2>
+      <p>Marketing pages are block-composed in DA; forms post to edge workers that hold secrets and integrate with CRM or event platforms. Experimentation may gate hero modules or CTAs during enrollment windows (sample).</p>
+      <ul>
+        <li>Event detail templates with schedule, FAQ, and CTA blocks.</li>
+        <li>JSON-defined forms rendered in blocks, processed by workers.</li>
+        <li>Campaign sections with metadata-driven backgrounds and typography.</li>
+      </ul>
+    </section>
+
+    <section id="highlights" class="chapter-section">
+      <h2>Technical highlights</h2>
+      <div class="case-study-highlights">
+        <article class="case-study-highlight">
+          <h3>Seasonal campaign heroes</h3>
+          <p>Full-bleed imagery and countdown-style promos — inspect homepage before/after major race announcements.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Worker-backed registration</h3>
+          <p>Forms never expose API keys in the browser — <a href="../playbooks/worker-backed-forms.html">Worker-backed forms</a> playbook.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Experimentation on CTAs (sample)</h3>
+          <p>A/B modules on registration paths — <a href="../playbooks/experimentation-and-personalization.html">Experimentation playbook</a>.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>Architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Marketing[Marketing] --> DA[DA]
+  DA --> EDS[EDS pages]
+  Visitor[Runner / guest] --> EDS
+  Visitor --> Form[Form block]
+  Form --> Worker[Cloudflare Worker]
+  Worker --> CRM[Registration API]
+      </pre>
+      <p>Public pages are static-fast from EDS; submissions hit workers for validation and server-side integration (sample).</p>
+    </section>
+
+    <section id="outcomes" class="chapter-section">
+      <h2>Outcomes</h2>
+      <p><em>Sample metrics — replace when verified.</em></p>
+      <div class="case-study-metrics">
+        <div class="case-study-metric"><strong>Minutes</strong><span>Homepage campaign swaps (sample)</span></div>
+        <div class="case-study-metric"><strong>99.9%</strong><span>Form submission success during peaks (sample)</span></div>
+        <div class="case-study-metric"><strong>0</strong><span>Secrets in client-side form code (sample)</span></div>
+      </div>
+    </section>
+
+    <section id="lessons" class="chapter-section">
+      <h2>Lessons &amp; what to inspect</h2>
+      <ul>
+        <li>Registration funnel: field validation UX and error states.</li>
+        <li>Network tab on submit — calls go to worker endpoints, not raw third-party keys.</li>
+        <li>Event pages: block structure for schedules, FAQs, and secondary CTAs.</li>
+      </ul>
+    </section>
+
+    <section id="related" class="chapter-section">
+      <h2>Related playbook &amp; cookbook</h2>
+      <ul>
+        <li><a href="../playbooks/worker-backed-forms.html">Worker-backed forms</a></li>
+        <li><a href="../playbooks/experimentation-and-personalization.html">Experimentation &amp; personalization</a></li>
+        <li><a href="../use-cases/how-to-forms.html">Forms (cookbook)</a></li>
+        <li><a href="../use-cases/how-to-build-hero-block.html">Hero block</a></li>
+      </ul>
+    </section>
+
+    <section id="resources" class="chapter-section">
+      <h2>Resources</h2>
+      <ul>
+        <li><a href="https://www.rundisney.com/" target="_blank" rel="noopener">Production site — rundisney.com</a></li>
+        <li><a href="../playbooks/worker-backed-forms.html">Worker-backed forms chapter</a></li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/case-studies/run-disney.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

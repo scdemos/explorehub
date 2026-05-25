@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>DA / AEM MCP | EDS Reference Playbook</title>
+  <meta name="description" content="Connect Document Authoring (and AEM Admin API) to Cursor, Claude Desktop, and other MCP-aware clients via Model Context Protocol. Authentication, permissions, common operations.">
+
+  <meta property="og:title" content="DA / AEM MCP | EDS Reference Playbook">
+  <meta property="og:description" content="Wire DA Admin to Cursor and Claude Desktop via MCP — list, read, write content from chat.">
+  <meta property="og:type" content="article">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css">
+  <script src="../scripts/prism-simple.js"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">AI and AEM</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">DA / AEM MCP</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-ai">AI &amp; AEM</span>
+      <h1>DA / AEM Model Context Protocol</h1>
+      <p class="subtitle">Connect Document Authoring (and the Helix Admin API) to MCP-aware clients — Cursor, Claude Desktop, Codex CLI — so the agent can <em>list / read / create / update</em> content alongside your code.</p>
+      <div class="metadata">
+        <span class="tag">MCP</span>
+        <span class="tag">DA</span>
+        <span class="tag">Cursor</span>
+        <span class="tag">Claude Desktop</span>
+        <span class="tag">Helix Admin API</span>
+      </div>
+    </header>
+
+    <div class="alert alert-warning">
+      <strong>Evolving area.</strong> The DA team ships an official MCP server that we link below. Treat this page as orientation: the canonical install / config commands live in the upstream repo and may change between versions.
+    </div>
+
+    <section id="why" class="chapter-section">
+      <h2>Why MCP for AEM?</h2>
+      <p>MCP lets your AI editor "speak" the same protocol as your CMS. Instead of:</p>
+      <ol>
+        <li>Pasting URLs, then asking the agent to write fetch code,</li>
+        <li>Then running it locally against an unstable API surface,</li>
+      </ol>
+      <p>You wire DA in once, and the agent can list folders, read drafts, create pages, copy fragments — using the same auth your browser session has. No glue code, no leaked tokens.</p>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>How an MCP-connected workflow looks</h2>
+      <pre><code class="language-text">User in Cursor:    "Create a /products/widget-x page from /templates/product-template.
+                    Set title to 'Widget X' and replace the hero image with /assets/widget-x.jpg."
+
+Cursor → DA MCP:   list /scdemos/demo/templates
+                  → daFetch /source/scdemos/demo/templates/product-template.html
+                  → POST /source/scdemos/demo/products/widget-x.html with rewritten body
+
+DA admin.da.live: persists, returns success. Cursor reports back.</code></pre>
+    </section>
+
+    <section id="install-da-mcp" class="chapter-section">
+      <h2>1. DA MCP — install &amp; auth</h2>
+      <p>The DA team maintains the canonical MCP server. Install instructions, supported tools, and current auth flow live in the linked repo:</p>
+      <ul>
+        <li><a href="https://github.com/adobe/da-mcp" target="_blank"><strong>adobe/da-mcp</strong></a> (canonical DA MCP server)</li>
+        <li><a href="https://docs.da.live/developers/mcp" target="_blank">DA MCP developer docs</a></li>
+      </ul>
+
+      <h3>Cursor configuration</h3>
+      <p>Add to <code>~/.cursor/mcp.json</code> (global) or <code>.cursor/mcp.json</code> (per-project):</p>
+      <pre><code class="language-json">{
+  "mcpServers": {
+    "da-live": {
+      "command": "npx",
+      "args": ["-y", "@adobe/da-mcp"],
+      "env": {
+        "DA_TOKEN": "${DA_TOKEN}"
+      }
+    }
+  }
+}</code></pre>
+
+      <h3>Claude Desktop configuration</h3>
+      <p>Add to <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (macOS):</p>
+      <pre><code class="language-json">{
+  "mcpServers": {
+    "da-live": {
+      "command": "npx",
+      "args": ["-y", "@adobe/da-mcp"]
+    }
+  }
+}</code></pre>
+      <p>Restart Cursor / Claude Desktop after editing. The MCP server appears in the tool palette; the agent calls it when the user's intent matches.</p>
+    </section>
+
+    <section id="helix-admin-mcp" class="chapter-section">
+      <h2>2. Helix Admin API via MCP (optional)</h2>
+      <p>For preview / publish / unpublish / sites config, you can stand up a Helix Admin MCP server. There's an emerging community implementation; the same pattern as DA: a single binary that exposes API calls as MCP tools, requires a token in env.</p>
+      <p>If you don't want to run another server, the <a href="https://github.com/scdemos/demo/tree/main/workers/cloneit_token" target="_blank" rel="noopener">CloneIt token worker</a> in <code>scdemos/demo</code> shows how to call Helix Admin via IMS <code>client_credentials</code> — wrap the same pattern as an MCP tool for agents.</p>
+    </section>
+
+    <section id="permissions" class="chapter-section">
+      <h2>Permissions &amp; safety</h2>
+      <ul>
+        <li><strong>Use a dev / sandbox org first.</strong> Don't point your agent at a production DA org while you're learning what tool calls it makes.</li>
+        <li><strong>Scope the token narrowly.</strong> A read-only token is plenty for "summarize my pages" workflows. Reserve write tokens for explicit migration sessions.</li>
+        <li><strong>Audit tool calls.</strong> Cursor + Claude Desktop both show a permission prompt when an MCP tool is called. Don't auto-approve writes.</li>
+        <li><strong>Rotate tokens.</strong> MCP config files end up in dotfile syncs, screen recordings, and pair-programming sessions. Treat them like SSH keys.</li>
+      </ul>
+    </section>
+
+    <section id="common-flows" class="chapter-section">
+      <h2>Common MCP-driven flows</h2>
+      <div class="card-grid">
+        <article class="guide-card">
+          <h3>Bulk metadata edit</h3>
+          <p>"Update the og:image on every article under /learn/ to use the new brand banner." Agent lists the folder, reads each, rewrites &lt;meta&gt;, writes back.</p>
+        </article>
+        <article class="guide-card">
+          <h3>Cross-site fragment copy</h3>
+          <p>"Copy /fragments/footer from siteA to siteB and rewrite the social links." DA MCP supports <code>copy</code>; agent applies the rewrite in flight.</p>
+        </article>
+        <article class="guide-card">
+          <h3>Lint authored content</h3>
+          <p>"List pages where the H1 doesn't match the page title." Agent walks query-index, fetches each page, compares, outputs report.</p>
+        </article>
+        <article class="guide-card">
+          <h3>Seed a demo</h3>
+          <p>After provisioning a demo site (see <a href="../playbooks/hosted-demo-map.html#clone">Demo Site - Library · CloneIt</a>), have the agent populate the new site with sample content from a brief.</p>
+        </article>
+      </div>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/ai-and-aem/mcp.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

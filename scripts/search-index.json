@@ -1,0 +1,456 @@
+{
+  "version": 1,
+  "generated": "2026-05-26",
+  "entries": [
+    {
+      "lane": "getting-started",
+      "category": "hub",
+      "title": "Explore Hub",
+      "description": "Unified search and entry point for playbooks, cookbook blocks, plugins, AI skills, and references.",
+      "path": "index.html",
+      "tags": ["hub", "search", "home", "explore"]
+    },
+    {
+      "lane": "playbook",
+      "category": "catalog",
+      "title": "Playbook chapters",
+      "description": "Index of use-case playbooks — gated content, search, JSON2HTML, forms, feeds, embed.",
+      "path": "playbooks/index.html",
+      "tags": ["playbooks", "index", "recipes"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Cookbook — Blocks",
+      "description": "20 block-by-block implementation guides for authored tables in scdemos/demo.",
+      "path": "cookbook/index.html",
+      "tags": ["cookbook", "blocks", "index"]
+    },
+    {
+      "lane": "ai",
+      "category": "ai",
+      "title": "AI and AEM overview",
+      "description": "Skills, prompts, MCP, and modernization patterns for AI-assisted EDS development.",
+      "path": "ai-and-aem/index.html",
+      "tags": ["ai", "skills", "mcp", "index"]
+    },
+    {
+      "lane": "references",
+      "category": "references",
+      "title": "External references",
+      "description": "Canonical AEM, DA, and Helix documentation links — we point, not duplicate.",
+      "path": "references/index.html",
+      "tags": ["docs", "aem.live", "da.live", "links"]
+    },
+    {
+      "lane": "case-study",
+      "category": "catalog",
+      "title": "Case studies",
+      "description": "Production EDS sites — cmegroup, revolt, volvo, crn, run disney, jet2.",
+      "path": "case-studies/index.html",
+      "tags": ["case-study", "production", "customers", "live-sites"]
+    },
+    {
+      "lane": "case-study",
+      "category": "sites",
+      "title": "cmegroup.com",
+      "description": "CME Group financial markets site on AEM Edge Delivery Services.",
+      "path": "case-studies/cmegroup.html",
+      "tags": ["cmegroup", "finance", "enterprise"]
+    },
+    {
+      "lane": "case-study",
+      "category": "sites",
+      "title": "revolt.tv",
+      "description": "Revolt media brand on AEM Edge Delivery Services.",
+      "path": "case-studies/revolt.html",
+      "tags": ["revolt", "media", "entertainment"]
+    },
+    {
+      "lane": "case-study",
+      "category": "sites",
+      "title": "volvo",
+      "description": "Volvo Cars global brand site on AEM Edge Delivery Services.",
+      "path": "case-studies/volvo.html",
+      "tags": ["volvo", "automotive", "volvocars"]
+    },
+    {
+      "lane": "case-study",
+      "category": "sites",
+      "title": "crn.com",
+      "description": "CRN B2B publishing on AEM Edge Delivery Services.",
+      "path": "case-studies/crn.html",
+      "tags": ["crn", "publishing", "b2b", "editorial"]
+    },
+    {
+      "lane": "case-study",
+      "category": "sites",
+      "title": "run disney",
+      "description": "runDisney events and registration on AEM Edge Delivery Services.",
+      "path": "case-studies/run-disney.html",
+      "tags": ["rundisney", "disney", "events", "forms"]
+    },
+    {
+      "lane": "case-study",
+      "category": "sites",
+      "title": "jet2",
+      "description": "Jet2 travel and holidays on AEM Edge Delivery Services.",
+      "path": "case-studies/jet2.html",
+      "tags": ["jet2", "travel", "holidays", "airline"]
+    },
+    {
+      "lane": "playbook",
+      "category": "catalog",
+      "title": "Demo Site - Library",
+      "description": "demo.bbird.live use-case library — links to playbook chapters, cookbook blocks, and live demos without duplicating SC scripts.",
+      "path": "playbooks/hosted-demo-map.html",
+      "tags": ["catalog", "demo-docs", "hosted-demo", "demo-site-library", "library", "adoption", "use-cases"]
+    },
+    {
+      "lane": "playbook",
+      "category": "experience-patterns",
+      "title": "Gated content",
+      "description": "Cloudflare Access + CDN HTML rewriting + author-only preview toggle for member-only pages.",
+      "path": "playbooks/gated-content.html",
+      "tags": ["auth", "workers", "cdn", "cloudflare-access", "preview"]
+    },
+    {
+      "lane": "playbook",
+      "category": "experience-patterns",
+      "title": "Search & discovery",
+      "description": "Faceted search and content recommendations powered by query-index.json.",
+      "path": "playbooks/search-and-discovery.html",
+      "tags": ["search", "query-index", "discovery", "facets"]
+    },
+    {
+      "lane": "playbook",
+      "category": "experience-patterns",
+      "title": "Experimentation & personalization",
+      "description": "Privacy-first A/B + audiences, phased Adobe Target / WebSDK without blocking LCP.",
+      "path": "playbooks/experimentation-and-personalization.html",
+      "tags": ["a/b", "experimentation", "target", "martech", "audiences"]
+    },
+    {
+      "lane": "playbook",
+      "category": "dynamic-content",
+      "title": "Structured JSON → dynamic HTML",
+      "description": "One JSON source + Mustache template = unlimited list + detail pages. mhast fallback for .json.",
+      "path": "playbooks/json2html-dynamic-pages.html",
+      "tags": ["json2html", "templates", "mhast", "dynamic", "events", "article"]
+    },
+    {
+      "lane": "playbook",
+      "category": "dynamic-content",
+      "title": "RSS / JSON Feed syndication",
+      "description": "A worker that turns query-index into RFC-compliant RSS 2.0 + JSON Feed 1.1 endpoints.",
+      "path": "playbooks/rss-and-feeds.html",
+      "tags": ["workers", "rss", "json-feed", "syndication", "seo"]
+    },
+    {
+      "lane": "playbook",
+      "category": "dynamic-content",
+      "title": "Embeddable EDS content",
+      "description": "A web component that mounts a Helix page or block inside any external surface.",
+      "path": "playbooks/embeddable-eds-content.html",
+      "tags": ["web-component", "embed", "headless", "shadow-dom"]
+    },
+    {
+      "lane": "playbook",
+      "category": "forms-workflows",
+      "title": "Worker-backed forms",
+      "description": "JSON form definition → Cloudflare Worker → Slack / n8n / CRM. Hide secrets server-side.",
+      "path": "playbooks/worker-backed-forms.html",
+      "tags": ["forms", "workers", "slack", "n8n", "secrets"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Hero",
+      "description": "Light/dark image and video pairs, tagline detection, LCP optimization.",
+      "path": "use-cases/how-to-build-hero-block.html",
+      "tags": ["hero", "lcp", "video", "theming"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Cards",
+      "description": "Default + Links + Bento variants. Query-index integration for Links.",
+      "path": "use-cases/how-to-build-cards-block.html",
+      "tags": ["cards", "bento", "query-index", "variants"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Tabs",
+      "description": "Section-metadata-driven tabs with hash navigation and Heritage Elite styling.",
+      "path": "use-cases/how-to-build-tabs-block.html",
+      "tags": ["tabs", "section-metadata", "navigation", "dynamic"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Modal",
+      "description": "Fragment-link interception, dialog overlay, scroll lock, focus restore.",
+      "path": "use-cases/how-to-build-modal-block.html",
+      "tags": ["modal", "dialog", "fragments", "dynamic"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Embed",
+      "description": "YouTube, Vimeo, Twitter with lazy loading and placeholder.",
+      "path": "use-cases/how-to-build-embed-block.html",
+      "tags": ["embed", "media", "video", "lazy-load"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Fragment",
+      "description": "Fragment loader powering header / footer / 404 / modal content reuse.",
+      "path": "use-cases/how-to-build-fragment-block.html",
+      "tags": ["fragment", "reuse", "header", "footer"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Columns",
+      "description": "Responsive flex layout with auto column counting.",
+      "path": "use-cases/how-to-build-columns-block.html",
+      "tags": ["columns", "layout", "responsive"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Table",
+      "description": "Semantic thead/tbody, data-align, data-valign, no-header variant.",
+      "path": "use-cases/how-to-build-table-block.html",
+      "tags": ["table", "data", "semantic"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Teaser",
+      "description": "CSS-only teaser with image-backdrop variant for login screens.",
+      "path": "use-cases/how-to-build-teaser-block.html",
+      "tags": ["teaser", "css-only"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Form",
+      "description": "JSON-driven form builder with conditional fields and remote submission.",
+      "path": "use-cases/how-to-forms.html",
+      "tags": ["form", "json", "validation"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Quiz",
+      "description": "Slider-based quiz with progress tracking and lesson-completion flag.",
+      "path": "use-cases/how-to-build-quiz-block.html",
+      "tags": ["quiz", "interactive", "education"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "FAQ",
+      "description": "Accordion with FAQ index JSON and schema.org FAQPage extension.",
+      "path": "use-cases/how-to-build-faq.html",
+      "tags": ["faq", "accordion", "schema.org", "seo"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Journey Map",
+      "description": "Sequential progressive-disclosure step list with completion gating.",
+      "path": "use-cases/how-to-build-journey-map.html",
+      "tags": ["journey-map", "progress", "gated"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Related Articles",
+      "description": "Keyword + query-index recommendations with bento variant.",
+      "path": "use-cases/how-to-build-related-articles.html",
+      "tags": ["related-articles", "discovery", "bento"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Product Grid",
+      "description": "JSON-driven product cards with CAD prices and relative image resolution.",
+      "path": "use-cases/how-to-build-product-grid.html",
+      "tags": ["product-grid", "commerce", "json"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Auth Toggle",
+      "description": "Floating author-only panel for previewing gated content states.",
+      "path": "use-cases/how-to-build-auth-toggle.html",
+      "tags": ["auth", "preview", "gated"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "N8N Form",
+      "description": "Configurable form that POSTs to any n8n webhook with optional Bearer auth.",
+      "path": "use-cases/how-to-build-n8n-form.html",
+      "tags": ["n8n", "form", "webhook", "bearer"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Compound Interest Calculator",
+      "description": "Chart.js growth projections with yearly breakdown.",
+      "path": "use-cases/how-to-build-compound-interest-calculator.html",
+      "tags": ["calculator", "chart.js", "fire"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Net Worth Calculator",
+      "description": "Assets, liabilities, emergency-fund readiness with Canadian account types.",
+      "path": "use-cases/how-to-build-networth-calculator.html",
+      "tags": ["calculator", "fire", "wealth"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "blocks",
+      "title": "Savings Rate Calculator",
+      "description": "Years-to-FI calculator with provincial tax estimation.",
+      "path": "use-cases/how-to-build-savings-rate-calculator.html",
+      "tags": ["calculator", "fire", "savings"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "patterns",
+      "title": "Plugins, tools & patterns",
+      "description": "DA plugins, Sidekick tools, site features, and scripts.js — separate from block-by-block cookbook.",
+      "path": "cookbook/patterns.html",
+      "tags": ["plugins", "tools", "patterns", "platform", "da-sdk"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "plugins",
+      "title": "Fragment Picker plugin",
+      "description": "Two-panel tree + live preview. Inserts a fragment link via DA SDK.",
+      "path": "use-cases/how-to-build-fragment-picker-plugin.html",
+      "tags": ["da-sdk", "plugin", "fragments", "tree"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "plugins",
+      "title": "Tags plugin",
+      "description": "Multi-select picker fetching from a centralized tagging.json.",
+      "path": "use-cases/how-to-build-tags-plugin.html",
+      "tags": ["da-sdk", "plugin", "tags", "metadata"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "plugins",
+      "title": "Quick Edit tool",
+      "description": "Lightweight loader that wires DA Universal Editor quick-edit overlay.",
+      "path": "use-cases/how-to-build-quick-edit-tool.html",
+      "tags": ["da", "ue", "quick-edit"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "features",
+      "title": "Search page",
+      "description": "Faceted search with filtering, sorting, and pagination over query-index.",
+      "path": "use-cases/how-to-author-search-page.html",
+      "tags": ["search", "query-index"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "features",
+      "title": "Experimentation",
+      "description": "A/B tests, audience targeting, campaigns with RUM integration.",
+      "path": "use-cases/how-to-use-experimentation.html",
+      "tags": ["a/b", "experimentation", "audiences"]
+    },
+    {
+      "lane": "cookbook",
+      "category": "platform",
+      "title": "Page Load & scripts.js",
+      "description": "Eager / lazy / delayed phases, LCP, Sidekick, quick-edit, embeds, section metadata.",
+      "path": "use-cases/how-to-page-load-scripts-js.html",
+      "tags": ["core", "performance", "lcp", "phases"]
+    },
+
+    {
+      "lane": "ai",
+      "category": "ai",
+      "title": "Playground agent skills",
+      "description": "Install demo-playground meta skill and scdemos/demo task skills — Cursor, Claude Code, Codex.",
+      "path": "ai-and-aem/playground-agent-skills.html",
+      "tags": ["skills", "install", "cursor", "claude-code", "codex", "ide", "agent"]
+    },
+    {
+      "lane": "ai",
+      "category": "ai",
+      "title": "EDS Reference Playbook (meta skill)",
+      "description": "Agent skill that routes to playbook chapters, cookbook, scdemos/demo, aem.live, and task skills before inventing EDS patterns.",
+      "path": ".skills/eds-reference-playbook/SKILL.md",
+      "tags": ["skills", "agent", "meta", "playbook", "router", "cursor", "claude-code"]
+    },
+    {
+      "lane": "ai",
+      "category": "ai",
+      "title": "AEM Skills",
+      "description": "18 agent skills — meta-router plus 17 task skills in scdemos/demo for scrape, import, build, test, review.",
+      "path": "ai-and-aem/skills.html",
+      "tags": ["skills", "agent", "cdd", "claude-code", "cursor"]
+    },
+    {
+      "lane": "ai",
+      "category": "ai",
+      "title": "Sample Prompts",
+      "description": "Use-case-shaped prompts: page import, block creation, modernization, code review.",
+      "path": "ai-and-aem/prompts.html",
+      "tags": ["prompts", "ai", "automation"]
+    },
+    {
+      "lane": "ai",
+      "category": "ai",
+      "title": "DA / AEM MCP",
+      "description": "Connect DA Admin and AEM Admin to Cursor and Claude Desktop via Model Context Protocol.",
+      "path": "ai-and-aem/mcp.html",
+      "tags": ["mcp", "da", "cursor", "claude-desktop"]
+    },
+    {
+      "lane": "ai",
+      "category": "ai",
+      "title": "Experience Modernization",
+      "description": "Prompts and patterns for migrating legacy AEM Sites pages into EDS structure.",
+      "path": "ai-and-aem/modernization.html",
+      "tags": ["migration", "modernization", "ams"]
+    },
+
+    {
+      "lane": "getting-started",
+      "category": "getting-started",
+      "title": "Getting Started",
+      "description": "What this is, who it's for, and how to navigate. Start here.",
+      "path": "getting-started/index.html",
+      "tags": ["onboarding", "intro"]
+    },
+    {
+      "lane": "getting-started",
+      "category": "getting-started",
+      "title": "Boilerplate vs Author Kit vs Playbooks",
+      "description": "One-page comparison answering the most common onboarding question.",
+      "path": "getting-started/boilerplate-vs-author-kit-vs-playbooks.html",
+      "tags": ["onboarding", "comparison"]
+    },
+    {
+      "lane": "getting-started",
+      "category": "getting-started",
+      "title": "Contributing & feedback",
+      "description": "Open a use-case request, contribution philosophy, and anti-goals.",
+      "path": "getting-started/contributing.html",
+      "tags": ["contributing", "feedback"]
+    }
+  ]
+}

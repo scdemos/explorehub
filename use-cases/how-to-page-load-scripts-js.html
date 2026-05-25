@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Developer Guide: Page Load & scripts.js | AEM Edge Delivery Services</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Page Load & scripts.js</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>Page Load Lifecycle (<code>scripts.js</code>)</h1>
+      <p class="subtitle">How AEM Edge Delivery Services boots the page: eager, lazy, delayed phases, LCP, Sidekick, quick-edit, and embeds</p>
+
+      <div class="metadata">
+        <span class="tag">Core Concepts</span>
+        <span class="tag">Performance</span>
+        <span class="tag">Intermediate</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p><code>scripts/scripts.js</code> is the <strong>project entry point</strong> for page decoration. It orchestrates <em>when</em> work runs; low-level DOM helpers live in <code>scripts/aem.js</code> (do not modify per project rules).</p>
+
+      <div class="links">
+        <a href="https://github.com/scdemos/demo/blob/main/scripts/scripts.js" class="btn btn-secondary" target="_blank">View scripts.js on GitHub</a>
+        <a href="https://www.aem.live/developer/markup-sections-blocks" class="btn btn-secondary" target="_blank">Sections &amp; Blocks Docs</a>
+      </div>
+      <h3>Key responsibilities</h3>
+      <ul>
+        <li><strong>Three-phase loading:</strong> <code>loadEager</code> → <code>loadLazy</code> → <code>loadDelayed</code> via <code>loadPage()</code></li>
+        <li><strong>decorateMain:</strong> Structure all of <code>main</code> (sections, blocks, icons) without running every block’s JS yet</li>
+        <li><strong>First section LCP:</strong> Load block JS/CSS, wait for first image, inline fragments, then reveal section</li>
+        <li><strong>Martech:</strong> Adobe Target / Launch (skipped in quick-edit URL mode)</li>
+        <li><strong>Author tooling:</strong> Sidekick events, quick-edit, DA preview, theme sync</li>
+        <li><strong>Embeds:</strong> <code>aem-embed</code> suppresses full <code>loadPage</code> on the host document</li>
+      </ul>
+
+      <h3>Related files</h3>
+      <table class="content-table">
+        <thead>
+          <tr><th>File</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>scripts/scripts.js</code></td><td>Orchestration, theme, martech, fragments, boot</td></tr>
+          <tr><td><code>scripts/aem.js</code></td><td><code>decorateSections</code>, <code>loadSection</code>, <code>loadBlock</code>, <code>waitForFirstImage</code></td></tr>
+          <tr><td><code>scripts/aem-embed.js</code></td><td>Web component embed; sets <code>suppressLoadPage</code></td></tr>
+          <tr><td><code>scripts/sidekick.js</code></td><td>Sidekick ↔ experimentation plugin bridge</td></tr>
+          <tr><td><code>tools/quick-edit/quick-edit.js</code></td><td>Adapter to DA quick-edit plugin; passes <code>loadPage</code></td></tr>
+          <tr><td><code>scripts/delayed.js</code></td><td>Non-critical features after 3s delay</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>How It Works</h2>
+
+      <h3>High-level boot</h3>
+      <div class="mermaid">
+flowchart TD
+  A[scripts.js module loads] --> B{UE host?}
+  B -->|yes| C[ue.js]
+  B --> D{suppressLoadPage?}
+  C --> D
+  D -->|no| E[loadPage]
+  D -->|yes| F[Skip loadPage - embed host]
+  E --> G[loadEager]
+  G --> H[loadLazy]
+  H --> I[loadDelayed 3s]
+  E --> J[DA preview / experiment URL params]
+  E --> K[sidekick.js + theme listener]
+      </div>
+
+      <h3><code>loadPage()</code></h3>
+      <div class="mermaid">
+sequenceDiagram
+  participant LP as loadPage
+  participant E as loadEager
+  participant L as loadLazy
+  participant D as loadDelayed
+
+  LP->>E: await loadEager(document)
+  E-->>LP: first section visible
+  LP->>L: await loadLazy(document)
+  L-->>LP: header, all sections, footer
+  LP->>D: setTimeout 3000ms
+  Note over D: martechDelayed + delayed.js
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">scripts.js — loadPage</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">export async function loadPage() {
+  await loadEager(document);
+  await loadLazy(document);
+  loadDelayed();
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2><code>loadEager</code> — LCP phase</h2>
+      <p>Eager work makes the <strong>first screen</strong> meaningful fast. It does <strong>not</strong> load the full page.</p>
+
+      <div class="mermaid">
+sequenceDiagram
+  participant E as loadEager
+  participant DM as decorateMain
+  participant S1 as first .section
+  participant B as loadBlock
+  participant IMG as waitForFirstImage
+
+  E->>E: theme, martech init parallel
+  E->>DM: all sections structured hidden
+  E->>E: body.appear display block
+  E->>S1: loadSection
+  S1->>B: each block JS/CSS
+  S1->>IMG: first img load or error
+  S1->>S1: loadFragments
+  S1->>S1: display section visible
+      </div>
+
+      <h3>Body vs section visibility</h3>
+      <ul>
+        <li>CSS: <code>body { display: none }</code> until <code>body.appear</code> → <code>display: block</code></li>
+        <li><code>decorateSections</code> sets every <code>.section</code> to <code>display: none</code> and <code>data-section-status="initialized"</code></li>
+        <li>Only the <strong>first</strong> section’s <code>loadSection</code> clears <code>display</code> when status becomes <code>loaded</code></li>
+      </ul>
+
+      <h3>First section pipeline (order matters)</h3>
+      <ol>
+        <li><code>data-section-status = loading</code></li>
+        <li><strong><code>loadBlock</code></strong> for every <code>div.block</code> in that section (hero reorder, carousel logic, etc.)</li>
+        <li><strong><code>waitForFirstImage</code></strong> — first <code>&lt;img&gt;</code> in DOM order; browser <code>load</code> / <code>error</code> events</li>
+        <li><strong><code>loadFragments</code></strong> — inline <code>/fragments/*</code> links</li>
+        <li><code>data-section-status = loaded</code>, section shown</li>
+      </ol>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>scripts/aem.js</code> — waitForFirstImage</p>
+        <a href="https://github.com/scdemos/demo/blob/main/scripts/aem.js"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">aem.js — waitForFirstImage</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">async function waitForFirstImage(section) {
+  const lcpCandidate = section.querySelector('img');
+  await new Promise((resolve) => {
+    if (lcpCandidate && !lcpCandidate.complete) {
+      lcpCandidate.setAttribute('loading', 'eager');
+      lcpCandidate.addEventListener('load', resolve);
+      lcpCandidate.addEventListener('error', resolve);
+    } else {
+      resolve();
+    }
+  });
+}</code></pre>
+      </div>
+      <h3>LCP vs image error</h3>
+      <table class="content-table">
+        <thead>
+          <tr><th>Concern</th><th>Behavior</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Site pipeline</strong></td>
+            <td>On <code>error</code>, Promise still resolves → section shows. User may see a broken image; page does not hang on <code>display: none</code>.</td>
+          </tr>
+          <tr>
+            <td><strong>Browser LCP metric</strong></td>
+            <td>Measured by the browser, not this code. Failed hero image usually does <em>not</em> mean “LCP succeeded”; another element may become LCP.</td>
+          </tr>
+          <tr>
+            <td><strong>Carousel / multiple images</strong></td>
+            <td>Only the <strong>first <code>&lt;img&gt;</code></strong> in the section is waited on. Other slides load later. Blocks like <code>hero.js</code> can reorder DOM so the visible image is first before <code>waitForFirstImage</code> runs.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3><code>decorateMain</code> — “meaningful” DOM</h3>
+      <p><code>decorateMain</code> mutates <strong>all</strong> sections at once but does not run block <code>.js</code> or show sections:</p>
+      <ul>
+        <li>Buttons, icons, auto-blocks (YouTube → embed)</li>
+        <li><code>decorateSections</code> + <code>decorateBlocks</code></li>
+        <li>Page schemas (JSON-LD)</li>
+      </ul>
+      <p>Block behavior and per-section visibility happen in <code>loadSection</code> / <code>loadLazy</code>.</p>
+    </section>
+
+    <section>
+      <h2><code>loadLazy</code> and <code>loadDelayed</code></h2>
+
+      <h3>Lazy phase</h3>
+      <ul>
+        <li>Header + footer blocks</li>
+        <li>Page template JS/CSS if <code>template</code> metadata set</li>
+        <li><strong>Every</strong> <code>.section</code> via <code>loadSection</code> + <code>loadFragments</code> (section 1 skipped — already <code>loaded</code>)</li>
+        <li><code>dynamicBlocks</code>, gated content, hash scroll</li>
+        <li>Martech lazy, scroll reveal, nav shadow, <code>lazy-styles.css</code>, fonts</li>
+        <li>Sidekick <code>custom:quick-edit</code> listener</li>
+      </ul>
+
+      <h3>Delayed phase (3 seconds)</h3>
+      <ul>
+        <li><code>martechDelayed()</code> (unless quick-edit URL)</li>
+        <li><code>import('./delayed.js')</code> — social share, analytics, etc.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Boot tail: suppress, DA preview, theme</h2>
+      <p>Module-level code after function definitions (approx. lines 381–410):</p>
+
+      <h3><code>suppressLoadPage</code> and <code>aem-embed</code></h3>
+      <p>When <code>aem-embed.js</code> loads, it sets <code>window.hlx.suppressLoadPage = true</code> so the <strong>host page</strong> does not run <code>loadPage()</code>. The embed fetches <code>.plain.html</code> and runs <code>decorateMain</code> + block loading inside its <strong>shadow DOM</strong> only.</p>
+
+      <div class="mermaid">
+flowchart LR
+  H[Host page with aem-embed] --> S[suppressLoadPage true]
+  S --> X[No loadEager/Lazy/Delayed on host]
+  H --> E[Embed shadow DOM own pipeline]
+      </div>
+
+      <h3>DA preview IIFE</h3>
+      <p><code>?dapreview</code> loads <code>da.live/scripts/dapreview.js</code> and passes <code>loadPage</code> as refresh callback after content changes. <code>?daexperiment</code> loads the experimentation overlay.</p>
+
+      <h3><code>aem-theme-change</code></h3>
+      <p>Header theme toggle dispatches <code>aem-theme-change</code>; <code>scripts.js</code> calls <code>applyTheme(detail.theme)</code>. Keeps document and embed testers in sync without importing <code>scripts.js</code> from blocks.</p>
+    </section>
+
+    <section>
+      <h2>Sidekick and quick-edit</h2>
+
+      <div class="mermaid">
+flowchart LR
+  SK[aem-sidekick extension] --> E1[custom:experimentation]
+  SK --> E2[custom:quick-edit]
+  E1 --> SJ[scripts/sidekick.js]
+  SJ --> EXP[da.live exp.js toggle]
+  E2 --> QE[tools/quick-edit/quick-edit.js]
+  QE --> DAP[da.live quick-edit plugin]
+  DAP --> LP[loadPage callback on save]
+      </div>
+
+      <table class="content-table">
+        <thead>
+          <tr><th>Entry</th><th>Trigger</th><th>What runs</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Experimentation</strong></td>
+            <td>Sidekick button → <code>custom:experimentation</code></td>
+            <td><code>scripts/sidekick.js</code> toggles <code>exp.js</code></td>
+          </tr>
+          <tr>
+            <td><strong>Quick-edit URL</strong></td>
+            <td><code>?quick-edit</code> (any value)</td>
+            <td>Immediate <code>tools/quick-edit/quick-edit.js</code>; martech skipped</td>
+          </tr>
+          <tr>
+            <td><strong>Quick-edit Sidekick</strong></td>
+            <td><code>custom:quick-edit</code> in <code>loadLazy</code></td>
+            <td>Same adapter; optional Sidekick payload with DA mountpoint</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Quick-edit loads Lit-based UI from DA, sets <code>html[quick-edit="true"]</code>, and passes <code>loadPage</code> so authors can save and re-run the full decoration pipeline.</p>
+    </section>
+
+    <section>
+      <h2>Section metadata change (PR #64)</h2>
+      <p>Client-side parsing of <code>div.section-metadata</code> was <strong>removed</strong> from <code>decorateSections</code> in <code>aem.js</code>.</p>
+
+      <table class="content-table">
+        <thead>
+          <tr><th>Before (client)</th><th>After (delivery)</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Read metadata table → classes on <code>.section</code>, <code>dataset.*</code>, remove metadata div</td>
+            <td>Metadata applied when HTML is <strong>delivered</strong> (DA/AEM pipeline); browser only wraps sections and hides until <code>loadSection</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Eager/lazy section loading (<code>display: none</code> → first section eager → rest lazy) is <strong>unchanged</strong> by this PR.</p>
+
+      <p><strong>Reference:</strong> <a href="https://github.com/scdemos/demo/pull/64" target="_blank">PR #64 — fix: remove client-side section metadata handling</a></p>
+    </section>
+
+    <section>
+      <h2>Implementation</h2>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>scripts/scripts.js</code> — loadEager (excerpt)</p>
+        <a href="https://github.com/scdemos/demo/blob/main/scripts/scripts.js#L192-L249"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">scripts.js — loadEager core</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">async function loadEager(doc) {
+  decorateTemplateAndTheme();
+  applyTheme();
+  const martechLoadedPromise = !IS_QUICK_EDIT && initMartech(/* ... */);
+
+  const main = doc.querySelector('main');
+  if (main) {
+    decorateMain(main);
+    document.body.classList.add('appear');
+    await Promise.all([
+      martechLoadedPromise && martechLoadedPromise.then(martechEager),
+      loadSection(main.querySelector('.section'), async (s) => {
+        await waitForFirstImage(s);
+        await loadFragments(s);
+      }),
+    ]);
+  }
+}</code></pre>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>scripts/aem.js</code> — loadSection</p>
+        <a href="https://github.com/scdemos/demo/blob/main/scripts/aem.js#L652-L665"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">aem.js — loadSection</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">async function loadSection(section, loadCallback) {
+  const status = section.dataset.sectionStatus;
+  if (!status || status === 'initialized') {
+    section.dataset.sectionStatus = 'loading';
+    const blocks = [...section.querySelectorAll('div.block')];
+    for (let i = 0; i &lt; blocks.length; i += 1) {
+      await loadBlock(blocks[i]);
+    }
+    if (loadCallback) await loadCallback(section);
+    section.dataset.sectionStatus = 'loaded';
+    section.style.display = null;
+  }
+}</code></pre>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <p style="margin: 0;"><strong>File:</strong> <code>styles/styles.css</code> — body appear</p>
+        <a href="https://github.com/scdemos/demo/blob/main/styles/styles.css#L269-L293"
+           target="_blank"
+           style="color: #4a4a4a; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">styles.css — body visibility</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-css">body {
+  display: none;
+}
+
+body.appear {
+  display: block;
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Configuration &amp; preview URLs</h2>
+      <p>Authoring and preview tooling — not DA block tables.</p>
+
+      <h3>URL query parameters</h3>
+      <details>
+        <summary>Expand to view preview URL parameters</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="3" style="background-color: #f0f0f0;">Preview URL parameters (scripts.js boot)</th></tr>
+              <tr>
+                <th style="width: 25%;">Parameter</th>
+                <th style="width: 35%;">Example</th>
+                <th>Effect</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>quick-edit</code></td>
+                <td><code>?quick-edit</code> or <code>?quick-edit=local</code></td>
+                <td>Load DA quick-edit; skip martech</td>
+              </tr>
+              <tr>
+                <td><code>dapreview</code></td>
+                <td><code>?dapreview</code></td>
+                <td>DA preview script; <code>loadPage</code> refresh callback</td>
+              </tr>
+              <tr>
+                <td><code>daexperiment</code></td>
+                <td><code>?daexperiment</code></td>
+                <td>Load DA experimentation overlay</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <h3>Sidekick plugin config</h3>
+      <details>
+        <summary>Expand to view tools/sidekick/config.json structure</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">Sidekick — experimentation plugin (this repo)</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width: 40%;">id</td>
+                <td>experimentation</td>
+              </tr>
+              <tr>
+                <td>environments</td>
+                <td>dev, preview (not live)</td>
+              </tr>
+              <tr>
+                <td>event</td>
+                <td>experimentation → <code>custom:experimentation</code> on <code>&lt;aem-sidekick&gt;</code></td>
+              </tr>
+              <tr>
+                <td>Handler</td>
+                <td><code>scripts/sidekick.js</code> toggles <code>https://da.live/nx/public/plugins/exp/exp.js</code></td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 1rem;"><strong>Quick-edit</strong> is wired in <code>loadLazy</code> via <code>custom:quick-edit</code> → <code>tools/quick-edit/quick-edit.js</code> (not listed in this JSON file).</p>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2>Quick Start</h2>
+      <ol>
+        <li>
+          <h3>Run local dev server</h3>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Terminal</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-bash">cd demo
+npm install
+npx -y @adobe/aem-cli up --no-open --forward-browser-logs</code></pre>
+          </div>
+        </li>
+        <li>
+          <h3>Inspect decoration phases</h3>
+          <p>Open <code>http://localhost:3000/</code>. In DevTools:</p>
+          <ul>
+            <li>Watch <code>data-section-status</code> on <code>.section</code> elements</li>
+            <li>First section: <code>initialized</code> → <code>loading</code> → <code>loaded</code></li>
+            <li><code>body.appear</code> added during eager; sections hidden until loaded</li>
+          </ul>
+        </li>
+        <li>
+          <h3>See fully decorated HTML</h3>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Terminal — decorate CLI</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-bash">npm install -g aem-decorate
+decorate /path/to/page --selector "main .section"</code></pre>
+          </div>
+        </li>
+        <li>
+          <h3>Try quick-edit locally</h3>
+          <p>Add <code>?quick-edit</code> to your preview URL (requires Sidekick or DA tooling as appropriate).</p>
+        </li>
+        <li>
+          <h3>Trace a change</h3>
+          <p>When debugging LCP, check: first section blocks loaded → first <code>img</code> → fragments → <code>display</code> cleared. Compare with <code>loadLazy</code> for sections 2+.</p>
+        </li>
+      </ol>
+
+      <h3>Mental model checklist</h3>
+      <ul>
+        <li>✅ <code>decorateMain</code> = structure for all sections; hidden until <code>loadSection</code></li>
+        <li>✅ Eager = first section only + martech parallel + <code>body.appear</code></li>
+        <li>✅ Lazy = header, all sections (skip #1), footer, polish</li>
+        <li>✅ <code>load</code>/<code>error</code> on img = browser events; error still shows section</li>
+        <li>✅ Embed host = <code>suppressLoadPage</code>; embed has its own pipeline</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

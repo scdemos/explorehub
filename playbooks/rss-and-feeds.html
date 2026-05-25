@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>RSS &amp; JSON Feed syndication | EDS Reference Playbook</title>
+  <meta name="description" content="Generate standards-compliant RSS 2.0 and JSON Feed 1.1 from query-index — without rebuilding pages, without a backend, without scheduled jobs. One Cloudflare Worker, two URLs, fully cacheable.">
+
+  <meta property="og:title" content="RSS &amp; JSON Feed syndication | EDS Reference Playbook">
+  <meta property="og:description" content="Generate standards-compliant RSS 2.0 and JSON Feed 1.1 from query-index — without rebuilding pages, without a backend, without scheduled jobs.">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css">
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Playbooks &amp; Recipes</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">RSS &amp; JSON Feed syndication</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-playbook">Playbook</span>
+      <h1>RSS &amp; JSON Feed syndication</h1>
+      <p class="subtitle">A single Cloudflare Worker reads <code>query-index.json</code>, filters, sorts, and emits RSS 2.0 + JSON Feed 1.1. Cached at the edge for two hours, refreshed on demand by re-publishing.</p>
+      <div class="metadata">
+        <span class="tag">RSS 2.0</span>
+        <span class="tag">JSON Feed 1.1</span>
+        <span class="tag">query-index</span>
+        <span class="tag">Cloudflare Worker</span>
+        <span class="tag">Edge cache</span>
+      </div>
+    </header>
+
+    <section id="problem" class="chapter-section">
+      <h2>Problem</h2>
+      <p>Editorial sites still need feeds — for newsletters, podcast players, IFTTT, AI ingest, and SEO. Building feeds inside EDS would require rebuilding HTML pages on every author change. The Worker pattern moves feed generation off the page-build path entirely: query-index already lists every published article, so a 200-line Worker reads it on demand, transforms to feed XML/JSON, and ships it cached at the edge.</p>
+    </section>
+
+    <section id="live-example" class="chapter-section">
+      <h2>Live example</h2>
+      <p>The demo exposes both feed formats:</p>
+      <p>
+        <a class="btn btn-primary" target="_blank" href="https://demo.bbird.live/rss.xml">RSS 2.0 feed</a>
+        <a class="btn btn-secondary" target="_blank" href="https://demo.bbird.live/feed.json">JSON Feed 1.1</a>
+        <a class="btn btn-secondary" target="_blank" href="https://github.com/scdemos/demo/blob/main/workers/feed/index.js">workers/feed/index.js</a>
+      </p>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>High-level architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Reader["RSS reader /<br/>JSON Feed client"]
+  --&gt; CDN["Cloudflare CDN<br/>(edge cache, 2h)"]
+  CDN --&gt; Worker["workers/feed<br/>(/rss.xml, /feed.json)"]
+  Worker --&gt; QI["query-index.json<br/>(paginated fetch)"]
+  QI --&gt; Filter["isArticle: /learn/* with 3+ segments"]
+  Filter --&gt; Sort["sort by date desc"]
+  Sort --&gt; Build{"path"}
+  Build --&gt;|"/rss.xml"| RSS["RSS 2.0 XML"]
+  Build --&gt;|"/feed.json"| JF["JSON Feed 1.1"]
+      </pre>
+    </section>
+
+    <section id="snippets" class="chapter-section">
+      <h2>Code snippets</h2>
+
+      <h3>1. Pagination — pull every row from query-index</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>workers/feed/index.js</code> (fetchAllArticles)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/workers/feed/index.js#L12-L42" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">async function fetchAllArticles(origin, siteUrl, env) {
+  const results = [];
+  let offset = 0;
+  let rows;
+  do {
+    const url = `${origin}/query-index.json?offset=${offset}&amp;limit=${PAGE_SIZE}`;
+    const headers = {
+      'x-forwarded-host': new URL(siteUrl).hostname,
+      'x-byo-cdn-type': 'cloudflare',
+    };
+    if (env.PUSH_INVALIDATION !== 'disabled') headers['x-push-invalidation'] = 'enabled';
+    if (env.ORIGIN_AUTHENTICATION) headers.authorization = `token ${env.ORIGIN_AUTHENTICATION}`;
+    const resp = await fetch(new Request(url, { headers, cf: { cacheEverything: true } }));
+    if (!resp.ok) throw new Error(`query-index fetch failed: ${resp.status}`);
+    const json = await resp.json();
+    rows = json?.data || [];
+    results.push(...rows);
+    offset += rows.length;
+  } while (rows.length === PAGE_SIZE);
+  return results;
+}</code></pre>
+      </div>
+
+      <p>The <code>x-byo-cdn-type</code> + <code>x-push-invalidation</code> headers tell Helix to honor cache invalidation when an author re-publishes. Without them, the feed could lag behind for the cache lifetime.</p>
+
+      <h3>2. The filter (project-specific, easy to customize)</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>workers/feed/index.js</code> (isArticle)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/workers/feed/index.js#L48-L53" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">function isArticle(row) {
+  const { path } = row;
+  if (!path || !path.startsWith('/learn/')) return false;
+  const segments = path.split('/').filter(Boolean);
+  return segments.length &gt;= 3;
+}</code></pre>
+      </div>
+
+      <p>Replace the <code>/learn/</code> prefix with whatever your editorial folder is. Or run multiple feeds — one per topic — by varying the filter.</p>
+
+      <h3>3. RSS 2.0 with image enclosures</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>workers/feed/index.js</code> (buildRss)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/workers/feed/index.js#L119-L154" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">function buildRss(articles, siteUrl) {
+  const items = articles.map((row) =&gt; {
+    const link = `${siteUrl}${row.path}`;
+    const pubDate = new Date(getTimestamp(row)).toUTCString();
+    const img = imageUrl(row.image, siteUrl);
+    const enclosure = img
+      ? `\n  &lt;enclosure url="${escapeXml(img)}" length="0" type="${imageMimeType(img, siteUrl)}"/&gt;`
+      : '';
+    return `&lt;item&gt;
+  &lt;title&gt;&lt;![CDATA[${row.title || ''}]]&gt;&lt;/title&gt;
+  &lt;link&gt;${escapeXml(link)}&lt;/link&gt;
+  &lt;guid isPermaLink="true"&gt;${escapeXml(link)}&lt;/guid&gt;
+  &lt;pubDate&gt;${pubDate}&lt;/pubDate&gt;
+  &lt;description&gt;&lt;![CDATA[${row.description || ''}]]&gt;&lt;/description&gt;
+${enclosure}
+&lt;/item&gt;`;
+  });
+  return `&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"&gt;...&lt;/rss&gt;`;
+}</code></pre>
+      </div>
+
+      <h3>4. JSON Feed 1.1 with tags</h3>
+      <div class="permalink-card">
+        <div class="permalink-card-header">
+          <span><code>workers/feed/index.js</code> (buildJsonFeed)</span>
+          <a href="https://github.com/scdemos/demo/blob/main/workers/feed/index.js#L160-L193" target="_blank">View on GitHub →</a>
+        </div>
+        <pre><code class="language-javascript">return JSON.stringify({
+  version: 'https://jsonfeed.org/version/1.1',
+  title: FEED_TITLE,
+  home_page_url: siteUrl,
+  feed_url: `${siteUrl}/feed.json`,
+  description: FEED_DESCRIPTION,
+  language: FEED_LANGUAGE,
+  authors: [{ name: FEED_AUTHOR_NAME }],
+  items,
+}, null, 2);</code></pre>
+      </div>
+
+      <h3>5. Cache headers</h3>
+      <pre><code class="language-javascript">return new Response(buildRss(articles, siteUrl), {
+  headers: {
+    'Content-Type': 'application/rss+xml; charset=utf-8',
+    'Cache-Control': 'max-age=7200, must-revalidate',
+  },
+});</code></pre>
+      <p>Two hours of freshness is a sensible default for editorial sites. Drop to 5 minutes for breaking-news contexts, raise to a day for rarely-updated topics.</p>
+    </section>
+
+    <section id="gotchas" class="chapter-section">
+      <h2>Notes &amp; gotchas</h2>
+      <ul>
+        <li><strong>query-index must include the fields you need.</strong> The Worker reads <code>title</code>, <code>description</code>, <code>image</code>, <code>date</code>, <code>lastModified</code>, <code>keywords</code>. Configure <code>helix-query.yaml</code> to surface them, otherwise the items will be empty. See the <a href="search-and-discovery.html">search &amp; discovery playbook</a>.</li>
+        <li><strong>Date precedence.</strong> The Worker prefers an authored <code>date</code> field over <code>lastModified</code>, multiplying epoch-seconds × 1000 to get JS milliseconds. Surface <code>date</code> in your query-index for accurate <code>pubDate</code>.</li>
+        <li><strong>Image MIME detection</strong> reads the <code>format</code> query param (AEM optimized delivery) before falling back to extension matching. If your images go through a different optimizer, extend <code>imageMimeType()</code>.</li>
+        <li><strong>The Worker is read-only.</strong> No KV / D1 needed. State lives entirely in query-index, which means re-publishing in DA = next feed fetch reflects the change (within the cache TTL).</li>
+        <li><strong>Pagination cap is 200 per page.</strong> If you have &gt;10k articles, the cold-cache build can take a few seconds. Add a paged feed (<code>?page=N</code>) or split by category if you hit that.</li>
+        <li><strong>Origin auth.</strong> If your <code>main--site--org.aem.live</code> origin requires <code>x-auth</code> or a token (e.g. for staging), set <code>ORIGIN_AUTHENTICATION</code> in the Worker env.</li>
+        <li><strong>Don't overload the Worker.</strong> Keep it focused on <code>query-index</code> → feed transforms. If you need full content, render via templates instead (see <a href="json2html-dynamic-pages.html">json2html playbook</a>).</li>
+      </ul>
+    </section>
+
+    <section id="adapt" class="chapter-section">
+      <h2>How to adapt into my project</h2>
+      <ol>
+        <li><strong>Configure <code>helix-query.yaml</code></strong> to expose the fields you want in the feed (<code>title</code>, <code>description</code>, <code>image</code>, <code>date</code>, <code>keywords</code>).</li>
+        <li><strong>Copy <code>workers/feed/</code></strong>. Update <code>FEED_TITLE</code>, <code>FEED_DESCRIPTION</code>, <code>FEED_LANGUAGE</code>, <code>FEED_AUTHOR_NAME</code>, and the <code>isArticle()</code> filter to match your site.</li>
+        <li><strong>Set env vars</strong> in <code>wrangler.toml</code>: <code>SITE_URL</code> (your custom domain), <code>CONTENT_ORIGIN</code> (the Helix .live host).</li>
+        <li><strong>Route <code>/rss.xml</code> + <code>/feed.json</code></strong> to the Worker — either via the worker's own route, or via your CDN Worker fronting requests.</li>
+        <li><strong>Validate</strong> with <a href="https://validator.w3.org/feed/" target="_blank">W3C feed validator</a> and <a href="https://validator.jsonfeed.org/" target="_blank">JSON Feed validator</a>.</li>
+        <li><strong>Add the auto-discovery <code>&lt;link&gt;</code></strong> tags in your <code>head.html</code>:
+<pre><code class="language-html">&lt;link rel="alternate" type="application/rss+xml" title="..." href="/rss.xml"&gt;
+&lt;link rel="alternate" type="application/feed+json" title="..." href="/feed.json"&gt;</code></pre>
+        </li>
+      </ol>
+    </section>
+
+    <section id="links" class="chapter-section">
+      <h2>Links</h2>
+      <ul>
+        <li><a href="https://www.rssboard.org/rss-specification" target="_blank">RSS 2.0 spec</a></li>
+        <li><a href="https://www.jsonfeed.org/version/1.1/" target="_blank">JSON Feed 1.1 spec</a></li>
+        <li><a href="https://www.aem.live/developer/indexing" target="_blank">AEM — Indexing &amp; query-index</a></li>
+        <li><a href="search-and-discovery.html">Playbook: Search &amp; discovery</a></li>
+        <li><a href="../use-cases/how-to-write-workers.html">Cookbook: Cloudflare Workers</a></li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/playbooks/rss-and-feeds.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

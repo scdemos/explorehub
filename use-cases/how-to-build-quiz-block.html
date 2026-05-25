@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Developer Guide: Quiz Block | AEM Edge Delivery Services</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Quiz Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Quiz Block</h1>
+      <p class="subtitle">Complete implementation guide for interactive quizzes with immediate feedback, scoring, and slider navigation</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Interactive</span>
+        <span class="tag">Advanced</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>The Quiz block creates interactive knowledge assessments with immediate feedback. It supports radio (single answer) and checkbox (multiple answer) questions, slider navigation for multi-question quizzes, scoring, and custom completion messages. Perfect for educational content, training, and engagement.</p>
+
+      <div class="links">
+        <a href="https://demo.bbird.live" class="btn" target="_blank">View Live Demo</a>
+        <a href="https://github.com/scdemos/demo" class="btn btn-secondary" target="_blank">AEM Boilerplate</a>
+      </div>
+      <h3>Key Features</h3>
+      <ul>
+        <li><strong>Question Types:</strong> Single answer (radio) or multiple answers (checkbox)</li>
+        <li><strong>Slider Navigation:</strong> For multi-question quizzes with prev/next buttons</li>
+        <li><strong>Progress Dots:</strong> Visual progress indicator</li>
+        <li><strong>Immediate Feedback:</strong> Per-question feedback with snippets</li>
+        <li><strong>Scoring:</strong> Automatic scoring with completion events</li>
+        <li><strong>Custom Messages:</strong> Configurable completion messages</li>
+        <li><strong>Validation:</strong> Ensures all questions answered before submission</li>
+        <li><strong>Accessibility:</strong> ARIA attributes, keyboard navigation, screen reader support</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Architecture</h2>
+
+      <div class="mermaid">
+graph TB
+    A[Quiz Block] --> B[Parse Rows]
+    B --> C[Extract Config]
+    B --> D[Build Questions]
+
+    D --> E{Question Type}
+    E -->|Single| F[Radio Buttons]
+    E -->|Multiple| G[Checkboxes]
+
+    D --> H{Quiz Length}
+    H -->|1 Question| I[Simple Layout]
+    H -->|Multiple| J[Slider Layout]
+
+    J --> K[Build Navigation]
+    K --> L[Prev/Next Buttons]
+    K --> M[Progress Dots]
+
+    F --> N[Render Form]
+    G --> N
+
+    N --> O[Handle Submit]
+    O --> P[Validate Answers]
+    P --> Q[Check Correctness]
+    Q --> R[Show Feedback]
+    R --> S[Calculate Score]
+    S --> T[Display Results]
+    T --> U[Dispatch Event]
+
+    style A fill:#0066cc,color:#fff
+    style U fill:#008060,color:#fff
+      </div>
+
+      <h3>Building Blocks</h3>
+      <div class="blocks-list">
+        <div class="block-card">
+          <h4>Quiz Block</h4>
+          <p>Main component for interactive quizzes</p>
+          <code>blocks/quiz/quiz.js</code><br>
+          <code>blocks/quiz/quiz.css</code>
+        </div>
+
+        <div class="block-card">
+          <h4>Question Parser</h4>
+          <p>Extracts config and questions from table</p>
+          <code>parseRows()</code>
+        </div>
+
+        <div class="block-card">
+          <h4>Slider Controller</h4>
+          <p>Navigation and progress tracking</p>
+          <code>renderSlider()</code>
+        </div>
+
+        <div class="block-card">
+          <h4>Feedback System</h4>
+          <p>Immediate per-question feedback</p>
+          <code>buildFeedback()</code>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Content Structure</h2>
+      <p>Authors create quizzes using a table structure with optional configuration rows followed by questions and options:</p>
+
+      <h3>Basic Quiz Structure</h3>
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Column 1</th>
+            <th>Column 2</th>
+            <th>Column 3</th>
+            <th>Column 4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Config rows (optional):</strong></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><code>Complete Message</code></td>
+            <td><code>Great job!</code></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>Separator row:</strong></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><code>Questions</code></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>Question + Options:</strong></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><code>Question 1 text</code></td>
+            <td><code>Option A</code></td>
+            <td><code>true</code></td>
+            <td><code>Feedback snippet</code></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><code>Option B</code></td>
+            <td><code>false</code></td>
+            <td><code>Feedback snippet</code></td>
+          </tr>
+          <tr>
+            <td><code>Question 2 text</code></td>
+            <td><code>Option A</code></td>
+            <td><code>true</code></td>
+            <td><code>Snippet</code></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><code>Option B</code></td>
+            <td><code>true</code></td>
+            <td><code>Snippet</code></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><code>Option C</code></td>
+            <td><code>false</code></td>
+            <td><code>Snippet</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="alert alert-warning">
+        <strong>Key Points:</strong>
+        <ul>
+          <li>Question text appears in Column 1 (only on first row of each question)</li>
+          <li>Option text in Column 2</li>
+          <li>Correct flag in Column 3 (<code>true</code> or <code>false</code>)</li>
+          <li>Feedback snippet in Column 4 (optional)</li>
+          <li>Multiple correct answers = checkbox question</li>
+          <li>Single correct answer = radio question</li>
+        </ul>
+      </div>
+
+      <h3>Configuration Options</h3>
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Config Key</th>
+            <th>Value</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Complete Message</code></td>
+            <td>Text</td>
+            <td>"Great job! You completed the quiz."</td>
+            <td>Message shown on perfect score</td>
+          </tr>
+          <tr>
+            <td><code>Do Not Mark Lesson As Completed</code></td>
+            <td><code>true</code> or <code>false</code></td>
+            <td><code>false</code></td>
+            <td>Skip completion event dispatch</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Implementation</h2>
+
+      <h3>Step 1: Parse Quiz Structure</h3>
+      <p>The quiz block parses the table structure to extract configuration and questions:</p>
+
+      <details>
+        <summary>Parse Rows Code</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">quiz.js - parseRows (lines 11-60)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">function parseRows(block) {
+  const rows = [...block.querySelectorAll(':scope > div')];
+
+  // Default configuration
+  const config = {
+    completeMessage: 'Great job! You completed the quiz.',
+    doNotMarkLessonAsCompleted: false,
+  };
+
+  // Find config rows (before "Questions" separator)
+  let startIndex = 0;
+  for (let i = 0; i < rows.length; i += 1) {
+    const firstCol = normalizeText(rows[i].children[0]?.textContent);
+    const secondCol = normalizeText(rows[i].children[1]?.textContent);
+
+    if (firstCol.toLowerCase() === 'questions') {
+      startIndex = i + 1; // Questions start after this row
+      break;
+    }
+
+    // Parse config values
+    if (firstCol.toLowerCase() === 'complete message') {
+      config.completeMessage = secondCol || config.completeMessage;
+    }
+    if (firstCol.toLowerCase() === 'do not mark lesson as completed') {
+      config.doNotMarkLessonAsCompleted = toBool(secondCol);
+    }
+  }
+
+  // Parse questions from remaining rows
+  const questions = [];
+  let currentQuestion = null;
+
+  rows.slice(startIndex).forEach((row) => {
+    const questionCell = normalizeText(row.children[0]?.textContent);
+    const optionText = normalizeText(row.children[1]?.textContent);
+    const isCorrect = toBool(row.children[2]?.textContent);
+    const snippet = normalizeText(row.children[3]?.textContent);
+
+    // New question (Column 1 has text)
+    if (questionCell) {
+      currentQuestion = {
+        text: questionCell,
+        options: [],
+      };
+      questions.push(currentQuestion);
+    }
+
+    // Skip rows with no option text
+    if (!currentQuestion || !optionText) return;
+
+    // Add option to current question
+    currentQuestion.options.push({
+      text: optionText,
+      correct: isCorrect,
+      snippet,
+    });
+  });
+
+  return { config, questions };
+}</code></pre>
+          </div>
+
+          <p><strong>How it works:</strong></p>
+          <ul>
+            <li>Scans rows until finding "Questions" separator</li>
+            <li>Extracts config from rows before separator</li>
+            <li>Groups options by question (question text only in first row)</li>
+            <li>Automatically determines question type based on correct answer count</li>
+          </ul>
+        </div>
+      </details>
+
+      <h3>Step 2: Build Question Elements</h3>
+      <p>Each question becomes a fieldset with radio buttons or checkboxes:</p>
+
+      <details>
+        <summary>Question Building Code</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">quiz.js - Build questions (lines 104-136)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">questions.forEach((question, qIndex) => {
+  // Determine correct answer indexes
+  const correctIndexes = question.options
+    .map((option, index) => (option.correct ? index : null))
+    .filter((idx) => idx !== null);
+
+  // Multiple correct answers = checkbox question
+  const multiCorrect = correctIndexes.length > 1;
+
+  // Create fieldset for semantic grouping
+  const fieldset = createTag('fieldset', {
+    class: 'quiz-question',
+    'data-question-index': String(qIndex)
+  });
+
+  const legend = createTag('legend', { class: 'quiz-question-title' }, question.text);
+  fieldset.append(legend);
+
+  // Add instruction for checkbox questions
+  if (multiCorrect) {
+    fieldset.append(createTag('p', { class: 'quiz-instruction' }, 'Select all that apply.'));
+  }
+
+  // Build options container
+  const options = createTag('div', { class: 'quiz-options' });
+
+  question.options.forEach((option, oIndex) => {
+    const inputId = `quiz-${qIndex}-${oIndex}`;
+
+    // Create input (radio or checkbox)
+    const input = createTag('input', {
+      id: inputId,
+      type: multiCorrect ? 'checkbox' : 'radio',
+      name: `question-${qIndex}`,
+      value: String(oIndex),
+    });
+
+    // Create label with input and text
+    const label = createTag('label', { class: 'quiz-option', for: inputId }, [
+      input,
+      createTag('span', { class: 'quiz-option-label' }, option.text),
+    ]);
+
+    options.append(label);
+  });
+
+  // Add feedback slot (empty until submission)
+  const feedbackSlot = createTag('div', { class: 'quiz-feedback-slot' });
+  fieldset.append(options, feedbackSlot);
+
+  // Store correct indexes as data attribute for submission check
+  fieldset.dataset.correctIndexes = JSON.stringify(correctIndexes);
+
+  sliderTrack.append(fieldset);
+});</code></pre>
+          </div>
+        </div>
+      </details>
+
+      <h3>Step 3: Slider Navigation</h3>
+      <p>For multi-question quizzes, a slider provides smooth navigation:</p>
+
+      <details>
+        <summary>Slider Implementation Code</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">quiz.js - Slider navigation (lines 138-169)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">let currentIndex = 0;
+
+// Create navigation buttons
+const navPrev = createTag('button', {
+  type: 'button',
+  class: 'quiz-nav-btn quiz-nav-prev',
+  'aria-label': 'Previous question',
+}, '← Back');
+
+const navNext = createTag('button', {
+  type: 'button',
+  class: 'quiz-nav-btn quiz-nav-next',
+  'aria-label': 'Next question',
+}, 'Next →');
+
+// Create progress dots
+const dots = questions.map((_, i) => createTag('li', {
+  class: `quiz-nav-dot${i === 0 ? ' is-active' : ''}`,
+  'aria-hidden': 'true',
+}));
+const navDots = createTag('ol', { class: 'quiz-nav-dots' }, dots);
+
+// Check if current question is answered
+function currentQuestionAnswered() {
+  const currentQuestion = sliderTrack.querySelectorAll('.quiz-question')[currentIndex];
+  return currentQuestion ? getSelectedIndexes(currentQuestion).length > 0 : false;
+}
+
+// Render slider state
+function renderSlider() {
+  // Slide to current question (CSS transform)
+  sliderTrack.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+  // Update active dot
+  dots.forEach((dot, i) => dot.classList.toggle('is-active', i === currentIndex));
+
+  // Disable prev button on first question
+  navPrev.disabled = currentIndex === 0;
+  navPrev.classList.toggle('is-hidden', currentIndex === 0);
+
+  // Hide next button on last question
+  navNext.classList.toggle('is-hidden', currentIndex === questions.length - 1);
+
+  // Disable next button if current question not answered
+  navNext.disabled = !currentQuestionAnswered();
+
+  // Show submit button only on last question
+  submit.hidden = currentIndex !== questions.length - 1;
+}
+
+// Navigation event listeners
+navPrev.addEventListener('click', () => {
+  currentIndex = Math.max(0, currentIndex - 1);
+  renderSlider();
+});
+
+navNext.addEventListener('click', () => {
+  currentIndex = Math.min(questions.length - 1, currentIndex + 1);
+  renderSlider();
+});
+
+// Enable next button when current question is answered
+sliderTrack.addEventListener('change', () => {
+  navNext.disabled = !currentQuestionAnswered();
+});
+
+// Initial render
+renderSlider();</code></pre>
+          </div>
+
+          <p><strong>Slider Features:</strong></p>
+          <ul>
+            <li>CSS transform for smooth sliding animation</li>
+            <li>Progress dots show current position</li>
+            <li>Next button disabled until question answered</li>
+            <li>Submit button only appears on last question</li>
+            <li>Prev button hidden on first question</li>
+          </ul>
+        </div>
+      </details>
+
+      <h3>Step 4: Submission and Feedback</h3>
+      <p>On submit, the quiz validates answers, shows feedback, and calculates score:</p>
+
+      <details>
+        <summary>Submission Handler Code</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">quiz.js - Handle submit (lines 197-263)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">form.addEventListener('submit', (event) => {
+  event.preventDefault();
+
+  let score = 0;
+  let allAnswered = true;
+  const questionEls = [...form.querySelectorAll('.quiz-question')];
+
+  questionEls.forEach((questionEl) => {
+    // Get selected options
+    const selected = getSelectedIndexes(questionEl);
+
+    // Get correct answer indexes from data attribute
+    const correctIndexes = JSON.parse(questionEl.dataset.correctIndexes || '[]');
+
+    const feedbackSlot = questionEl.querySelector('.quiz-feedback-slot');
+    const optionEls = [...questionEl.querySelectorAll('.quiz-option')];
+
+    // Clear previous feedback
+    feedbackSlot.textContent = '';
+    optionEls.forEach((el) => el.classList.remove('is-selected', 'is-correct', 'is-wrong'));
+
+    // Check if question was answered
+    if (!selected.length) {
+      allAnswered = false;
+      feedbackSlot.append(
+        buildFeedback(false, ['Please select an answer before submitting.'])
+      );
+      return;
+    }
+
+    // Check if answer is correct (all correct options selected, no wrong ones)
+    const correct = isCorrectSelection(selected, correctIndexes);
+    if (correct) score += 1;
+
+    // Collect feedback snippets for selected options
+    const snippets = [];
+    selected.forEach((selectedIndex) => {
+      const label = optionEls[selectedIndex];
+      const isCorrectOption = correctIndexes.includes(selectedIndex);
+
+      // Mark option as selected + correct/wrong
+      label?.classList.add('is-selected', isCorrectOption ? 'is-correct' : 'is-wrong');
+
+      // Add snippet if available
+      const snippet = questions[Number(questionEl.dataset.questionIndex)]
+        .options[selectedIndex]?.snippet;
+      if (snippet) snippets.push(snippet);
+    });
+
+    // If no snippets and answer wrong, use first correct option's snippet
+    if (!snippets.length && !correct) {
+      const firstCorrect = correctIndexes[0];
+      const fallback = questions[Number(questionEl.dataset.questionIndex)]
+        .options[firstCorrect]?.snippet;
+      if (fallback) snippets.push(fallback);
+    }
+
+    // Show feedback
+    feedbackSlot.append(buildFeedback(correct, snippets));
+  });
+
+  // Handle unanswered questions
+  if (!allAnswered) {
+    if (isSlider) {
+      // Jump to first unanswered question
+      const firstUnanswered = questionEls.findIndex(
+        (questionEl) => !getSelectedIndexes(questionEl).length
+      );
+      if (firstUnanswered >= 0) {
+        currentIndex = firstUnanswered;
+        renderSlider();
+      }
+    }
+    status.textContent = 'Please answer all questions and try again.';
+    return;
+  }
+
+  // Display results
+  const total = questions.length;
+
+  if (score === total) {
+    // Perfect score
+    completeBanner.textContent = config.completeMessage;
+    completeBanner.className = 'quiz-complete-banner is-success';
+    completeBanner.hidden = false;
+    status.textContent = `${config.completeMessage} (${score}/${total})`;
+
+    // Dispatch completion event (for LMS integration, etc.)
+    if (!config.doNotMarkLessonAsCompleted) {
+      window.dispatchEvent(new CustomEvent('quiz:completed', {
+        detail: { score, total }
+      }));
+    }
+  } else {
+    // Incomplete - show retry message
+    completeBanner.textContent = `You scored ${score} of ${total} — review each question and try again.`;
+    completeBanner.className = 'quiz-complete-banner is-retry';
+    completeBanner.hidden = false;
+    status.textContent = `You got ${score}/${total}.`;
+  }
+});</code></pre>
+          </div>
+
+          <p><strong>Feedback Features:</strong></p>
+          <ul>
+            <li>Per-option visual feedback (green checkmark / red X)</li>
+            <li>Text snippets explain correct/incorrect answers</li>
+            <li>Automatic navigation to first unanswered question</li>
+            <li>Success banner for perfect score</li>
+            <li>Retry message for incomplete attempts</li>
+            <li>Custom event for LMS/tracking integration</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2>Example Quiz</h2>
+
+      <h3>Complete Quiz Authoring</h3>
+      <details>
+        <summary>Expand to view and copy complete quiz structure</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="4" style="background-color: #f0f0f0;">Quiz</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width: 40%;">Complete Message</td>
+                <td colspan="3">Excellent work! You're a quiz master.</td>
+              </tr>
+              <tr>
+                <td>Questions</td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>What is 2 + 2?</td>
+                <td>3</td>
+                <td>false</td>
+                <td>Try again!</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>4</td>
+                <td>true</td>
+                <td>Correct! Basic arithmetic.</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>5</td>
+                <td>false</td>
+                <td>Not quite.</td>
+              </tr>
+              <tr>
+                <td>Which are primary colors?</td>
+                <td>Red</td>
+                <td>true</td>
+                <td>Yes, red is primary.</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>Green</td>
+                <td>false</td>
+                <td>Green is secondary.</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>Blue</td>
+                <td>true</td>
+                <td>Yes, blue is primary.</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>Yellow</td>
+                <td>true</td>
+                <td>Yes, yellow is primary.</td>
+              </tr>
+              <tr>
+                <td>What is the capital of France?</td>
+                <td>London</td>
+                <td>false</td>
+                <td>That's the UK capital.</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>Paris</td>
+                <td>true</td>
+                <td>Correct!</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>Berlin</td>
+                <td>false</td>
+                <td>That's Germany's capital.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <p><strong>This creates:</strong></p>
+      <ul>
+        <li>Question 1: Radio buttons (single answer)</li>
+        <li>Question 2: Checkboxes (multiple answers - "Select all that apply")</li>
+        <li>Question 3: Radio buttons (single answer)</li>
+        <li>Slider navigation with 3 progress dots</li>
+        <li>Custom completion message</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>CSS Styling</h2>
+      <p>The quiz block uses smooth animations and clear visual feedback:</p>
+
+      <h3>Key Styling Features</h3>
+      <ul>
+        <li><strong>Slider Animation:</strong> Custom cubic-bezier easing for smooth transitions</li>
+        <li><strong>Visual Feedback:</strong> Green checkmarks for correct, red X for wrong</li>
+        <li><strong>Progress Dots:</strong> Active dot scales and changes color</li>
+        <li><strong>Button States:</strong> Disabled, hover, and active states</li>
+        <li><strong>Theme Support:</strong> Light/dark mode with CSS <code>light-dark()</code></li>
+      </ul>
+
+      <details>
+        <summary>View Key CSS Snippets</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">quiz.css - Slider animation</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-css">/* Slider with smooth easing */
+.quiz .quiz-slider-track {
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Each question takes full width */
+.quiz .quiz-slider-track > .quiz-question {
+  flex: 0 0 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* Progress dots */
+.quiz .quiz-nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: light-dark(var(--color-gray-300), rgb(197 160 89 / 25%));
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.quiz .quiz-nav-dot.is-active {
+  background: var(--color-accent);
+  transform: scale(1.35);
+}</code></pre>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2>Accessibility</h2>
+      <ul>
+        <li><strong>Semantic HTML:</strong> <code>&lt;fieldset&gt;</code> and <code>&lt;legend&gt;</code> for question groups</li>
+        <li><strong>Form Controls:</strong> Proper radio/checkbox grouping with <code>name</code> attributes</li>
+        <li><strong>Labels:</strong> Each input associated with descriptive label</li>
+        <li><strong>ARIA Live Region:</strong> Status messages announced to screen readers</li>
+        <li><strong>ARIA Labels:</strong> Navigation buttons have <code>aria-label</code></li>
+        <li><strong>Keyboard Navigation:</strong> Full keyboard support for all controls</li>
+        <li><strong>Focus Management:</strong> Logical tab order, visible focus indicators</li>
+        <li><strong>Instructions:</strong> "Select all that apply" for checkbox questions</li>
+      </ul>
+
+      <div class="alert alert-success">
+        <strong>WCAG 2.1 AA Compliant:</strong> Meets accessibility standards with proper markup and ARIA.
+      </div>
+    </section>
+
+    <section>
+      <h2>Custom Events</h2>
+      <p>The quiz dispatches a custom event on completion for LMS integration or tracking:</p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">Listen for quiz completion</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">// Listen for quiz completion
+window.addEventListener('quiz:completed', (event) => {
+  const { score, total } = event.detail;
+
+  console.log(`Quiz completed: ${score}/${total}`);
+
+  // Send to analytics
+  dataLayer.push({
+    event: 'quiz_completed',
+    score: score,
+    total: total,
+    percentage: Math.round((score / total) * 100)
+  });
+
+  // Mark lesson complete in LMS
+  if (window.LMS) {
+    window.LMS.markLessonComplete();
+  }
+});</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Step-by-Step Setup</h2>
+
+      <ol class="steps">
+        <li>
+          <h3>Create Block Files</h3>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Terminal</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-bash">mkdir -p blocks/quiz
+touch blocks/quiz/quiz.js
+touch blocks/quiz/quiz.css</code></pre>
+          </div>
+        </li>
+
+        <li>
+          <h3>Copy Implementation Code</h3>
+          <p>Copy the complete quiz block JavaScript (265 lines) and CSS from the implementation sections above into the respective files.</p>
+        </li>
+
+        <li>
+          <h3>Create Quiz in DA</h3>
+          <details>
+            <summary>Expand to view and copy basic quiz example</summary>
+            <div class="details-content">
+              <button class="copy-btn" onclick="copyTable(this)"
+                      style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+                Copy
+              </button>
+              <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                  <tr><th colspan="4" style="background-color: #f0f0f0;">Quiz</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="width: 40%;">Complete Message</td>
+                    <td colspan="3">You aced it!</td>
+                  </tr>
+                  <tr>
+                    <td>Questions</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>What is 2 + 2?</td>
+                    <td>3</td>
+                    <td>false</td>
+                    <td>Try again</td>
+                  </tr>
+                  <tr>
+                    <td></td>
+                    <td>4</td>
+                    <td>true</td>
+                    <td>Correct!</td>
+                  </tr>
+                  <tr>
+                    <td></td>
+                    <td>5</td>
+                    <td>false</td>
+                    <td>Not quite</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </li>
+
+        <li>
+          <h3>Test Locally</h3>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Terminal</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-bash">npx -y @adobe/aem-cli up</code></pre>
+          </div>
+          <p>Verify:</p>
+          <ul>
+            <li>Questions render correctly</li>
+            <li>Slider navigation works (if multiple questions)</li>
+            <li>Next button disabled until answer selected</li>
+            <li>Submission validates all questions</li>
+            <li>Feedback shows correctly</li>
+            <li>Score calculated accurately</li>
+            <li>Completion event fires</li>
+          </ul>
+        </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Related Guides</h2>
+      <div class="related-guides">
+        <a href="how-to-forms.html" class="guide-card">
+          <h4>Form Block</h4>
+          <p>Similar input collection with validation and submission</p>
+        </a>
+
+        <a href="how-to-journey-map.html" class="guide-card">
+          <h4>Journey Map Block</h4>
+          <p>Step-by-step process visualization with accordion interface</p>
+        </a>
+
+        <a href="how-to-experimentation.html" class="guide-card">
+          <h4>Experimentation</h4>
+          <p>A/B test quiz variations for optimal engagement</p>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

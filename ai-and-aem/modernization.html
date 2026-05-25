@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Experience Modernization | EDS Reference Playbook</title>
+  <meta name="description" content="Migrate legacy AEM Sites pages, classic UI components, and WCM templates into Edge Delivery structure using prompt-driven analysis and import workflows.">
+
+  <meta property="og:title" content="Experience Modernization | EDS Reference Playbook">
+  <meta property="og:description" content="Migrate legacy AEM Sites pages, classic UI, and WCM templates into Edge Delivery structure using prompt-driven workflows.">
+  <meta property="og:type" content="article">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css">
+  <script src="../scripts/prism-simple.js"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">AI and AEM</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Experience Modernization</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-ai">AI &amp; AEM</span>
+      <h1>Experience Modernization</h1>
+      <p class="subtitle">Most enterprise EDS projects start with content that already lives in <em>somewhere else</em>: AEM 6.5, AEMaaCS classic, Sitecore, WordPress, custom CMSs. Modernization is the inbound migration story — and where AI shines.</p>
+      <div class="metadata">
+        <span class="tag">Migration</span>
+        <span class="tag">AMS</span>
+        <span class="tag">AEMaaCS</span>
+        <span class="tag">WCM</span>
+        <span class="tag">Modernization</span>
+      </div>
+    </header>
+
+    <section id="approach" class="chapter-section">
+      <h2>Approach</h2>
+      <p>The honest answer: there's no universal "modernization button." But the demo's <a href="https://github.com/scdemos/demo/blob/main/.skills/page-import/SKILL.md" target="_blank">page-import</a> skill plus a thoughtful prompt covers ~80% of typical migrations. The remaining 20% — bespoke components, scripted personalization, server-side includes — needs architect-level judgment.</p>
+      <p>What changes vs a brand-new build:</p>
+      <ul>
+        <li><strong>Source is HTML, not a brief.</strong> The agent extracts intent from existing markup, not greenfield design.</li>
+        <li><strong>Block selection is constrained.</strong> Use what the EDS project already has; flag missing capabilities for explicit decision.</li>
+        <li><strong>Metadata matters more.</strong> SEO, social previews, redirects — losing any of these in migration is a real-money cost.</li>
+        <li><strong>Scale is the differentiator.</strong> 5 pages = manual review. 5,000 pages = automation with sampled QA.</li>
+      </ul>
+    </section>
+
+    <section id="patterns" class="chapter-section">
+      <h2>Migration prompt patterns</h2>
+
+      <h3>Single-page modernization</h3>
+      <pre><code class="language-text">Modernize this AEM 6.5 page to our EDS site:
+  Source: /tmp/legacy-export/products/widget-x.html
+  Target: content/products/widget-x.html
+
+Constraints:
+- Identify each WCM component used; map to closest EDS block we already have.
+- If no block fits, write the section as default content and flag it for review.
+- Preserve title, description, og:image, canonical URL.
+- Strip legacy analytics tags — we re-add via plugins/martech.
+- Remove inline styles. Keep semantic HTML.
+- Preserve any data-attributes the editorial team uses for tagging.
+
+Run preview-import after, and surface a diff vs the original page screenshot.</code></pre>
+
+      <h3>Bulk modernization (sample first, then run)</h3>
+      <pre><code class="language-text">I need to migrate ~3,400 product pages from /tmp/legacy-products/.
+
+Phase 1 (now): pick 5 representative samples, modernize each, show me diffs and your block mapping decisions. I'll review and approve the mapping rules.
+
+Phase 2 (after approval): apply the same rules to the full set. Output to content/products/. Generate a CSV report with: sourcePath, targetPath, blocksUsed, fallbacksToDefault, anyManualFlags.
+
+Don't run Phase 2 until I confirm Phase 1 is good.</code></pre>
+
+      <h3>Component inventory before migration</h3>
+      <pre><code class="language-text">Scan /tmp/legacy-export/. Build an inventory of:
+- Every WCM component name used (count by frequency)
+- Inline styles or scripts that need replacement
+- Custom data attributes
+- Image / video paths (and their final hosts)
+
+Output a markdown report I can take to the architecture review.</code></pre>
+    </section>
+
+    <section id="block-mapping" class="chapter-section">
+      <h2>Mapping legacy components to EDS blocks</h2>
+      <p>Encode the mapping in your project (e.g. <code>.cursor/rules/migration-mappings.mdc</code>) so every migration session uses the same rules:</p>
+      <pre><code class="language-text">## WCM → EDS block mapping
+
+- core/wcm/components/text → default content (paragraphs)
+- core/wcm/components/title → h1/h2/h3 default content
+- core/wcm/components/teaser → blocks/hero (single-image variant)
+- core/wcm/components/carousel → blocks/cards (default variant) — MANUAL REVIEW: carousel auto-rotation lost
+- core/wcm/components/accordion → blocks/faq
+- core/wcm/components/tabs → tabs (section metadata pattern, not a block)
+- proj/components/cta-button → button auto-decoration in default content
+- proj/components/quote → default content (blockquote)
+- proj/components/[unknown] → DEFAULT CONTENT + FLAG for manual review</code></pre>
+      <p>The agent reads <code>.cursor/rules</code> on every prompt. Once you've encoded the mappings, the modernization prompt becomes one-liner: <em>"Modernize <code>/tmp/legacy-export/widget-x.html</code> using our migration rules."</em></p>
+    </section>
+
+    <section id="qa" class="chapter-section">
+      <h2>QA after migration</h2>
+      <ul>
+        <li><strong>Visual diff sampling.</strong> Don't trust a 100% pass rate; sample 1% of migrated pages and visual-diff against the original (Playwright + pixel-diff tool).</li>
+        <li><strong>SEO regression check.</strong> Crawl the migrated site, compare H1/title/meta against pre-migration extraction. Set hard thresholds (zero pages with missing &lt;title&gt;, &lt; 1% with title/H1 mismatch).</li>
+        <li><strong>Redirect map.</strong> Every URL change needs a redirect from the legacy URL → new URL. Have the agent build this from the migration report.</li>
+        <li><strong>Author UX.</strong> Open 10 random migrated pages in DA and confirm authors can edit them without docs. If the block tables are unreadable, your mapping is wrong.</li>
+        <li><strong>CWV.</strong> Run Lighthouse on a sample of pages before celebrating. Migration occasionally introduces inline scripts or unoptimized images that tank LCP.</li>
+      </ul>
+    </section>
+
+    <section id="ams-specifics" class="chapter-section">
+      <h2>AMS / AEMaaCS specifics</h2>
+      <ul>
+        <li><strong>Use <code>.html</code> exports, not JCR snapshots.</strong> The agent works with rendered HTML — let the legacy stack do the rendering, then migrate the output.</li>
+        <li><strong>Personalization rules don't auto-port.</strong> If pages use ContextHub or Adobe Target activities, list them separately and migrate via the <a href="../playbooks/experimentation-and-personalization.html">experimentation playbook</a>.</li>
+        <li><strong>Servlets / fragments / experience fragments</strong> all need explicit decisions: become EDS fragments, become blocks, or become headless API calls.</li>
+        <li><strong>Authoring continuity.</strong> Ship a Sidekick / DA bookmark to every legacy author so they don't lose access to their drafts during the cutover window.</li>
+      </ul>
+    </section>
+
+    <section id="non-aem" class="chapter-section">
+      <h2>Non-AEM legacy stacks</h2>
+      <p>Most of the patterns above transfer. Differences:</p>
+      <ul>
+        <li><strong>WordPress:</strong> use the WP REST API for the inventory step instead of HTML scraping. Otherwise identical.</li>
+        <li><strong>Drupal:</strong> map content types → DA folder structure 1:1; map paragraphs → blocks via the same mapping doc.</li>
+        <li><strong>Custom CMSs:</strong> if there's no API, scrape the rendered site. The <a href="https://github.com/scdemos/demo/blob/main/.skills/scrape-webpage/SKILL.md" target="_blank">scrape-webpage skill</a> handles JS-rendered pages.</li>
+      </ul>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/ai-and-aem/modernization.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

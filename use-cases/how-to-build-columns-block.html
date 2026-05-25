@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="../favicon.ico" />
+  <title>How to Build a Columns Block | AEM Edge Delivery Developer Guides</title>
+  <meta name="description" content="Learn to build a responsive columns block for multi-column layouts in AEM Edge Delivery Services." />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+  
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Columns Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Columns Block</h1>
+      <p class="subtitle">Create responsive multi-column layouts with automatic column counting and image detection</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Layout</span>
+        <span class="tag">Responsive</span>
+        <span class="tag">Beginner</span>
+      </div>
+    </header>
+
+    <section>
+      <h2 id="overview">Overview</h2>
+      <p>
+        The Columns block enables authors to create multi-column layouts without writing CSS. It automatically detects
+        the number of columns, identifies image-only columns for special styling, and provides responsive behavior that
+        stacks columns on mobile devices.
+      </p>
+
+      <div class="info-box">
+        <strong>Key Features:</strong>
+        <ul>
+          <li><strong>Automatic Column Counting:</strong> Adds <code>columns-N-cols</code> class based on column count</li>
+          <li><strong>Image Column Detection:</strong> Identifies and styles image-only columns differently</li>
+          <li><strong>Responsive:</strong> Multi-column on desktop, stacked on mobile</li>
+          <li><strong>Flexible Content:</strong> Supports text, images, headings, lists, and nested blocks</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="authoring">Authoring Structure</h2>
+      <p>Authors create columns using a table with cells for each column:</p>
+
+      <h3>Two-Column Example</h3>
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr>
+              <th colspan="2">Columns</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <h3>Feature 1</h3>
+                <p>Description of the first feature with supporting text and details.</p>
+              </td>
+              <td>
+                <h3>Feature 2</h3>
+                <p>Description of the second feature with supporting text and details.</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Three-Column with Image</h3>
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr>
+              <th colspan="3">Columns</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><img src="https://placehold.co/600x400/e8e8e8/666?text=Feature+1" alt="Feature 1" style="max-width: 100%; height: auto;"></td>
+              <td>
+                <h3>Text Column</h3>
+                <p>This column has mixed content.</p>
+              </td>
+              <td><img src="https://placehold.co/600x400/e8e8e8/666?text=Feature+2" alt="Feature 2" style="max-width: 100%; height: auto;"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="markup-flow">From Authoring to Rendering</h2>
+      <p>Understanding how AEM Edge Delivery transforms column layouts from authored tables to flexible CSS layouts is essential for effective block development.</p>
+
+      <h3>Step 1: What the Author Creates</h3>
+      <p>Authors create columns using a simple table with multiple columns in a single row:</p>
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr><th colspan="3">Columns</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <img src="https://placehold.co/400x300/e8e8e8/666?text=Image+1" alt="Feature 1" style="max-width: 100%; height: auto;">
+              </td>
+              <td>
+                <h3>Middle Column</h3>
+                <p>This column contains text content with a heading and description.</p>
+              </td>
+              <td>
+                <img src="https://placehold.co/400x300/e8e8e8/666?text=Image+2" alt="Feature 2" style="max-width: 100%; height: auto;">
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Step 2: Plain HTML (.plain.html)</h3>
+      <p>AEM converts the table columns into nested divs <strong>before any JavaScript or CSS runs</strong>:</p>
+
+      <pre><code class="language-html">&lt;div&gt;
+  &lt;div class="columns"&gt;
+    &lt;div&gt;
+      &lt;div&gt;
+        &lt;picture&gt;
+          &lt;source type="image/webp" srcset="./media_abc.png?width=2000&amp;format=webply" media="(min-width: 600px)"&gt;
+          &lt;img loading="lazy" alt="Feature 1" src="./media_abc.png?width=750" width="750" height="563"&gt;
+        &lt;/picture&gt;
+      &lt;/div&gt;
+      &lt;div&gt;
+        &lt;h3&gt;Middle Column&lt;/h3&gt;
+        &lt;p&gt;This column contains text content with a heading and description.&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div&gt;
+        &lt;picture&gt;
+          &lt;source type="image/webp" srcset="./media_xyz.png?width=2000&amp;format=webply" media="(min-width: 600px)"&gt;
+          &lt;img loading="lazy" alt="Feature 2" src="./media_xyz.png?width=750" width="750" height="563"&gt;
+        &lt;/picture&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+      <p><strong>Key observations:</strong></p>
+      <ul>
+        <li>Block name "Columns" becomes <code>class="columns"</code></li>
+        <li>The table row becomes a single <code>&lt;div&gt;</code> container</li>
+        <li>Each table cell becomes a child <code>&lt;div&gt;</code> (sibling divs = columns)</li>
+        <li>Content structure is preserved exactly as authored</li>
+        <li><strong>No column classes yet</strong> - no <code>columns-3-cols</code> or <code>columns-img-col</code></li>
+      </ul>
+
+      <h3>Step 3: JavaScript Decoration</h3>
+      <p>The <code>blocks/columns/columns.js</code> file analyzes the structure and adds semantic classes:</p>
+
+      <pre><code class="language-javascript">export default function decorate(block) {
+  // Count columns from first row
+  const cols = [...block.firstElementChild.children];
+  block.classList.add(`columns-${cols.length}-cols`);  // ← Adds count class
+
+  // Detect image-only columns
+  [...block.children].forEach((row) =&gt; {
+    [...row.children].forEach((col) =&gt; {
+      const pic = col.querySelector('picture');
+      if (pic) {
+        const picWrapper = pic.closest('div');
+        if (picWrapper &amp;&amp; picWrapper.children.length === 1) {
+          // Only a picture, no other content
+          picWrapper.classList.add('columns-img-col');  // ← Marks image columns
+        }
+      }
+    });
+  });
+}</code></pre>
+
+      <h3>Step 4: Decorated HTML (Final DOM)</h3>
+      <p>After the full AEM decoration pipeline runs, the DOM has semantic classes and optimized images. This is what you see in browser DevTools:</p>
+
+      <pre><code class="language-html">&lt;div&gt;
+  &lt;div class="columns columns-3-cols block" data-block-name="columns" data-block-status="loaded"&gt;
+    &lt;div&gt;
+      &lt;div class="columns-img-col"&gt;
+        &lt;picture&gt;
+          &lt;source type="image/webp"
+                  srcset="./media_abc.png?width=2000&amp;format=webply&amp;optimize=medium"
+                  media="(min-width: 600px)"&gt;
+          &lt;source type="image/webp"
+                  srcset="./media_abc.png?width=750&amp;format=webply&amp;optimize=medium"&gt;
+          &lt;source type="image/png"
+                  srcset="./media_abc.png?width=2000&amp;format=png&amp;optimize=medium"
+                  media="(min-width: 600px)"&gt;
+          &lt;img loading="lazy" alt="Feature 1"
+               src="./media_abc.png?width=750&amp;format=png&amp;optimize=medium"
+               width="750" height="563"&gt;
+        &lt;/picture&gt;
+      &lt;/div&gt;
+      &lt;div&gt;
+        &lt;h3&gt;Middle Column&lt;/h3&gt;
+        &lt;p&gt;This column contains text content with a heading and description.&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div class="columns-img-col"&gt;
+        &lt;picture&gt;
+          &lt;source type="image/webp"
+                  srcset="./media_xyz.png?width=2000&amp;format=webply&amp;optimize=medium"
+                  media="(min-width: 600px)"&gt;
+          &lt;source type="image/webp"
+                  srcset="./media_xyz.png?width=750&amp;format=webply&amp;optimize=medium"&gt;
+          &lt;source type="image/png"
+                  srcset="./media_xyz.png?width=2000&amp;format=png&amp;optimize=medium"
+                  media="(min-width: 600px)"&gt;
+          &lt;img loading="lazy" alt="Feature 2"
+               src="./media_xyz.png?width=750&amp;format=png&amp;optimize=medium"
+               width="750" height="563"&gt;
+        &lt;/picture&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+      <p><strong>Key transformations:</strong></p>
+      <ul>
+        <li><code>class="block"</code> and data attributes added by AEM's core pipeline</li>
+        <li><code>columns-3-cols</code> class added by block JavaScript based on column count</li>
+        <li><code>columns-img-col</code> classes added to image-only columns by block JavaScript</li>
+        <li><code>&lt;picture&gt;</code> elements with responsive sources generated by <code>createOptimizedPicture()</code></li>
+      </ul>
+
+      <h3>Step 5: CSS Styling</h3>
+      <p>Finally, <code>blocks/columns/columns.css</code> creates responsive column layouts:</p>
+
+      <pre><code class="language-css">/* Mobile: stacked by default */
+.columns &gt; div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+/* Desktop: side-by-side */
+@media (width &gt;= 900px) {
+  .columns &gt; div {
+    flex-direction: row;
+  }
+
+  .columns &gt; div &gt; div {
+    flex: 1;  /* Equal width columns */
+  }
+
+  /* Image-only columns don't stretch */
+  .columns &gt; div &gt; div.columns-img-col {
+    flex: 0 0 auto;
+  }
+}
+
+/* Specific column widths */
+.columns.columns-3-cols &gt; div &gt; div {
+  flex-basis: 33.33%;
+}</code></pre>
+
+      <div class="info-box">
+        <strong>The Flow Summary:</strong>
+        <ol>
+          <li><strong>Author</strong> creates a table with multiple columns (cells) in a single row</li>
+          <li><strong>AEM</strong> converts each cell to a sibling <code>&lt;div&gt;</code> within a row container</li>
+          <li><strong>JavaScript</strong> counts columns (adds <code>columns-N-cols</code>) and detects image-only columns</li>
+          <li><strong>CSS</strong> uses flexbox to create responsive layouts: stacked on mobile, side-by-side on desktop</li>
+        </ol>
+      </div>
+
+      <h3>Why This Pattern Works</h3>
+      <p>The columns block demonstrates key AEM Edge Delivery principles:</p>
+      <ul>
+        <li><strong>Content-driven:</strong> Column count is detected automatically, not configured</li>
+        <li><strong>Semantic HTML:</strong> JavaScript adds meaningful classes based on content analysis</li>
+        <li><strong>Mobile-first:</strong> Default stacked layout, enhanced for larger screens</li>
+        <li><strong>Flexible:</strong> Works with any content type (text, images, headings, etc.)</li>
+      </ul>
+
+      <h3>Viewing Plain HTML</h3>
+      <p>To see the pre-decoration markup, append <code>.plain.html</code> to any page URL:</p>
+      <ul>
+        <li><strong>Regular:</strong> <code>https://main--{repo}--{owner}.aem.live/{path}</code></li>
+        <li><strong>Plain HTML:</strong> <code>https://main--{repo}--{owner}.aem.live/{path}.plain.html</code></li>
+      </ul>
+      <p><strong>Example:</strong> <code>https://main--demo--scdemos.aem.live/index.plain.html</code></p>
+    </section>
+
+    <section>
+      <h2 id="implementation">Implementation</h2>
+
+      <h3>JavaScript Logic</h3>
+      <p>Create <code>blocks/columns/columns.js</code>:</p>
+
+      <pre><code class="language-javascript">export default function decorate(block) {
+  const cols = [...block.firstElementChild.children];
+  block.classList.add(`columns-${cols.length}-cols`);
+
+  // Setup image columns
+  [...block.children].forEach((row) => {
+    [...row.children].forEach((col) => {
+      const pic = col.querySelector('picture');
+      if (pic) {
+        const picWrapper = pic.closest('div');
+        if (picWrapper && picWrapper.children.length === 1) {
+          // Picture is only content in column
+          picWrapper.classList.add('columns-img-col');
+        }
+      }
+    });
+  });
+}</code></pre>
+
+      <h3>CSS Styling</h3>
+      <p>Create <code>blocks/columns/columns.css</code>:</p>
+
+      <pre><code class="language-css">/* Base: stacked on mobile */
+.columns > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+/* Desktop: side-by-side columns */
+@media (width >= 900px) {
+  .columns > div {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .columns > div > div {
+    flex: 1;
+  }
+
+  /* Image-only columns: don't grow */
+  .columns > div > div.columns-img-col {
+    flex: 0 0 auto;
+  }
+}
+
+/* Specific column counts */
+.columns.columns-2-cols > div > div {
+  flex-basis: 50%;
+}
+
+.columns.columns-3-cols > div > div {
+  flex-basis: 33.33%;
+}
+
+.columns.columns-4-cols > div > div {
+  flex-basis: 25%;
+}
+
+/* Image column styling */
+.columns-img-col {
+  display: flex;
+  align-items: center;
+}
+
+.columns-img-col picture {
+  display: flex;
+  width: 100%;
+}
+
+.columns-img-col img {
+  width: 100%;
+  height: auto;
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="how-it-works">How It Works</h2>
+
+      <h3>Column Counting</h3>
+      <pre><code class="language-javascript">const cols = [...block.firstElementChild.children];
+block.classList.add(`columns-${cols.length}-cols`);</code></pre>
+      <p>Counts children of the first row and adds a class like <code>columns-3-cols</code> for CSS targeting.</p>
+
+      <h3>Image Detection</h3>
+      <pre><code class="language-javascript">const pic = col.querySelector('picture');
+if (pic) {
+  const picWrapper = pic.closest('div');
+  if (picWrapper && picWrapper.children.length === 1) {
+    picWrapper.classList.add('columns-img-col');
+  }
+}</code></pre>
+      <p>Checks if a column contains ONLY a picture (no other content). These columns get special styling to prevent stretching.</p>
+    </section>
+
+    <section>
+      <h2 id="use-cases">Common Use Cases</h2>
+
+      <h3>1. Feature Comparison</h3>
+      <pre><code class="language-text">| Columns (3) |
+| Free Plan | Pro Plan | Enterprise |
+| $0/month  | $49/month | Custom |
+| Feature list | Feature list | Feature list |</code></pre>
+
+      <h3>2. Image Gallery</h3>
+      <pre><code class="language-text">| Columns (4) |
+| Image 1 | Image 2 | Image 3 | Image 4 |</code></pre>
+
+      <h3>3. Text + Image Layout</h3>
+      <pre><code class="language-text">| Columns (2) |
+| Image | Text content with headings and paragraphs |</code></pre>
+
+      <h3>4. Card Grid</h3>
+      <pre><code class="language-text">| Columns (3) |
+| Card 1: Icon + Title + Description |
+| Card 2: Icon + Title + Description |
+| Card 3: Icon + Title + Description |</code></pre>
+    </section>
+
+    <section>
+      <h2 id="testing">Testing</h2>
+
+      <h3>Test Checklist</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Test Case</th>
+              <th>Expected Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2 columns</td>
+              <td>Class <code>columns-2-cols</code> added, 50% width each on desktop</td>
+            </tr>
+            <tr>
+              <td>3 columns</td>
+              <td>Class <code>columns-3-cols</code> added, 33% width each on desktop</td>
+            </tr>
+            <tr>
+              <td>4 columns</td>
+              <td>Class <code>columns-4-cols</code> added, 25% width each on desktop</td>
+            </tr>
+            <tr>
+              <td>Image-only column</td>
+              <td>Class <code>columns-img-col</code> added, doesn't stretch</td>
+            </tr>
+            <tr>
+              <td>Mixed content column</td>
+              <td>No special class, stretches to fill space</td>
+            </tr>
+            <tr>
+              <td>Mobile (< 900px)</td>
+              <td>Columns stack vertically</td>
+            </tr>
+            <tr>
+              <td>Desktop (>= 900px)</td>
+              <td>Columns display side-by-side</td>
+            </tr>
+            <tr>
+              <td>Unequal content heights</td>
+              <td>Columns stretch to match tallest</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="customization">Customization Ideas</h2>
+
+      <h3>1. Custom Column Widths</h3>
+      <pre><code class="language-css">/* 70/30 split for 2 columns */
+.columns.columns-2-cols > div > div:first-child {
+  flex-basis: 70%;
+}
+
+.columns.columns-2-cols > div > div:last-child {
+  flex-basis: 30%;
+}</code></pre>
+
+      <h3>2. Vertical Alignment Options</h3>
+      <pre><code class="language-css">/* Add variant: columns (top) */
+.columns.top > div {
+  align-items: flex-start;
+}
+
+/* Add variant: columns (center) */
+.columns.center > div {
+  align-items: center;
+}
+
+/* Add variant: columns (bottom) */
+.columns.bottom > div {
+  align-items: flex-end;
+}</code></pre>
+
+      <h3>3. Gap Variants</h3>
+      <pre><code class="language-css">/* Add variant: columns (narrow) */
+.columns.narrow > div {
+  gap: var(--space-s);
+}
+
+/* Add variant: columns (wide) */
+.columns.wide > div {
+  gap: var(--space-l);
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="best-practices">Best Practices</h2>
+
+      <h3>Content</h3>
+      <ul>
+        <li><strong>Balance:</strong> Keep column heights similar for better visual balance</li>
+        <li><strong>Readability:</strong> Limit text columns to 2-3 on desktop for optimal reading width</li>
+        <li><strong>Mobile-first:</strong> Design for stacked mobile layout first</li>
+      </ul>
+
+      <h3>Images</h3>
+      <ul>
+        <li><strong>Consistent aspect ratios:</strong> Use same ratio across image columns</li>
+        <li><strong>Optimize:</strong> Right-size images for column width (not full-width)</li>
+        <li><strong>Alt text:</strong> Always provide descriptive alt text</li>
+      </ul>
+
+      <h3>Responsive Design</h3>
+      <ul>
+        <li><strong>Test breakpoints:</strong> Verify stack/unstack behavior at 900px</li>
+        <li><strong>Content order:</strong> Most important content should be first (appears top on mobile)</li>
+        <li><strong>Max columns:</strong> Avoid more than 4 columns on desktop (readability)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="resources">Additional Resources</h2>
+      <ul>
+        <li><a href="https://www.aem.live/developer/block-collection" target="_blank" style="color: var(--color-rust);">AEM Block Collection</a></li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Flexible_Box_Layout" target="_blank" style="color: var(--color-rust);">MDN: Flexbox</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

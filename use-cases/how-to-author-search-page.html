@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Block - Developer Guide | AEM Edge Delivery</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Search Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Search Block</h1>
+      <p class="subtitle">Searchable content pages with filtering, sorting, and pagination</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Query Index</span>
+        <span class="tag">Advanced</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>Full-featured search block that fetches content from query-index, filters by keywords, displays results as cards or list, and provides sidebar filters for faceted search.</p>
+      <p><strong>Source:</strong>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/search/search.js" target="_blank">search.js (395 lines)</a> ·
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/search/search.css" target="_blank">search.css (367 lines)</a>
+      </p>
+
+      <div class="links">
+        <a href="https://demo.bbird.live/demo-docs/library" class="btn" target="_blank">Live Demo</a>
+        <a href="https://demo.bbird.live/query-index.json" class="btn btn-secondary" target="_blank">Query Index Example</a>
+      </div>
+    </section>
+
+    <!-- 2. ARCHITECTURE FLOW -->
+    <section>
+      <h2>Architecture Flow</h2>
+      <div class="mermaid">
+flowchart TD
+    Block[Search Block] --> Config[readBlockConfig]
+    Config --> Fetch[fetchQueryIndexPage]
+    Fetch --> QI[query-index.json]
+
+    QI --> Process[Process Results]
+    Process --> Keywords[Apply Keywords Filter]
+    Keywords --> Facets[Build Facet Filters]
+
+    Facets --> Render[Render UI]
+    Render --> SearchBar[Search Input]
+    Render --> Sidebar[Filter Sidebar]
+    Render --> Results[Result Cards/List]
+
+    SearchBar --> Update{User Interaction}
+    Sidebar --> Update
+    Results --> Update
+
+    Update -->|Search Query| Filter[Filter Results]
+    Update -->|Facet Selection| Filter
+    Update -->|Load More| Paginate[Fetch Next Page]
+
+    Filter --> Refresh[Update Display]
+    Paginate --> QI
+    Refresh --> Results
+      </div>
+    </section>
+
+    <!-- 3. BLOCK AUTHORING -->
+    <section>
+      <h2>Block Authoring</h2>
+      <p>Authors create search blocks using a 2-column block structure in DA:</p>
+
+      <h3>Search Block</h3>
+      <details>
+        <summary>Expand to view and copy</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)" style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Copy</button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">search</th></tr>
+            </thead>
+            <tbody>
+              <tr><td style="width: 30%;">view</td><td>cards</td></tr>
+              <tr><td>keywords</td><td>blog, tutorial</td></tr>
+              <tr><td>excluded-keywords</td><td>draft</td></tr>
+              <tr><td>searchbar</td><td>enabled</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <h3>Search with Filters</h3>
+      <details>
+        <summary>Expand to view and copy</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)" style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Copy</button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">search</th></tr>
+            </thead>
+            <tbody>
+              <tr><td style="width: 30%;">view</td><td>cards</td></tr>
+              <tr><td>keywords</td><td>demo, usecases</td></tr>
+              <tr><td>searchbar</td><td>enabled</td></tr>
+              <tr><td>type</td><td>tutorial, guide, reference</td></tr>
+              <tr><td>topic</td><td>blocks, forms, integrations</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 1rem; font-size: 0.9rem; color: #666;"><em>Note: Any key besides view/keywords/excluded-keywords/searchbar becomes a filter group.</em></p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 4. CONFIGURATION OPTIONS -->
+    <section>
+      <h2>Configuration Options</h2>
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Values</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>view</code></td>
+            <td><code>cards</code> | <code>list</code></td>
+            <td>Display layout (default: cards)</td>
+          </tr>
+          <tr>
+            <td><code>keywords</code></td>
+            <td>Comma-separated</td>
+            <td>Include only content with these keywords</td>
+          </tr>
+          <tr>
+            <td><code>excluded-keywords</code></td>
+            <td>Comma-separated</td>
+            <td>Exclude content with these keywords</td>
+          </tr>
+          <tr>
+            <td><code>searchbar</code></td>
+            <td><code>enabled</code></td>
+            <td>Show search input field</td>
+          </tr>
+          <tr>
+            <td><code>*</code> (custom)</td>
+            <td>Comma-separated</td>
+            <td>Creates a filter group in sidebar</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 5. HOW IT WORKS -->
+    <section>
+      <h2>How It Works</h2>
+
+      <h3>1. Reading the Markup</h3>
+      <p>AEM transforms the authored block into nested divs. The <code>readBlockConfig()</code> utility converts this into a key-value object:</p>
+      <details>
+        <summary>View HTML structure</summary>
+        <div class="details-content">
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">HTML received by decorate()</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-markup">&lt;div class="search block"&gt;
+  &lt;div&gt;&lt;div&gt;view&lt;/div&gt;&lt;div&gt;cards&lt;/div&gt;&lt;/div&gt;
+  &lt;div&gt;&lt;div&gt;keywords&lt;/div&gt;&lt;div&gt;demo, usecases&lt;/div&gt;&lt;/div&gt;
+  &lt;div&gt;&lt;div&gt;type&lt;/div&gt;&lt;div&gt;tutorial, guide&lt;/div&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Config object after readBlockConfig()</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-javascript">{
+  view: "cards",
+  keywords: "demo, usecases",
+  type: "tutorial, guide"
+}</code></pre>
+          </div>
+        </div>
+      </details>
+
+      <h3>2. Fetching Data from Query Index</h3>
+      <p>The block fetches content metadata from <code>/query-index.json</code> in batches (500 items per request):</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">Recursive batch fetching (search.js:94-108)</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">async function fetchAllResults(keywords, excluded) {
+  const allArticles = [];
+  const limit = 500;
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const articles = await fetchQueryIndexPage(offset, limit);
+    allArticles.push(...articles);
+    hasMore = articles.length === limit;
+    offset += limit;
+  }
+
+  return matchArticles(allArticles, keywords, excluded);
+}</code></pre>
+      </div>
+
+      <h3>3. Constructing the DOM</h3>
+      <p>Results are rendered as cards or list items. Filter groups become sidebar checkboxes:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">Building result cards (search.js:110-140)</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-javascript">function buildResultItem(article, view) {
+  const item = createTag('div', { class: `search-result ${view}` });
+
+  const link = createTag('a', { href: article.path });
+  const title = createTag('h3', {}, article.title);
+  const description = createTag('p', {}, article.description);
+  const date = createTag('time', {}, formatDate(article.date));
+
+  link.append(title, description, date);
+  item.append(link);
+
+  return item;
+}</code></pre>
+      </div>
+
+      <h3>4. CSS Layout</h3>
+      <p>Cards use CSS Grid with responsive breakpoints. Filters use a sticky sidebar:</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-title">Key layout styles (search.css:45-78)</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <pre><code class="language-css">.search-container {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: var(--space-l);
+}
+
+.search-results.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-m);
+}
+
+.search-sidebar {
+  position: sticky;
+  top: var(--space-m);
+  max-height: calc(100vh - var(--space-m) * 2);
+  overflow-y: auto;
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- 6. COMPLETE IMPLEMENTATION -->
+    <section>
+      <h2>Complete Implementation</h2>
+      <p>View the full source code on GitHub:</p>
+      <ul>
+        <li><a href="https://github.com/scdemos/demo/blob/main/blocks/search/search.js" target="_blank"><strong>search.js</strong></a> - 395 lines of JavaScript</li>
+        <li><a href="https://github.com/scdemos/demo/blob/main/blocks/search/search.css" target="_blank"><strong>search.css</strong></a> - 367 lines of CSS</li>
+        <li><a href="https://github.com/scdemos/demo/blob/main/scripts/shared.js" target="_blank"><strong>shared.js</strong></a> - Utility functions</li>
+      </ul>
+    </section>
+
+    <!-- 7. QUICK START -->
+    <section>
+      <h2>Quick Start</h2>
+      <ol class="steps">
+        <li>
+          <h3>Create Block Files</h3>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Terminal</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-bash">mkdir -p blocks/search
+touch blocks/search/search.js
+touch blocks/search/search.css</code></pre>
+          </div>
+        </li>
+        <li>
+          <h3>Copy Implementation</h3>
+          <p>Copy the code from GitHub into your block files.</p>
+        </li>
+        <li>
+          <h3>Add Required Utilities</h3>
+          <p>Ensure <code>scripts/shared.js</code> contains:</p>
+          <ul>
+            <li><code>fetchQueryIndexPage()</code></li>
+            <li><code>parseKeywords()</code></li>
+            <li><code>createTag()</code></li>
+            <li><code>formatDate()</code></li>
+          </ul>
+        </li>
+        <li>
+          <h3>Create Content in DA</h3>
+          <p>Use the copyable tables above to create a search block in your document.</p>
+        </li>
+        <li>
+          <h3>Test Locally</h3>
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-title">Terminal</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-bash">aem up
+# Visit http://localhost:3000/your-page</code></pre>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- 8. ACCESSIBILITY & PERFORMANCE -->
+    <section>
+      <h2>Accessibility & Performance</h2>
+
+      <details>
+        <summary>Accessibility Features</summary>
+        <div class="details-content">
+          <ul>
+            <li>Semantic HTML: <code>&lt;nav&gt;</code>, <code>&lt;form&gt;</code>, <code>&lt;article&gt;</code></li>
+            <li>ARIA labels on filter checkboxes and search input</li>
+            <li>Keyboard navigation: Tab through filters, Enter to submit search</li>
+            <li>Focus management: Results announce "X results found"</li>
+            <li>Screen reader: Filter counts and active filters announced</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>Performance Optimizations</summary>
+        <div class="details-content">
+          <ul>
+            <li><strong>Lazy loading:</strong> Block decorates when in viewport</li>
+            <li><strong>Batch fetching:</strong> Query-index fetched in 500-item chunks</li>
+            <li><strong>Debounced search:</strong> 300ms delay on search input</li>
+            <li><strong>CSS containment:</strong> <code>contain: layout style</code> on cards</li>
+            <li><strong>Minimal reflows:</strong> DOM updates batched with DocumentFragment</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <!-- 9. RELATED RESOURCES -->
+    <section>
+      <h2>Related Resources</h2>
+      <div class="related-guides">
+        <a href="how-to-build-related-articles.html" class="guide-card">
+          <h4>Related Articles Block</h4>
+          <p>Dynamic article recommendations</p>
+        </a>
+        <a href="how-to-build-cards-block.html" class="guide-card">
+          <h4>Cards Block</h4>
+          <p>Static card layouts</p>
+        </a>
+        <a href="https://www.aem.live/developer/block-collection" class="guide-card" target="_blank">
+          <h4>Block Collection</h4>
+          <p>Official AEM block library</p>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Sample Prompts | EDS Reference Playbook</title>
+  <meta name="description" content="Use-case-shaped prompts for AEM Edge Delivery work — page imports, block creation, modernization, code review. Copy / adapt / paste into Cursor, Claude Code, or Codex CLI.">
+
+  <meta property="og:title" content="Sample Prompts | EDS Reference Playbook">
+  <meta property="og:description" content="Use-case-shaped prompts for AEM Edge Delivery work in Cursor, Claude Code, or Codex CLI.">
+  <meta property="og:type" content="article">
+
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css">
+  <script src="../scripts/prism-simple.js"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">AI and AEM</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Sample Prompts</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <span class="lane-chip lane-ai">AI &amp; AEM</span>
+      <h1>Sample prompts</h1>
+      <p class="subtitle">Real prompts that have shipped real demos. Use them as templates: replace the bracketed placeholders, paste into your agent runtime of choice.</p>
+      <div class="metadata">
+        <span class="tag">Prompts</span>
+        <span class="tag">Cursor</span>
+        <span class="tag">Claude Code</span>
+        <span class="tag">Codex</span>
+      </div>
+    </header>
+
+    <section id="page-import" class="chapter-section">
+      <h2>1. Page import / migration</h2>
+      <p>Triggers the <a href="https://github.com/scdemos/demo/blob/main/.skills/page-import/SKILL.md" target="_blank">page-import</a> skill. Works for any URL — competitor pages, design previews, legacy CMS exports.</p>
+      <pre><code class="language-text">Migrate this page to our EDS site:
+  https://www.example.com/about
+
+Use only blocks already in our project. If a section needs a block we don't have, flag it and propose adapting an existing one. Save the result to /content/imports/about.html and start the local dev server so I can preview it.</code></pre>
+      <p><strong>Variations:</strong> swap "Migrate" for "Import", "Convert", or "Migrating". The skill matches the verb plus the URL signal.</p>
+    </section>
+
+    <section id="block-creation" class="chapter-section">
+      <h2>2. New block from a content sketch</h2>
+      <p>Triggers <a href="https://github.com/scdemos/demo/blob/main/.skills/content-driven-development/SKILL.md" target="_blank">content-driven-development</a>, which orchestrates content modeling + building + testing.</p>
+      <pre><code class="language-text">Build me a "feature-comparison" block.
+
+Authoring shape:
+| feature-comparison |
+|--------|----------|----------|
+| Heading row: Feature | Plan A | Plan B |
+| Row: Storage | 100 GB | 1 TB |
+| ... |
+
+Behavior:
+- Sticky header row on scroll
+- Mobile: collapse to one-column-per-plan accordion
+- Tap a feature row to highlight which plan wins
+
+Acceptance criteria:
+- Lighthouse a11y >= 95
+- Works in DA Quick Edit
+- No layout shift on load</code></pre>
+      <p>The skill will refuse to start coding until you've created (or pointed at) test content — that's the "content driven" guarantee.</p>
+    </section>
+
+    <section id="block-modification" class="chapter-section">
+      <h2>3. Modify an existing block</h2>
+      <pre><code class="language-text">Add a "compact" variant to our cards block.
+
+Current variants: default, links, bento. The compact variant should:
+- 4 columns on desktop, 2 on mobile
+- Hide the description, keep title + image only
+- Reduce padding by 50%
+
+Find existing test content using cards (any variant) and add a section that uses the compact variant for testing. Then implement.</code></pre>
+      <p>Triggers <code>find-test-content</code> first, then <code>building-blocks</code>. Both invoked through the CDD orchestrator.</p>
+    </section>
+
+    <section id="bug-fix" class="chapter-section">
+      <h2>4. Bug fix with reproduction</h2>
+      <pre><code class="language-text">Bug: on mobile, the tabs block doesn't scroll the active tab into view after I tap a tab off-screen. Repro:
+
+1. Open https://main--demo--scdemos.aem.live/learn/fire/whats-fire on a phone
+2. Tap the rightmost tab (it's clipped off-screen)
+3. The active style applies but the tab list doesn't scroll
+
+Find the related code in blocks/tabs/tabs.js, fix it, and verify with a Playwright mobile-viewport test.</code></pre>
+      <p>The agent will use <code>analyze-and-plan</code> to define repro + AC, then <code>building-blocks</code> + <code>testing-blocks</code> to fix and verify.</p>
+    </section>
+
+    <section id="modernization" class="chapter-section">
+      <h2>5. Experience modernization</h2>
+      <p>Migrating off legacy AEM Sites / classic UI / WCM components. See the dedicated <a href="modernization.html">Modernization page</a> for fuller patterns.</p>
+      <pre><code class="language-text">I have a legacy AEM 6.5 page exported as HTML at /tmp/legacy/products/widget-x.html. Modernize it to our EDS site:
+
+- Identify each WCM component used
+- Map to the closest EDS block we have, or default content if none fits
+- Preserve metadata (title, description, og:image)
+- Drop any client-side analytics tags — we'll re-add via our martech plugin
+- Output to content/products/widget-x.html and open the preview</code></pre>
+    </section>
+
+    <section id="code-review" class="chapter-section">
+      <h2>6. Self code review before PR</h2>
+      <p>Triggers <a href="https://github.com/scdemos/demo/blob/main/.skills/code-review/SKILL.md" target="_blank">code-review</a> in self-review mode.</p>
+      <pre><code class="language-text">Review my changes on this branch before I open a PR:
+
+- Run lint, fix anything fixable
+- Check accessibility, performance budgets, naming conventions
+- Verify each new block follows EDS patterns from .cursor/rules
+- Suggest the PR title and a 3-bullet description</code></pre>
+    </section>
+
+    <section id="search-discovery" class="chapter-section">
+      <h2>7. Search &amp; discovery features</h2>
+      <pre><code class="language-text">Add a "browse by tag" page to our site.
+
+- Use query-index.json + the existing search.js helpers
+- Page lives at /browse and renders all unique values from the `tags` field
+- Clicking a tag goes to /search?tag={value}
+- Mobile-first, keyboard accessible, no layout shift
+
+Adapt our existing patterns from blocks/search and blocks/related-articles. Don't add new dependencies.</code></pre>
+    </section>
+
+    <section id="forms" class="chapter-section">
+      <h2>8. Worker-backed form</h2>
+      <pre><code class="language-text">Build a "request-a-demo" form on /contact.
+
+- Author the form schema as JSON in DA at /forms/request-demo.json
+- Submit via Cloudflare Worker that posts to our Slack #demos channel
+- Don't expose the Slack webhook to the client
+- Show a success state inline; no redirect
+
+Use the patterns in blocks/form/form.js and workers/contact_us/index.js as references.</code></pre>
+      <p>See the <a href="../playbooks/worker-backed-forms.html">Worker-backed forms playbook</a> for the full pattern.</p>
+    </section>
+
+    <section id="experimentation" class="chapter-section">
+      <h2>9. Set up an A/B test</h2>
+      <pre><code class="language-text">Run an A/B test on the home page hero.
+
+- Variant A (control): current hero
+- Variant B: replace the headline with "Save 30% on every plan"
+- Split 50/50, exclude internal traffic by IP
+- 2-week duration, success metric is signup conversions
+
+Configure via metadata in DA so I don't have to redeploy. Use our existing experimentation plugin (plugins/experimentation/). Confirm the RUM events split correctly between control and treatment.</code></pre>
+    </section>
+
+    <section id="prompts-as-files" class="chapter-section">
+      <h2>Storing prompts in your project</h2>
+      <p>For prompts you reuse, drop them in <code>.cursor/prompts/</code> (Cursor), <code>.claude/commands/</code> (Claude Code), or <code>~/.codex/prompts/</code>. Then call them by name: <code>/migrate-page</code> instead of pasting the long form.</p>
+    </section>
+
+    <a class="edit-on-github" href="https://github.com/scdemos/demo-playground/edit/main/ai-and-aem/prompts.html" target="_blank">✎ Edit this page on GitHub</a>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

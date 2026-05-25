@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="../favicon.ico" />
+  <title>How to Build a Quick Edit Tool | AEM Edge Delivery Developer Guides</title>
+  <meta name="description" content="Learn to implement a Quick Edit tool that enables in-context editing of page content with live preview and collaborative editing features." />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+  
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Quick Edit Tool</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Quick Edit Tool</h1>
+      <p class="subtitle">Enable in-context editing with live preview and real-time collaboration using DA Live's Quick Edit module</p>
+
+      <div class="metadata">
+        <span class="tag">Authoring Tool</span>
+        <span class="tag">Live Editing</span>
+        <span class="tag">Yjs/CRDT</span>
+        <span class="tag">Intermediate</span>
+      </div>
+    </header>
+
+    <section>
+      <h2 id="overview">Overview</h2>
+      <p>
+        Quick Edit is a powerful authoring tool that transforms static web pages into live, editable documents. It provides
+        authors with an in-context editing experience where they can modify content directly on the page while seeing a
+        real-time preview. The tool uses collaborative editing technology (Yjs) to support multiple authors working on the
+        same content simultaneously.
+      </p>
+
+      <div class="info-box">
+        <strong>What You'll Build:</strong>
+        <ul>
+          <li><strong>Quick Edit Loader:</strong> Module that bootstraps the DA Live Quick Edit interface</li>
+          <li><strong>Import Map Configuration:</strong> Setup for Lit and Yjs dependencies</li>
+          <li><strong>Sidekick Integration:</strong> Event-driven activation via AEM Sidekick</li>
+          <li><strong>URL Parameter Activation:</strong> Direct page access with <code>?quick-edit</code> parameter</li>
+          <li><strong>Environment Detection:</strong> Support for local, branch, and production editing</li>
+        </ul>
+      </div>
+
+      <div class="info-box warning">
+        <strong>Prerequisites:</strong>
+        <ul>
+          <li>Understanding of <a href="https://www.aem.live/docs/sidekick" target="_blank" style="color: var(--color-rust);">AEM Sidekick architecture</a></li>
+          <li>Familiarity with ES modules and dynamic imports</li>
+          <li>Knowledge of <a href="https://docs.yjs.dev/" target="_blank" style="color: var(--color-rust);">Yjs collaborative editing</a> (optional)</li>
+          <li>Experience with <a href="https://lit.dev/" target="_blank" style="color: var(--color-rust);">Lit web components</a> (optional)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="architecture">Architecture</h2>
+      <p>
+        Quick Edit uses a lightweight loader pattern that dynamically imports the full editing interface from DA Live.
+        This keeps your codebase minimal while providing a complete editing experience:
+      </p>
+
+      <pre class="mermaid">
+graph TB
+    A[Page Load] --> B{Check Activation}
+    B -->|URL param ?quick-edit| C[Auto-init]
+    B -->|Sidekick event| D[Event Listener]
+    C --> E[Detect Environment]
+    D --> E
+    E --> F{Environment}
+    F -->|Production| G[Load from da.live]
+    F -->|Local dev| H[Load from localhost:6456]
+    F -->|Branch ref| I[Load from branch]
+    G --> J[Add Import Map]
+    H --> J
+    I --> J
+    J --> K[Dynamic Import Module]
+    K --> L[Initialize Quick Edit]
+    L --> M[Set html attribute]
+    M --> N[Call loadQuickEdit]
+    N --> O[Enable In-Context Editing]
+
+    style A fill:#e1f5ff
+    style E fill:#fff4e1
+    style K fill:#ffe1f5
+    style O fill:#e1ffe1
+      </pre>
+
+      <h3>Key Components</h3>
+      <ul>
+        <li><strong>Loader Module:</strong> Minimal bootstrapper (<code>quick-edit.js</code>) that detects environment and loads the full editor</li>
+        <li><strong>Import Map:</strong> Defines module dependencies (Lit, Yjs wrapper) for ESM resolution</li>
+        <li><strong>Environment Detector:</strong> Determines correct DA Live origin (production, local, branch)</li>
+        <li><strong>Payload Generator:</strong> Constructs configuration object with mountpoint and location</li>
+        <li><strong>DA Live Module:</strong> Full editing interface loaded from <code>https://da.live/nx/public/plugins/quick-edit/quick-edit.js</code></li>
+        <li><strong>Page Reloader:</strong> Passes <code>loadPage()</code> function to reload content after edits</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="file-structure">File Structure</h2>
+      <p>The Quick Edit tool requires minimal local code:</p>
+
+      <pre><code class="language-text">tools/quick-edit/
+└── quick-edit.js      # Loader module (imports from DA Live)
+
+scripts/
+└── scripts.js         # Integration code (Sidekick listener, URL detection)</code></pre>
+
+      <div class="info-box">
+        <strong>Why This Structure:</strong>
+        <ul>
+          <li><strong>Minimal footprint:</strong> Only 54 lines of loader code in your repository</li>
+          <li><strong>Always up-to-date:</strong> Full editor loaded from DA Live ensures latest features</li>
+          <li><strong>No maintenance:</strong> Bug fixes and enhancements automatically available</li>
+          <li><strong>Flexible environments:</strong> Easy switching between production, local dev, and branch previews</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="implementation">Implementation</h2>
+
+      <h3>Step 1: Create the Quick Edit Loader</h3>
+      <p>Create <code>tools/quick-edit/quick-edit.js</code> with the loader logic:</p>
+
+      <pre><code class="language-javascript">// eslint-disable-next-line import/no-cycle
+import { loadPage } from '../../scripts/scripts.js';
+
+// Import map for module dependencies
+const importMap = {
+  imports: {
+    'da-lit': 'https://da.live/deps/lit/dist/index.js',
+    'da-y-wrapper': 'https://da.live/deps/da-y-wrapper/dist/index.js',
+  },
+};
+
+/**
+ * Adds import map to document head for module resolution
+ */
+function addImportmap() {
+  const importmapEl = document.createElement('script');
+  importmapEl.type = 'importmap';
+  importmapEl.textContent = JSON.stringify(importMap);
+  document.head.appendChild(importmapEl);
+}
+
+/**
+ * Dynamically loads the Quick Edit module from DA Live
+ * @param {string} origin - DA Live origin URL
+ * @param {Object} payload - Configuration payload with mountpoint and location
+ */
+async function loadModule(origin, payload) {
+  const { default: loadQuickEdit } = await import(`${origin}/nx/public/plugins/quick-edit/quick-edit.js`);
+  document.querySelector('html').setAttribute('quick-edit', 'true');
+  loadQuickEdit(payload, loadPage);
+}
+
+/**
+ * Generates Sidekick-compatible payload from current location
+ * @returns {Object} Payload object with config and location
+ */
+function generateSidekickPayload() {
+  let { hostname } = window.location;
+
+  // Handle localhost dev environment
+  if (hostname === 'localhost') {
+    hostname = document.querySelector('meta[property="hlx:proxyUrl"]').content;
+  }
+
+  // Parse hostname: branch--repo--owner.aem.page
+  const parts = hostname.split('.')[0].split('--');
+  const [, repo, owner] = parts;
+
+  return {
+    detail: {
+      config: {
+        mountpoint: `https://content.da.live/${owner}/${repo}/`
+      },
+      location: {
+        pathname: window.location.pathname,
+      },
+    }
+  };
+}
+
+/**
+ * Initializes Quick Edit with environment detection
+ * @param {Object} payload - Optional custom payload (uses generated if not provided)
+ */
+export default function init(payload) {
+  const { search } = window.location;
+  const ref = new URLSearchParams(search).get('quick-edit');
+
+  // Determine DA Live origin based on ref parameter
+  let origin;
+  if (ref === 'on' || !ref) {
+    origin = 'https://da.live'; // Production
+  } else if (ref === 'local') {
+    origin = 'http://localhost:6456'; // Local development
+  } else {
+    origin = `https://${ref}--da-nx--adobe.aem.live`; // Branch preview
+  }
+
+  addImportmap();
+  loadModule(origin, payload || generateSidekickPayload());
+}</code></pre>
+
+      <h3>Step 2: Integrate with Page Scripts</h3>
+      <p>Add Sidekick integration and URL parameter detection to <code>scripts/scripts.js</code>:</p>
+
+      <pre><code class="language-javascript">// In your loadLazy() or delayed() function:
+
+/**
+ * Lazy loader for Quick Edit module
+ */
+const loadQuickEdit = async (...args) => {
+  const { default: initQuickEdit } = await import('../tools/quick-edit/quick-edit.js');
+  initQuickEdit(...args);
+};
+
+/**
+ * Sets up Sidekick event listeners for Quick Edit
+ * @param {HTMLElement} sk - Sidekick element
+ */
+const addSidekickListeners = (sk) => {
+  sk.addEventListener('custom:quick-edit', loadQuickEdit);
+};
+
+// Wait for Sidekick to be ready
+const sk = document.querySelector('aem-sidekick');
+if (sk) {
+  addSidekickListeners(sk);
+} else {
+  // Wait for sidekick to be loaded
+  document.addEventListener('sidekick-ready', () => {
+    addSidekickListeners(document.querySelector('aem-sidekick'));
+  }, { once: true });
+}
+
+// At the end of scripts.js (outside any function):
+
+/**
+ * Auto-activate Quick Edit if URL parameter present
+ */
+const IS_QUICK_EDIT = new URL(window.location.href).searchParams.has('quick-edit');
+if (IS_QUICK_EDIT) {
+  import('../tools/quick-edit/quick-edit.js').then((mod) => mod.default());
+}</code></pre>
+
+      <h3>Step 3: Configure Sidekick Plugin (Optional)</h3>
+      <p>Add Quick Edit as a Sidekick plugin in your configuration:</p>
+
+      <pre><code class="language-json">{
+  "plugins": [
+    {
+      "id": "quick-edit",
+      "title": "Quick Edit",
+      "description": "Edit content in context with live preview",
+      "event": "custom:quick-edit",
+      "isEnabled": true
+    }
+  ]
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="how-it-works">How It Works</h2>
+
+      <h3>1. Activation Flow</h3>
+      <pre class="mermaid">
+sequenceDiagram
+    participant Author
+    participant Page
+    participant Sidekick
+    participant Loader
+    participant DA_Live
+    participant Editor
+
+    Author->>Page: Open page
+    Page->>Sidekick: Load Sidekick
+    Sidekick-->>Page: sidekick-ready event
+    Page->>Sidekick: Register event listener
+
+    Note over Author,Sidekick: Option 1: Sidekick Button
+    Author->>Sidekick: Click Quick Edit
+    Sidekick->>Page: Dispatch custom:quick-edit
+    Page->>Loader: loadQuickEdit()
+
+    Note over Author,Page: Option 2: URL Parameter
+    Author->>Page: Open with ?quick-edit
+    Page->>Loader: Auto-init
+
+    Loader->>Loader: addImportmap()
+    Loader->>DA_Live: Import module
+    DA_Live-->>Loader: loadQuickEdit function
+    Loader->>Editor: Initialize with payload
+    Editor->>Page: Inject editing UI
+      </pre>
+
+      <h3>2. Environment Detection</h3>
+      <p>The loader automatically detects which DA Live environment to use:</p>
+      <ul>
+        <li><strong>Production:</strong> <code>?quick-edit</code> or <code>?quick-edit=on</code> → <code>https://da.live</code></li>
+        <li><strong>Local development:</strong> <code>?quick-edit=local</code> → <code>http://localhost:6456</code></li>
+        <li><strong>Branch preview:</strong> <code>?quick-edit=my-branch</code> → <code>https://my-branch--da-nx--adobe.aem.live</code></li>
+      </ul>
+
+      <h3>3. Payload Generation</h3>
+      <p>The payload provides Quick Edit with context about the current page:</p>
+      <pre><code class="language-javascript">{
+  detail: {
+    config: {
+      mountpoint: "https://content.da.live/owner/repo/"
+    },
+    location: {
+      pathname: "/path/to/page"
+    }
+  }
+}</code></pre>
+      <p>This tells Quick Edit:</p>
+      <ul>
+        <li><strong>mountpoint:</strong> Where to read/write content (DA content API)</li>
+        <li><strong>pathname:</strong> Which document to edit</li>
+      </ul>
+
+      <h3>4. Import Map Resolution</h3>
+      <p>The import map allows DA Live's module to resolve its dependencies:</p>
+      <ul>
+        <li><strong>da-lit:</strong> Lit web components library for UI</li>
+        <li><strong>da-y-wrapper:</strong> Yjs wrapper for collaborative editing (CRDT)</li>
+      </ul>
+      <p>Without the import map, the browser wouldn't know where to find these bare module specifiers.</p>
+    </section>
+
+    <section>
+      <h2 id="usage">Usage Scenarios</h2>
+
+      <h3>For Authors</h3>
+
+      <h4>Activate via Sidekick</h4>
+      <ol>
+        <li>Open a page on your preview or live site</li>
+        <li>Click the Sidekick extension icon</li>
+        <li>Click the "Quick Edit" button</li>
+        <li>The page transforms into an editable document with a sidebar</li>
+      </ol>
+
+      <h4>Activate via URL</h4>
+      <ol>
+        <li>Add <code>?quick-edit</code> to any page URL</li>
+        <li>Example: <code>https://main--repo--owner.aem.page/page?quick-edit</code></li>
+        <li>The page loads directly in Quick Edit mode</li>
+      </ol>
+
+      <h4>Collaborative Editing</h4>
+      <ol>
+        <li>Multiple authors can open the same page with <code>?quick-edit</code></li>
+        <li>Changes sync in real-time via Yjs CRDT</li>
+        <li>Each author sees others' cursors and edits</li>
+        <li>Conflicts resolved automatically</li>
+      </ol>
+
+      <h3>For Developers</h3>
+
+      <h4>Local DA Live Development</h4>
+      <pre><code class="language-bash"># Clone DA Live repository
+git clone https://github.com/adobe/da-live.git
+cd da-live
+
+# Start local DA Live server
+npm install
+npm start
+
+# Open your page with local Quick Edit
+# https://localhost:3000/page?quick-edit=local</code></pre>
+
+      <h4>Test on Branch Preview</h4>
+      <pre><code class="language-bash"># Push changes to a branch
+git push origin feature-branch
+
+# Open page with branch Quick Edit
+# https://main--repo--owner.aem.page/page?quick-edit=feature-branch</code></pre>
+    </section>
+
+    <section>
+      <h2 id="configuration">Configuration & Customization</h2>
+
+      <h3>Custom Mountpoint</h3>
+      <p>If your content is stored in a custom location, override the mountpoint:</p>
+
+      <pre><code class="language-javascript">export default function init(payload) {
+  const customPayload = payload || {
+    detail: {
+      config: {
+        mountpoint: 'https://my-custom-cdn.com/content/'
+      },
+      location: {
+        pathname: window.location.pathname,
+      },
+    }
+  };
+
+  // ... rest of init code
+}</code></pre>
+
+      <h3>Additional Dependencies</h3>
+      <p>If you need to add more dependencies to the import map:</p>
+
+      <pre><code class="language-javascript">const importMap = {
+  imports: {
+    'da-lit': 'https://da.live/deps/lit/dist/index.js',
+    'da-y-wrapper': 'https://da.live/deps/da-y-wrapper/dist/index.js',
+    'my-custom-lib': 'https://cdn.example.com/my-lib.js',
+  },
+};</code></pre>
+
+      <h3>Custom loadPage Implementation</h3>
+      <p>Quick Edit calls <code>loadPage()</code> after edits to refresh content. Customize this if you have special reload logic:</p>
+
+      <pre><code class="language-javascript">import { loadPage as defaultLoadPage } from '../../scripts/scripts.js';
+
+async function customLoadPage() {
+  // Clear caches
+  if ('caches' in window) {
+    const cacheKeys = await caches.keys();
+    await Promise.all(cacheKeys.map((key) => caches.delete(key)));
+  }
+
+  // Reload with custom logic
+  await defaultLoadPage();
+
+  // Re-initialize custom components
+  document.querySelectorAll('[data-custom-component]').forEach((el) => {
+    // Re-decorate
+  });
+}
+
+async function loadModule(origin, payload) {
+  const { default: loadQuickEdit } = await import(`${origin}/nx/public/plugins/quick-edit/quick-edit.js`);
+  document.querySelector('html').setAttribute('quick-edit', 'true');
+  loadQuickEdit(payload, customLoadPage); // Use custom function
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="testing">Testing</h2>
+
+      <h3>Manual Testing Checklist</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Test Case</th>
+              <th>Steps</th>
+              <th>Expected Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Sidekick Activation</td>
+              <td>Click Quick Edit in Sidekick</td>
+              <td>Page transforms to editing mode with sidebar</td>
+            </tr>
+            <tr>
+              <td>URL Parameter Activation</td>
+              <td>Open page with ?quick-edit</td>
+              <td>Page loads directly in edit mode</td>
+            </tr>
+            <tr>
+              <td>Production Environment</td>
+              <td>Use ?quick-edit or ?quick-edit=on</td>
+              <td>Loads from https://da.live</td>
+            </tr>
+            <tr>
+              <td>Local Environment</td>
+              <td>Use ?quick-edit=local (with DA Live running locally)</td>
+              <td>Loads from http://localhost:6456</td>
+            </tr>
+            <tr>
+              <td>Branch Environment</td>
+              <td>Use ?quick-edit=branch-name</td>
+              <td>Loads from https://branch-name--da-nx--adobe.aem.live</td>
+            </tr>
+            <tr>
+              <td>Edit Content</td>
+              <td>Modify text in editor</td>
+              <td>Preview updates in real-time</td>
+            </tr>
+            <tr>
+              <td>Save Changes</td>
+              <td>Click Save in Quick Edit</td>
+              <td>Content saved to DA, loadPage() called</td>
+            </tr>
+            <tr>
+              <td>Localhost Detection</td>
+              <td>Open http://localhost:3000/page?quick-edit</td>
+              <td>Correctly detects repo/owner from meta tag</td>
+            </tr>
+            <tr>
+              <td>HTML Attribute Set</td>
+              <td>Inspect <code>&lt;html&gt;</code> tag after activation</td>
+              <td>Has <code>quick-edit="true"</code> attribute</td>
+            </tr>
+            <tr>
+              <td>Import Map Injected</td>
+              <td>Inspect <code>&lt;head&gt;</code> after activation</td>
+              <td>Contains <code>&lt;script type="importmap"&gt;</code> with da-lit and da-y-wrapper</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Automated Testing Example</h3>
+      <pre><code class="language-javascript">// Test Quick Edit loader
+import { expect } from '@esm-bundle/chai';
+import init from '../tools/quick-edit/quick-edit.js';
+
+describe('Quick Edit Loader', () => {
+  it('should add import map to document head', () => {
+    init();
+    const importMap = document.querySelector('script[type="importmap"]');
+    expect(importMap).to.exist;
+    const imports = JSON.parse(importMap.textContent);
+    expect(imports.imports['da-lit']).to.equal('https://da.live/deps/lit/dist/index.js');
+  });
+
+  it('should detect production environment', () => {
+    window.location.search = '?quick-edit';
+    // Spy on dynamic import and verify origin
+  });
+
+  it('should generate correct payload from hostname', () => {
+    // Mock hostname and meta tag
+    // Call generateSidekickPayload()
+    // Verify mountpoint format
+  });
+});</code></pre>
+    </section>
+
+    <section>
+      <h2 id="troubleshooting">Troubleshooting</h2>
+
+      <h3>Common Issues</h3>
+
+      <h4>Quick Edit doesn't load</h4>
+      <ul>
+        <li><strong>Check console:</strong> Look for CORS errors or 404s when importing from DA Live</li>
+        <li><strong>Verify URL parameter:</strong> Ensure <code>?quick-edit</code> is present in URL</li>
+        <li><strong>Check network:</strong> Verify connection to <code>https://da.live</code></li>
+        <li><strong>Inspect import map:</strong> Confirm <code>&lt;script type="importmap"&gt;</code> was added before dynamic import</li>
+      </ul>
+
+      <h4>Localhost detection fails</h4>
+      <ul>
+        <li><strong>Check meta tag:</strong> Ensure <code>&lt;meta property="hlx:proxyUrl"&gt;</code> exists with correct hostname</li>
+        <li><strong>Verify AEM CLI:</strong> Confirm you're running <code>aem up</code> or equivalent local server</li>
+      </ul>
+
+      <h4>Module resolution errors</h4>
+      <ul>
+        <li><strong>Import map timing:</strong> Ensure <code>addImportmap()</code> is called before <code>loadModule()</code></li>
+        <li><strong>Check URLs:</strong> Verify import map URLs are accessible and returning valid JavaScript</li>
+      </ul>
+
+      <h4>Changes not saving</h4>
+      <ul>
+        <li><strong>Check mountpoint:</strong> Verify mountpoint URL is correct and accessible</li>
+        <li><strong>Verify permissions:</strong> Ensure user has write access to the content repository</li>
+        <li><strong>Check payload:</strong> Log payload object to verify config and location are correct</li>
+      </ul>
+
+      <h3>Debugging Tips</h3>
+      <pre><code class="language-javascript">// Add logging to understand environment detection
+export default function init(payload) {
+  const { search } = window.location;
+  const ref = new URLSearchParams(search).get('quick-edit');
+
+  console.log('Quick Edit ref:', ref);
+  console.log('Payload:', payload || generateSidekickPayload());
+
+  let origin;
+  if (ref === 'on' || !ref) origin = 'https://da.live';
+  if (ref === 'local') origin = 'http://localhost:6456';
+  if (!origin) origin = `https://${ref}--da-nx--adobe.aem.live`;
+
+  console.log('Loading Quick Edit from:', origin);
+
+  addImportmap();
+  loadModule(origin, payload || generateSidekickPayload());
+}
+
+// Verify import map was added correctly
+function addImportmap() {
+  const importmapEl = document.createElement('script');
+  importmapEl.type = 'importmap';
+  importmapEl.textContent = JSON.stringify(importMap);
+  document.head.appendChild(importmapEl);
+  console.log('Import map added:', importMap);
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="advanced">Advanced Enhancements</h2>
+
+      <h3>1. Custom Toolbar Integration</h3>
+      <p>Add custom actions to the Quick Edit toolbar:</p>
+
+      <pre><code class="language-javascript">async function loadModule(origin, payload) {
+  const { default: loadQuickEdit } = await import(`${origin}/nx/public/plugins/quick-edit/quick-edit.js`);
+  document.querySelector('html').setAttribute('quick-edit', 'true');
+
+  // Pass custom toolbar config
+  const customPayload = {
+    ...payload,
+    detail: {
+      ...payload.detail,
+      customActions: [
+        {
+          id: 'spell-check',
+          title: 'Spell Check',
+          icon: 'spell-check-icon',
+          callback: () => runSpellCheck(),
+        },
+      ],
+    },
+  };
+
+  loadQuickEdit(customPayload, loadPage);
+}</code></pre>
+
+      <h3>2. Analytics Integration</h3>
+      <p>Track Quick Edit usage:</p>
+
+      <pre><code class="language-javascript">async function loadModule(origin, payload) {
+  const { default: loadQuickEdit } = await import(`${origin}/nx/public/plugins/quick-edit/quick-edit.js`);
+  document.querySelector('html').setAttribute('quick-edit', 'true');
+
+  // Track activation
+  if (window.adobeDataLayer) {
+    window.adobeDataLayer.push({
+      event: 'quick-edit-activated',
+      page: window.location.pathname,
+      environment: origin.includes('localhost') ? 'local' : 'production',
+    });
+  }
+
+  loadQuickEdit(payload, loadPage);
+}</code></pre>
+
+      <h3>3. Conditional Loading</h3>
+      <p>Only enable Quick Edit for specific users or pages:</p>
+
+      <pre><code class="language-javascript">export default function init(payload) {
+  // Check if user has edit permissions
+  const userHasEditPermission = checkUserPermissions();
+  if (!userHasEditPermission) {
+    console.warn('Quick Edit: User does not have edit permissions');
+    return;
+  }
+
+  // Check if page is editable
+  const isEditablePage = !window.location.pathname.startsWith('/system/');
+  if (!isEditablePage) {
+    console.warn('Quick Edit: Page is not editable');
+    return;
+  }
+
+  // Proceed with initialization
+  const { search } = window.location;
+  // ... rest of init code
+}</code></pre>
+
+      <h3>4. Performance Optimization</h3>
+      <p>Lazy load Quick Edit dependencies only when needed:</p>
+
+      <pre><code class="language-javascript">let quickEditLoaded = false;
+
+export default async function init(payload) {
+  if (quickEditLoaded) {
+    console.log('Quick Edit already loaded');
+    return;
+  }
+
+  // Show loading indicator
+  const loader = document.createElement('div');
+  loader.className = 'quick-edit-loader';
+  loader.textContent = 'Loading Quick Edit...';
+  document.body.appendChild(loader);
+
+  try {
+    const { search } = window.location;
+    const ref = new URLSearchParams(search).get('quick-edit');
+
+    let origin;
+    if (ref === 'on' || !ref) origin = 'https://da.live';
+    if (ref === 'local') origin = 'http://localhost:6456';
+    if (!origin) origin = `https://${ref}--da-nx--adobe.aem.live`;
+
+    addImportmap();
+    await loadModule(origin, payload || generateSidekickPayload());
+
+    quickEditLoaded = true;
+  } catch (error) {
+    console.error('Failed to load Quick Edit:', error);
+    alert('Failed to activate Quick Edit. Please try again.');
+  } finally {
+    loader.remove();
+  }
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="best-practices">Best Practices</h2>
+
+      <h3>Performance</h3>
+      <ul>
+        <li><strong>Lazy loading:</strong> Only import Quick Edit when activated (not on page load)</li>
+        <li><strong>Import map timing:</strong> Add import map synchronously before dynamic import</li>
+        <li><strong>Cache strategy:</strong> Allow browser to cache DA Live modules for repeat visits</li>
+      </ul>
+
+      <h3>Security</h3>
+      <ul>
+        <li><strong>Permission checks:</strong> Verify user has edit rights before enabling Quick Edit</li>
+        <li><strong>CORS configuration:</strong> Ensure DA Live origin is allowed in CSP</li>
+        <li><strong>Token validation:</strong> Quick Edit handles auth via DA Live, but verify tokens on save</li>
+      </ul>
+
+      <h3>User Experience</h3>
+      <ul>
+        <li><strong>Loading indicators:</strong> Show feedback while Quick Edit module loads</li>
+        <li><strong>Error handling:</strong> Provide clear messages when activation fails</li>
+        <li><strong>State preservation:</strong> Ensure page state is maintained after edits</li>
+      </ul>
+
+      <h3>Development</h3>
+      <ul>
+        <li><strong>Local testing:</strong> Use <code>?quick-edit=local</code> with local DA Live for development</li>
+        <li><strong>Branch testing:</strong> Test Quick Edit changes on branch previews before merging</li>
+        <li><strong>Version pinning:</strong> Consider pinning DA Live version for stability (e.g., <code>/v1.2.3/nx/public/plugins/...</code>)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="resources">Additional Resources</h2>
+      <ul>
+        <li>
+          <a href="https://www.aem.live/docs/sidekick" target="_blank" style="color: var(--color-rust);">
+            AEM Sidekick Documentation
+          </a>
+        </li>
+        <li>
+          <a href="https://github.com/adobe/da-live" target="_blank" style="color: var(--color-rust);">
+            DA Live Source Code (GitHub)
+          </a>
+        </li>
+        <li>
+          <a href="https://docs.yjs.dev/" target="_blank" style="color: var(--color-rust);">
+            Yjs Collaborative Editing Documentation
+          </a>
+        </li>
+        <li>
+          <a href="https://lit.dev/" target="_blank" style="color: var(--color-rust);">
+            Lit Web Components
+          </a>
+        </li>
+        <li>
+          <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap" target="_blank" style="color: var(--color-rust);">
+            MDN: Import Maps
+          </a>
+        </li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

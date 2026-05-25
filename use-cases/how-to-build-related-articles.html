@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Related Articles Block - Developer Guide | AEM Edge Delivery</title>
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Related Articles Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Related Articles Block</h1>
+      <p class="subtitle">Dynamic content recommendations powered by query-index</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Query Index</span>
+        <span class="tag">Intermediate</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>The Related Articles block displays contextually relevant content based on keywords, tags, or manually curated links. It queries the site's query-index to find matching articles and presents them in either a horizontal slider or bento-style grid layout.</p>
+
+      <h3>Key Features</h3>
+      <ul>
+        <li>Query-index powered - Dynamic content discovery</li>
+        <li>Keyword matching - Filter by metadata keywords/tags</li>
+        <li>Manual curation - Hand-picked article links</li>
+        <li>Two variants - Horizontal slider (default) or bento grid</li>
+        <li>Responsive carousel - Touch-friendly with navigation arrows</li>
+        <li>Exclusion filters - Remove unwanted articles</li>
+        <li>Random selection - Display random articles</li>
+      </ul>
+
+      <div class="links">
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/related-articles/related-articles.js" target="_blank" class="btn">View JavaScript (242 lines)</a>
+        <a href="https://github.com/scdemos/demo/blob/main/blocks/related-articles/related-articles.css" target="_blank" class="btn">View CSS (303 lines)</a>
+        <a href="https://demo.bbird.live/demo-docs/library" target="_blank" class="btn btn-secondary">Live Demo</a>
+      </div>
+    </section>
+
+    <!-- 2. Architecture Flow -->
+    <section>
+      <h2>Architecture Flow</h2>
+      <div class="mermaid">
+flowchart TD
+    Config[Block Config] --> Mode{Mode Check}
+    Mode -->|links| Links[Extract Authored Links]
+    Mode -->|dynamic| Keywords[Keyword Matching]
+    Links --> Fetch[fetchQueryIndexAll]
+    Keywords --> Fetch
+    Fetch --> Resolve[resolveArticlesFromIndex]
+    Resolve --> Match[matchArticles]
+    Match --> Variant{Variant?}
+    Variant -->|default| Slider[renderSliderVariant]
+    Variant -->|bento| Bento[renderBentoVariant]
+    Slider --> Cards[buildSliderCard]
+    Bento --> Cards
+    Cards --> Controls[Add Navigation]
+    Controls --> Events[Scroll Listeners]
+      </div>
+    </section>
+
+    <!-- 3. Block Authoring -->
+    <section>
+      <h2>Block Authoring for Content Authors</h2>
+      <p>Authors create related articles blocks using a 2-column configuration table. Three modes available: dynamic (keywords), links (manual), or random.</p>
+
+      <h3>Dynamic Mode (Keyword-based)</h3>
+      <details>
+        <summary>Expand to view and copy</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">related-articles</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width: 35%;">keywords</td>
+                <td>finance, investing, savings</td>
+              </tr>
+              <tr>
+                <td>excluded-keywords</td>
+                <td>cryptocurrency</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <h3>Links Mode (Manual Curation)</h3>
+      <details>
+        <summary>Expand to view and copy</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">related-articles</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width: 35%;">mode</td>
+                <td>links</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>
+                  - Article Title 1 (/articles/article-1)<br>
+                  - Article Title 2 (/articles/article-2)<br>
+                  - Article Title 3 (/articles/article-3)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <h3>Random Articles</h3>
+      <details>
+        <summary>Expand to view and copy</summary>
+        <div class="details-content">
+          <button class="copy-btn" onclick="copyTable(this)"
+                  style="margin-bottom: 1rem; background: #4a4a4a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            Copy
+          </button>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">related-articles</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width: 35%;">keywords</td>
+                <td>random</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <h3>Bento Variant (Grid Layout)</h3>
+      <details>
+        <summary>Expand to view example</summary>
+        <div class="details-content">
+          <p>Add "bento" to block name for asymmetric grid layout</p>
+          <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <thead>
+              <tr><th colspan="2" style="background-color: #f0f0f0;">related-articles (bento)</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="width: 35%;">keywords</td>
+                <td>featured, top-stories</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <!-- 4. Configuration Options -->
+    <section>
+      <h2>Configuration Options</h2>
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Option</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>mode</code></td>
+            <td>"dynamic" (default) or "links" for manual curation</td>
+          </tr>
+          <tr>
+            <td><code>keywords</code></td>
+            <td>Comma-separated keywords to match. Use "random" for random selection</td>
+          </tr>
+          <tr>
+            <td><code>excluded-keywords</code></td>
+            <td>Comma-separated keywords to exclude from results</td>
+          </tr>
+          <tr>
+            <td><code>Variant: bento</code></td>
+            <td>Add "(bento)" to block name for grid layout instead of slider</td>
+          </tr>
+          <tr>
+            <td><code>RESULT_LIMIT</code></td>
+            <td>Maximum 5 articles displayed (configurable in code)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 5. How It Works -->
+    <section>
+      <h2>How It Works</h2>
+
+      <h3>Step 1: Read Block Configuration</h3>
+      <p>Extract configuration from table using <code>readBlockConfig()</code> (<a href="https://github.com/scdemos/demo/blob/main/blocks/related-articles/related-articles.js#L226" target="_blank">related-articles.js:226</a>):</p>
+      <pre><code class="language-javascript">const config = readBlockConfig(block);
+const mode = config.mode || 'dynamic';
+const keywords = config.keywords || '';
+const excludedKeywords = config['excluded-keywords'] || '';</code></pre>
+
+      <h3>Step 2: Get Articles (Dynamic or Links)</h3>
+      <p>Two paths: extract manual links or match by keywords (<a href="https://github.com/scdemos/demo/blob/main/blocks/related-articles/related-articles.js#L18-L28" target="_blank">related-articles.js:18-28</a>):</p>
+      <pre><code class="language-javascript">// Links mode: extract <a> tags from block
+function getLinksFromBlock(block) {
+  const anchors = block.querySelectorAll('a[href]');
+  return [...anchors].map(a => ({
+    path: pathFromHref(a.href),
+    title: a.textContent.trim()
+  }));
+}
+
+// Dynamic mode: fetch query-index and match
+const indexRows = await fetchQueryIndexAll();
+const matches = matchArticles(indexRows, keywords, excludedKeywords, 5);</code></pre>
+
+      <h3>Step 3: Match Articles by Keywords</h3>
+      <p>Filter query-index rows by keyword matching (<a href="https://github.com/scdemos/demo/blob/main/blocks/related-articles/related-articles.js#L36-L60" target="_blank">related-articles.js:36-60</a>):</p>
+      <pre><code class="language-javascript">function matchArticles(rows, keywordsConfig, excludedConfig, limit) {
+  const requested = parseKeywords(keywordsConfig);
+  const excluded = parseKeywords(excludedConfig);
+  const isRandom = requested.includes('random');
+
+  // Filter by keywords
+  const filtered = isRandom || !requested.length
+    ? rows
+    : rows.filter(row =>
+        requested.some(keyword => rowMatchesKeyword(row, keyword))
+      );
+
+  // Remove excluded
+  const withoutExcluded = excluded.length
+    ? filtered.filter(row =>
+        !excluded.some(keyword => rowMatchesKeyword(row, keyword))
+      )
+    : filtered;
+
+  // Dedupe and sort
+  const deduped = [...new Set(withoutExcluded.map(r => r.path))];
+
+  // Shuffle if random or multiple keywords
+  if (isRandom) return shuffle(deduped).slice(0, limit);
+
+  return deduped
+    .sort((a, b) => getContentTimestamp(b) - getContentTimestamp(a))
+    .slice(0, limit);
+}</code></pre>
+
+      <h3>Step 4: Build Card UI</h3>
+      <p>Create card elements for slider or bento variant (<a href="https://github.com/scdemos/demo/blob/main/blocks/related-articles/related-articles.js#L66-L83" target="_blank">related-articles.js:66-83</a>):</p>
+      <pre><code class="language-javascript">function buildSliderCard(article) {
+  const href = normalizePath(article.path);
+  const link = createTag('a', {
+    href,
+    class: 'related-articles-card-link'
+  });
+
+  const content = createTag('div', {
+    class: 'related-articles-card-content'
+  });
+  content.append(createTag('h3', {}, article.title || href));
+
+  if (article.description) {
+    content.append(createTag('p', {
+      class: 'related-articles-card-description'
+    }, article.description));
+  }
+
+  const date = article.date || article.publisheddate;
+  if (date) {
+    content.append(createTag('p', {
+      class: 'related-articles-card-date'
+    }, formatDate(date)));
+  }
+
+  link.append(content);
+  return createTag('li', { class: 'related-articles-card' }, link);
+}</code></pre>
+
+      <h3>Step 5: Add Slider Controls</h3>
+      <p>For default variant, add prev/next navigation with scroll behavior (<a href="https://github.com/scdemos/demo/blob/main/blocks/related-articles/related-articles.js#L93-L101" target="_blank">related-articles.js:93-101</a>):</p>
+      <pre><code class="language-javascript">function updateSliderButtons(list, prevBtn, nextBtn) {
+  const max = list.scrollWidth - list.clientWidth - 1;
+  const atStart = list.scrollLeft <= 0;
+  const atEnd = list.scrollLeft >= max;
+
+  prevBtn.disabled = atStart;
+  prevBtn.classList.toggle('is-hidden', atStart);
+  nextBtn.disabled = atEnd;
+  nextBtn.classList.toggle('is-hidden', atEnd);
+}
+
+// Smooth scroll on button click
+prevBtn.addEventListener('click', () => {
+  const step = getScrollStep(list);
+  list.scrollBy({ left: -step, behavior: 'smooth' });
+});
+
+// Update button state on scroll
+list.addEventListener('scroll', () => {
+  updateSliderButtons(list, prevBtn, nextBtn);
+});</code></pre>
+    </section>
+
+    <!-- 6. Complete Implementation -->
+    <section>
+      <h2>Complete Implementation</h2>
+      <p>Full source code available on GitHub:</p>
+      <ul>
+        <li><a href="https://github.com/scdemos/demo/blob/main/blocks/related-articles/related-articles.js" target="_blank"><strong>related-articles.js</strong></a> - 242 lines of JavaScript</li>
+        <li><a href="https://github.com/scdemos/demo/blob/main/blocks/related-articles/related-articles.css" target="_blank"><strong>related-articles.css</strong></a> - 303 lines of CSS (responsive, mobile-first)</li>
+      </ul>
+
+      <h3>Key Implementation Details</h3>
+      <ul>
+        <li><strong>Query-index integration</strong> - <code>fetchQueryIndexAll()</code> from shared.js</li>
+        <li><strong>Keyword parsing</strong> - <code>parseKeywords()</code> splits comma-separated values</li>
+        <li><strong>Path normalization</strong> - <code>normalizePath()</code> ensures consistent URLs</li>
+        <li><strong>Date formatting</strong> - <code>formatDate()</code> handles multiple date fields</li>
+        <li><strong>Responsive scroll</strong> - CSS <code>scroll-snap-type</code> for touch gestures</li>
+        <li><strong>Two variants</strong> - <code>renderSliderVariant()</code> and <code>renderBentoVariant()</code></li>
+        <li><strong>Dynamic buttons</strong> - Prev/next visibility updates on scroll events</li>
+      </ul>
+    </section>
+
+    <!-- 7. Quick Start -->
+    <section>
+      <h2>Quick Start</h2>
+      <ol class="steps">
+        <li>
+          <h3>Create block files</h3>
+          <pre><code class="language-bash">mkdir -p blocks/related-articles
+touch blocks/related-articles/related-articles.js
+touch blocks/related-articles/related-articles.css</code></pre>
+        </li>
+
+        <li>
+          <h3>Copy implementation</h3>
+          <p>Download JavaScript and CSS from GitHub and place in your block directory.</p>
+        </li>
+
+        <li>
+          <h3>Ensure query-index is active</h3>
+          <p>Verify <code>/query-index.json</code> returns article metadata. See <a href="how-to-author-search-page.html">Search Page guide</a> for setup.</p>
+        </li>
+
+        <li>
+          <h3>Author content in DA</h3>
+          <p>Create a 2-column config table with keywords or links mode.</p>
+        </li>
+
+        <li>
+          <h3>Test locally</h3>
+          <pre><code class="language-bash">aem up
+# Visit http://localhost:3000/your-page</code></pre>
+        </li>
+      </ol>
+    </section>
+
+    <!-- 8. Accessibility & Performance -->
+    <section>
+      <h2>Accessibility & Performance</h2>
+
+      <details>
+        <summary>Accessibility Features</summary>
+        <div class="details-content">
+          <h4>Semantic HTML</h4>
+          <ul>
+            <li><code>&lt;ul&gt;</code> for article list</li>
+            <li><code>&lt;li&gt;</code> for each article card</li>
+            <li><code>&lt;a&gt;</code> links with descriptive text</li>
+            <li><code>&lt;h3&gt;</code> for article titles</li>
+            <li><code>&lt;button&gt;</code> for navigation controls</li>
+          </ul>
+
+          <h4>Keyboard Navigation</h4>
+          <ul>
+            <li><kbd>Tab</kbd> - Navigate between cards and buttons</li>
+            <li><kbd>Enter</kbd> - Activate links and buttons</li>
+            <li><kbd>Arrow Keys</kbd> - Horizontal scroll in slider</li>
+            <li>Focus visible - Outline on interactive elements</li>
+          </ul>
+
+          <h4>Screen Reader Support</h4>
+          <ul>
+            <li>Article cards announced as list items</li>
+            <li>Navigation buttons labeled clearly</li>
+            <li>Disabled state conveyed via <code>disabled</code> attribute</li>
+            <li>Date information provided in accessible format</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>Performance Optimizations</summary>
+        <div class="details-content">
+          <h4>Load Performance</h4>
+          <ul>
+            <li><strong>242 lines JS</strong> - Minimal JavaScript footprint</li>
+            <li><strong>303 lines CSS</strong> - Scoped, mobile-first styles</li>
+            <li><strong>Lazy loading</strong> - Query-index fetched async</li>
+            <li><strong>Shared utilities</strong> - Reuses functions from shared.js</li>
+          </ul>
+
+          <h4>Runtime Performance</h4>
+          <ul>
+            <li><strong>Efficient matching</strong> - Array operations for keyword filtering</li>
+            <li><strong>Debounced scroll</strong> - Button state updates throttled</li>
+            <li><strong>CSS scroll-snap</strong> - Native browser scrolling</li>
+            <li><strong>Minimal DOM queries</strong> - Elements cached in variables</li>
+          </ul>
+
+          <h4>CSS Performance</h4>
+          <ul>
+            <li><strong>Transform animations</strong> - GPU-accelerated transitions</li>
+            <li><strong>Flexbox/Grid</strong> - Native layout engines</li>
+            <li><strong>Scroll containers</strong> - <code>overflow-x: auto</code> with scroll-snap</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>Advanced Customization</summary>
+        <div class="details-content">
+          <h4>Change Result Limit</h4>
+          <pre><code class="language-javascript">// At top of related-articles.js:
+const RESULT_LIMIT = 10; // Default is 5</code></pre>
+
+          <h4>Custom Matching Logic</h4>
+          <pre><code class="language-javascript">// Modify rowMatchesKeyword() for fuzzy matching:
+function rowMatchesKeyword(row, keyword) {
+  const articleKeywords = parseKeywords(getArticleKeywords(row));
+  return articleKeywords.some(ak =>
+    ak.toLowerCase().includes(keyword.toLowerCase())
+  );
+}</code></pre>
+
+          <h4>Add Custom Sort</h4>
+          <pre><code class="language-javascript">// In matchArticles(), change sort logic:
+return deduped
+  .sort((a, b) => a.title.localeCompare(b.title)) // Alphabetical
+  .slice(0, limit);</code></pre>
+
+          <h4>Track Clicks</h4>
+          <pre><code class="language-javascript">// Add click tracking to cards:
+link.addEventListener('click', () => {
+  console.log('Related article clicked:', article.title);
+  // Send to analytics
+});</code></pre>
+        </div>
+      </details>
+    </section>
+
+    <!-- 9. Related Resources -->
+    <section>
+      <h2>Related Resources</h2>
+      <div class="related-guides">
+        <a href="how-to-author-search-page.html" class="guide-card">
+          <h4>Search Page</h4>
+          <p>Query-index setup and configuration</p>
+        </a>
+        <a href="how-to-build-cards-block.html" class="guide-card">
+          <h4>Cards Block</h4>
+          <p>Similar content display with query-index integration</p>
+        </a>
+        <a href="how-to-use-experimentation.html" class="guide-card">
+          <h4>Experimentation</h4>
+          <p>A/B test different article recommendations</p>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

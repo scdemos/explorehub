@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="../favicon.ico" />
+  <title>How to Build a Teaser Block | AEM Edge Delivery Developer Guides</title>
+  <meta name="description" content="Learn to build a CSS-only teaser card block with hover effects and theming for AEM Edge Delivery Services." />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+  
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Teaser Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Teaser Block</h1>
+      <p class="subtitle">Create elegant card-style teasers with CSS-only styling, hover effects, and special variants</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">CSS-Only</span>
+        <span class="tag">Cards</span>
+        <span class="tag">Beginner</span>
+      </div>
+    </header>
+
+    <section>
+      <h2 id="overview">Overview</h2>
+      <p>
+        The Teaser block is a CSS-only card component that requires no JavaScript decoration. It uses authored DOM
+        structure directly and applies sophisticated styling including borders, hover effects, and theme-aware colors.
+        A special <code>login-teaser-image</code> variant creates an overlapping card on an image backdrop.
+      </p>
+
+      <div class="info-box">
+        <strong>Key Features:</strong>
+        <ul>
+          <li><strong>CSS-Only:</strong> No JavaScript required - empty decorate function</li>
+          <li><strong>Card Styling:</strong> Heritage-themed borders, padding, and typography</li>
+          <li><strong>Hover Effects:</strong> Smooth lift animation with shadow and border color change</li>
+          <li><strong>Theme Support:</strong> Light/dark mode with <code>light-dark()</code> CSS</li>
+          <li><strong>Login Variant:</strong> Special section-level styling with image backdrop</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="authoring">Authoring Structure</h2>
+
+      <h3>Standard Teaser</h3>
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr>
+              <th>Teaser</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <h3>Start Your Financial Journey</h3>
+                <p>Get personalized retirement planning advice from our expert team. <a href="/get-started">Learn More →</a></p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Login Teaser with Image Backdrop</h3>
+      <p>Use section metadata to create the special variant:</p>
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr>
+              <th colspan="2">Section Metadata</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Style</td>
+              <td>login-teaser-image</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Then add default content (image) and the teaser block in the same section:</p>
+
+      <div style="border: 1px solid var(--color-border); padding: var(--space-m); margin-bottom: var(--space-m); background: light-dark(#fafafa, #1a1a1a);">
+        <p><strong>Document Content:</strong></p>
+
+        <p><img src="https://placehold.co/1200x600/2a2a2a/ccc?text=Background+Image" alt="Background" style="max-width: 100%; height: auto;"></p>
+        <p><em>(Image placed in the section, outside the block)</em></p>
+
+        <table class="authoring-table" style="margin-top: var(--space-m);">
+          <thead>
+            <tr><th>Teaser</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>🔒 Access Your Account</td></tr>
+            <tr><td>View your portfolio and track your progress.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><strong>Result:</strong> The image becomes the section background, and the teaser card appears centered over it.</p>
+    </section>
+
+    <section>
+      <h2 id="implementation">Implementation</h2>
+
+      <h3>JavaScript (None Required)</h3>
+      <p>Create <code>blocks/teaser/teaser.js</code>:</p>
+
+      <pre><code class="language-javascript">/**
+ * Teaser uses authored DOM structure directly.
+ */
+export default function decorate() {}</code></pre>
+
+      <p><strong>Why no decoration?</strong> The teaser's structure is perfect as-is from authoring. All styling is handled via CSS.</p>
+
+      <h3>CSS Styling</h3>
+      <p>Create <code>blocks/teaser/teaser.css</code>:</p>
+
+      <pre><code class="language-css">/* Base teaser card styling */
+main .teaser {
+  background: light-dark(var(--color-parchment), var(--color-card-dark));
+  border: var(--border-heritage);
+  border-radius: var(--border-radius-heritage);
+  text-align: center;
+  font-family: var(--font-family-serif);
+  font-size: var(--body-font-size-m);
+  font-weight: 500;
+  color: light-dark(var(--color-ink), var(--color-parchment));
+  transition: transform 0.5s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)),
+    box-shadow 0.5s ease,
+    border-color 0.4s ease;
+}
+
+/* Hover effects */
+main .teaser:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift-m);
+  border-color: light-dark(var(--color-gold), rgb(197 160 89 / 40%));
+}
+
+/* Content padding */
+main .teaser > div {
+  align-items: center;
+  gap: var(--space-s);
+  padding: var(--space-l) var(--content-padding-inline);
+}
+
+/* Link styling */
+main .teaser > div > div a {
+  color: light-dark(var(--color-rust), var(--color-rust-bright));
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--color-gold);
+  padding-inline-start: 0.5em;
+  transition: color 0.3s, text-decoration-color 0.3s;
+}
+
+main .teaser > div > div a:hover {
+  color: var(--color-gold);
+  text-decoration-color: var(--color-gold);
+}
+
+/* Desktop: more generous padding */
+@media (width >= 900px) {
+  main .teaser > div {
+    padding: var(--space-xl) var(--space-2xl, 48px);
+  }
+}
+
+/* Login teaser variant with image backdrop */
+main .section.login-teaser-image {
+  position: relative;
+  min-height: 18.75rem;
+  max-width: var(--grid-container-width);
+  margin: var(--main-block-space) auto;
+  padding: 0 var(--content-padding-inline);
+  overflow: hidden;
+  border-radius: var(--border-radius-heritage);
+}
+
+main .section.login-teaser-image > .default-content-wrapper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+main .section.login-teaser-image > .default-content-wrapper p {
+  margin: 0;
+  height: 100%;
+}
+
+main .section.login-teaser-image > .default-content-wrapper picture {
+  display: block;
+  height: 100%;
+}
+
+main .section.login-teaser-image > .default-content-wrapper picture img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+main .section.login-teaser-image > .teaser-wrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 18.75rem;
+  padding: var(--space-l);
+}
+
+main .section.login-teaser-image > .teaser-wrapper .teaser {
+  max-width: min(40rem, 100%);
+  margin: 0 auto;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+main .section.login-teaser-image > .teaser-wrapper .teaser h4 {
+  margin-top: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+main .section.login-teaser-image > .teaser-wrapper .teaser .icon-lock {
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  vertical-align: baseline;
+}
+
+@media (width >= 900px) {
+  main .section.login-teaser-image,
+  main .section.login-teaser-image > .teaser-wrapper {
+    min-height: 25rem;
+  }
+
+  main .section.login-teaser-image > .teaser-wrapper {
+    padding: var(--space-xl);
+  }
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="how-it-works">How It Works</h2>
+
+      <h3>CSS-Only Architecture</h3>
+      <p>The teaser block demonstrates that not all blocks need JavaScript. The empty <code>decorate()</code> function
+      signals that the authored structure is used as-is, with all presentation handled via CSS.</p>
+
+      <h3>Hover Animation</h3>
+      <pre><code class="language-css">main .teaser {
+  transition: transform 0.5s var(--ease-out-expo),
+    box-shadow 0.5s ease,
+    border-color 0.4s ease;
+}
+
+main .teaser:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift-m);
+  border-color: light-dark(var(--color-gold), rgb(197 160 89 / 40%));
+}</code></pre>
+      <p><strong>Effect:</strong> Card lifts 4px upward, shadow deepens, border turns gold - creating an inviting interactive feel.</p>
+
+      <h3>Login Teaser Variant</h3>
+      <p>The login variant uses section-level styling (not block-level) to create a special layout:</p>
+      <ol>
+        <li><strong>Image backdrop:</strong> <code>.default-content-wrapper</code> image positioned absolutely</li>
+        <li><strong>Teaser overlay:</strong> <code>.teaser-wrapper</code> positioned relatively with higher z-index</li>
+        <li><strong>Centered card:</strong> Teaser appears to float over the image</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2 id="use-cases">Common Use Cases</h2>
+
+      <h3>1. Call-to-Action Cards</h3>
+      <p>Authors create this in Google Docs/Word using a table:</p>
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr><th>Teaser</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Ready to Start Planning?</td></tr>
+            <tr><td>Join thousands who've achieved their retirement goals. Get started today!</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>2. Feature Highlights</h3>
+      <p>Simple two-row table for feature teasers:</p>
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr><th>Teaser</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Expert Advice Available</td></tr>
+            <tr><td>Schedule a free consultation with our certified financial planners.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>3. Login Prompts</h3>
+      <p>Using Section Metadata to add background styling:</p>
+
+      <div style="border: 1px solid var(--color-border); padding: var(--space-m); margin-bottom: var(--space-m); background: light-dark(#fafafa, #1a1a1a);">
+        <p><strong>Section Metadata:</strong></p>
+        <table class="authoring-table" style="margin-bottom: var(--space-m);">
+          <thead><tr><th colspan="2">Section Metadata</th></tr></thead>
+          <tbody>
+            <tr><td>Style</td><td>login-teaser-image</td></tr>
+          </tbody>
+        </table>
+
+        <p><em>(Background image placed outside the block in the section)</em></p>
+
+        <table class="authoring-table">
+          <thead>
+            <tr><th>Teaser</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>🔒 Access Your Account</td></tr>
+            <tr><td>View your portfolio, track progress, and manage your retirement plan.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="testing">Testing</h2>
+
+      <h3>Test Checklist</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Test Case</th>
+              <th>Expected Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Standard teaser</td>
+              <td>Card with border, padding, centered text</td>
+            </tr>
+            <tr>
+              <td>Hover effect</td>
+              <td>Card lifts 4px, shadow appears, border turns gold</td>
+            </tr>
+            <tr>
+              <td>Light mode</td>
+              <td>Parchment background, ink text</td>
+            </tr>
+            <tr>
+              <td>Dark mode</td>
+              <td>Dark card background, parchment text</td>
+            </tr>
+            <tr>
+              <td>Links</td>
+              <td>Rust/gold color, underline, hover to gold</td>
+            </tr>
+            <tr>
+              <td>Login teaser variant</td>
+              <td>Image backdrop, floating card overlay</td>
+            </tr>
+            <tr>
+              <td>Mobile (< 900px)</td>
+              <td>Standard padding, readable text</td>
+            </tr>
+            <tr>
+              <td>Desktop (>= 900px)</td>
+              <td>More generous padding</td>
+            </tr>
+            <tr>
+              <td>Reduced motion</td>
+              <td>Transitions respect user preference (instant)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="customization">Customization Ideas</h2>
+
+      <h3>1. Icon Support</h3>
+      <pre><code class="language-css">/* Add icon at top of teaser */
+main .teaser .icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--space-s);
+  display: block;
+}
+
+main .teaser .icon img {
+  width: 100%;
+  height: 100%;
+}</code></pre>
+
+      <h3>2. Left-Aligned Variant</h3>
+      <pre><code class="language-css">/* Add variant: teaser (left) */
+main .teaser.left {
+  text-align: left;
+}
+
+main .teaser.left > div {
+  align-items: flex-start;
+}</code></pre>
+
+      <h3>3. Color Variants</h3>
+      <pre><code class="language-css">/* Add variant: teaser (gold) */
+main .teaser.gold {
+  background: var(--color-gold);
+  color: var(--color-ink);
+  border-color: var(--color-gold);
+}
+
+main .teaser.gold:hover {
+  border-color: var(--color-rust);
+}</code></pre>
+
+      <h3>4. Click Tracking</h3>
+      <p>Add minimal JavaScript for analytics:</p>
+      <pre><code class="language-javascript">export default function decorate(block) {
+  block.addEventListener('click', (e) => {
+    const link = e.target.closest('a');
+    if (link) {
+      // Track teaser click
+      if (window.adobeDataLayer) {
+        window.adobeDataLayer.push({
+          event: 'teaser-click',
+          teaser: {
+            text: block.textContent.trim().substring(0, 50),
+            link: link.href,
+          },
+        });
+      }
+    }
+  });
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="best-practices">Best Practices</h2>
+
+      <h3>Content</h3>
+      <ul>
+        <li><strong>Concise:</strong> Keep teaser text brief - 1-2 sentences max</li>
+        <li><strong>Action-oriented:</strong> Include clear CTA link</li>
+        <li><strong>Hierarchy:</strong> Use heading + paragraph structure</li>
+        <li><strong>Icon usage:</strong> Optional icon should reinforce message</li>
+      </ul>
+
+      <h3>Design</h3>
+      <ul>
+        <li><strong>Contrast:</strong> Ensure text is readable in both themes</li>
+        <li><strong>Spacing:</strong> Don't overcrowd - let content breathe</li>
+        <li><strong>Consistency:</strong> Use same teaser style across site</li>
+        <li><strong>Hover feedback:</strong> Ensure hover state is obvious</li>
+      </ul>
+
+      <h3>Accessibility</h3>
+      <ul>
+        <li><strong>Link text:</strong> Make links descriptive ("Learn More" better than "Click Here")</li>
+        <li><strong>Color contrast:</strong> Test with accessibility tools</li>
+        <li><strong>Focus states:</strong> Ensure keyboard users can see focus</li>
+        <li><strong>Motion:</strong> Respect <code>prefers-reduced-motion</code></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="resources">Additional Resources</h2>
+      <ul>
+        <li><a href="https://www.aem.live/developer/block-collection" target="_blank" style="color: var(--color-rust);">AEM Block Collection</a></li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/light-dark" target="_blank" style="color: var(--color-rust);">MDN: light-dark() CSS Function</a></li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion" target="_blank" style="color: var(--color-rust);">MDN: prefers-reduced-motion</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

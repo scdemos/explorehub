@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="../favicon.ico" />
+  <title>How to Build a Modal Block | AEM Edge Delivery Developer Guides</title>
+  <meta name="description" content="Learn to build a modal dialog block that intercepts fragment links and displays content in an accessible overlay." />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+  
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Modal Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Modal Block</h1>
+      <p class="subtitle">Create accessible modal dialogs that intercept fragment links and display content in overlays</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Dialog</span>
+        <span class="tag">Accessibility</span>
+        <span class="tag">Advanced</span>
+      </div>
+    </header>
+
+    <section>
+      <h2 id="overview">Overview</h2>
+      <p>
+        The Modal block creates an accessible dialog system that automatically intercepts links to fragments (e.g.,
+        <code>/fragments/disclaimer</code>) and displays them in a modal overlay instead of navigating. It handles
+        fragment loading, focus management, keyboard navigation, and scroll locking.
+      </p>
+
+      <div class="info-box">
+        <strong>Key Features:</strong>
+        <ul>
+          <li><strong>Link Interception:</strong> Auto-detects fragment links, opens in modal instead of navigation</li>
+          <li><strong>Fragment Loading:</strong> Dynamically fetches and decorates fragment content</li>
+          <li><strong>Accessibility:</strong> ARIA attributes, focus restore on close, Escape key, click-outside-to-close (no full focus trap implemented)</li>
+          <li><strong>Scroll Locking:</strong> Prevents body scroll when modal is open</li>
+          <li><strong>Focus Management:</strong> Returns focus to trigger element on close</li>
+          <li><strong>Dynamic Blocks:</strong> Supports tabs, embeds, and other blocks within modal content</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="authoring">Authoring Structure</h2>
+      <p>Add a modal block anywhere on the page (typically in a hidden section or footer):</p>
+
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr>
+              <th>Modal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>(empty - block just enables modal functionality)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Then, create fragment links anywhere on the page:</p>
+
+      <pre><code class="language-html">&lt;a href="/fragments/disclaimer"&gt;View Disclaimer&lt;/a&gt;
+&lt;a href="/fragments/privacy-policy"&gt;Privacy Policy&lt;/a&gt;</code></pre>
+
+      <p><strong>Behavior:</strong> Clicking these links opens the fragment in a modal instead of navigating to a new page.</p>
+    </section>
+
+    <section>
+      <h2 id="implementation">Implementation</h2>
+
+      <h3>JavaScript Logic</h3>
+      <p>Create <code>blocks/modal/modal.js</code>:</p>
+
+      <pre><code class="language-javascript">import { loadFragment } from '../fragment/fragment.js';
+import { loadCSS } from '../../scripts/aem.js';
+import { createTag, getBlockContext } from '../../scripts/shared.js';
+import dynamicBlocks from '../dynamic/index.js';
+
+const FRAGMENT_PREFIX = '/fragments/';
+
+function getFragmentPath(href = '') {
+  try {
+    const url = new URL(href, window.location.origin);
+    if (!url.pathname.startsWith(FRAGMENT_PREFIX)) return null;
+    return `${url.pathname}${url.search}`;
+  } catch {
+    return null;
+  }
+}
+
+export function setupFragmentModal(el) {
+  if (window.__fragmentModalReady) return;
+  window.__fragmentModalReady = true;
+
+  const { eventRoot } = getBlockContext(el);
+
+  loadCSS(`${window.hlx.codeBasePath}/blocks/modal/modal.css`);
+
+  const closeBtn = createTag('button', { type: 'button', class: 'modal-close', 'aria-label': 'Close dialog' }, '×');
+  const content = createTag('div', { class: 'modal-content' });
+  const dialog = createTag('div', {
+    class: 'modal-dialog',
+    role: 'dialog',
+    'aria-modal': 'true',
+    'aria-label': 'Dialog',
+  }, [closeBtn, content]);
+  const backdrop = createTag('div', { class: 'modal-backdrop', 'aria-hidden': 'true' });
+  const modalRoot = createTag('div', { class: 'modal', hidden: 'true' }, [backdrop, dialog]);
+  document.body.append(modalRoot);
+  let previousOverflow = '';
+  let previousFocus = null;
+
+  const close = () => {
+    modalRoot.hidden = true;
+    content.replaceChildren();
+    document.body.style.overflow = previousOverflow;
+    if (previousFocus?.focus) previousFocus.focus();
+  };
+
+  const open = async (path) => {
+    previousFocus = el.getRootNode().activeElement;
+    modalRoot.hidden = false;
+    previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    content.textContent = 'Loading...';
+    closeBtn.focus();
+
+    try {
+      const fragment = await loadFragment(path);
+      if (fragment) {
+        const main = createTag('main', { class: 'modal-main' });
+        main.append(...fragment.childNodes);
+        content.replaceChildren(main);
+        await dynamicBlocks(main);
+      } else {
+        content.textContent = 'Unable to load this content right now.';
+      }
+      dialog.scrollTop = 0;
+    } catch {
+      content.textContent = 'Unable to load this content right now.';
+    }
+  };
+
+  closeBtn.addEventListener('click', close);
+  backdrop.addEventListener('click', close);
+  eventRoot.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modalRoot.hidden) close();
+  });
+
+  eventRoot.addEventListener('click', (e) => {
+    const link = e.target.closest('main a[href*="/fragments/"]');
+    if (!link) return;
+    if (link.closest('header, footer, nav, .modal')) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (link.target === '_blank') return;
+    const path = getFragmentPath(link.href);
+    if (!path) return;
+    e.preventDefault();
+    open(path);
+  });
+}
+
+export default function decorate(block) {
+  setupFragmentModal(block);
+  block.style.display = 'none';
+}</code></pre>
+
+      <h3>CSS Styling</h3>
+      <p>Create <code>blocks/modal/modal.css</code>:</p>
+
+      <pre><code class="language-css">/* Modal overlay */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal[hidden] {
+  display: none;
+}
+
+/* Backdrop */
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Dialog container */
+.modal-dialog {
+  position: relative;
+  z-index: 1;
+  max-width: min(900px, 90vw);
+  max-height: 90vh;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Close button */
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.modal-close:focus {
+  outline: 2px solid var(--color-focus, #1976d2);
+  outline-offset: 2px;
+}
+
+/* Modal content */
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 60px 32px 32px;
+}
+
+.modal-main {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .modal-dialog {
+    background: var(--color-background-dark, #1a1a1a);
+    color: var(--color-text-dark, #ffffff);
+  }
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="how-it-works">How It Works</h2>
+
+      <pre class="mermaid">
+sequenceDiagram
+    participant User
+    participant Link
+    participant Modal
+    participant Fragment
+    participant Decorate
+
+    User->>Link: Click /fragments/foo link
+    Link->>Modal: Event intercepted
+    Modal->>Modal: Check if fragment link
+    Modal->>Modal: preventDefault()
+    Modal->>Modal: Save previousFocus
+    Modal->>Modal: Lock body scroll
+    Modal->>Fragment: loadFragment(path)
+    Fragment-->>Modal: Fragment main element
+    Modal->>Decorate: dynamicBlocks(main)
+    Decorate->>Decorate: Process blocks, sections
+    Decorate-->>Modal: Decorated content
+    Modal->>Modal: Insert into dialog
+    Modal->>Modal: Focus close button
+    Modal->>User: Display modal
+
+    User->>Modal: Press Escape OR Click backdrop OR Click ×
+    Modal->>Modal: close()
+    Modal->>Modal: Restore body scroll
+    Modal->>Modal: Clear content
+    Modal->>Modal: Restore previousFocus
+    Modal->>User: Modal hidden
+      </pre>
+
+      <h3>Key Mechanisms</h3>
+
+      <h4>1. Link Interception</h4>
+      <pre><code class="language-javascript">eventRoot.addEventListener('click', (e) => {
+  const link = e.target.closest('main a[href*="/fragments/"]');
+  if (!link) return;
+  if (link.closest('header, footer, nav, .modal')) return; // Exclusions
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // Modifiers
+  if (link.target === '_blank') return; // New window
+  const path = getFragmentPath(link.href);
+  if (!path) return;
+  e.preventDefault();
+  open(path);
+});</code></pre>
+      <p><strong>Filtering:</strong></p>
+      <ul>
+        <li>Only intercepts links in <code>&lt;main&gt;</code> (not header/footer/nav)</li>
+        <li>Respects modifier keys (Ctrl+Click = new tab still works)</li>
+        <li>Ignores <code>target="_blank"</code> links</li>
+        <li>Validates URL starts with <code>/fragments/</code></li>
+      </ul>
+
+      <h4>2. Focus Management</h4>
+      <pre><code class="language-javascript">const open = async (path) => {
+  previousFocus = el.getRootNode().activeElement; // Save current focus
+  modalRoot.hidden = false;
+  closeBtn.focus(); // Move focus to close button
+  // ... load content
+};
+
+const close = () => {
+  modalRoot.hidden = true;
+  if (previousFocus?.focus) previousFocus.focus(); // Restore focus
+};</code></pre>
+      <p>Ensures keyboard users return to the element they were on before opening modal.</p>
+
+      <h4>3. Scroll Locking</h4>
+      <pre><code class="language-javascript">const open = async (path) => {
+  previousOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden'; // Lock scroll
+};
+
+const close = () => {
+  document.body.style.overflow = previousOverflow; // Restore scroll
+};</code></pre>
+      <p>Prevents background page from scrolling while modal is open.</p>
+
+      <h4>4. Singleton Pattern</h4>
+      <pre><code class="language-javascript">export function setupFragmentModal(el) {
+  if (window.__fragmentModalReady) return;
+  window.__fragmentModalReady = true;
+  // ... setup code
+}</code></pre>
+      <p>Ensures modal UI is only created once, even if multiple modal blocks exist.</p>
+    </section>
+
+    <section>
+      <h2 id="use-cases">Common Use Cases</h2>
+
+      <h3>1. Legal Disclaimers</h3>
+      <pre><code class="language-html">&lt;p&gt;See our &lt;a href="/fragments/disclaimer"&gt;investment disclaimer&lt;/a&gt; for details.&lt;/p&gt;
+
+Result: Disclaimer opens in modal, user doesn't leave page</code></pre>
+
+      <h3>2. Terms & Conditions</h3>
+      <pre><code class="language-html">&lt;p&gt;By signing up, you agree to our &lt;a href="/fragments/terms"&gt;Terms of Service&lt;/a&gt;.&lt;/p&gt;
+
+Result: Terms open in scrollable modal dialog</code></pre>
+
+      <h3>3. Help Content</h3>
+      <pre><code class="language-html">&lt;button&gt;&lt;a href="/fragments/how-it-works"&gt;How does this work?&lt;/a&gt;&lt;/button&gt;
+
+Result: Contextual help opens in modal</code></pre>
+
+      <h3>4. Quick Reference</h3>
+      <pre><code class="language-html">&lt;p&gt;Check the &lt;a href="/fragments/glossary"&gt;glossary&lt;/a&gt; for definitions.&lt;/p&gt;
+
+Result: Glossary fragment loads in modal for quick lookup</code></pre>
+    </section>
+
+    <section>
+      <h2 id="testing">Testing</h2>
+
+      <h3>Test Checklist</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Test Case</th>
+              <th>Expected Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Click fragment link</td>
+              <td>Modal opens, fragment content loads</td>
+            </tr>
+            <tr>
+              <td>Click close button</td>
+              <td>Modal closes, focus returns to link</td>
+            </tr>
+            <tr>
+              <td>Click backdrop</td>
+              <td>Modal closes</td>
+            </tr>
+            <tr>
+              <td>Press Escape</td>
+              <td>Modal closes</td>
+            </tr>
+            <tr>
+              <td>Ctrl+Click fragment link</td>
+              <td>Opens in new tab (not modal)</td>
+            </tr>
+            <tr>
+              <td>Link with target="_blank"</td>
+              <td>Opens in new tab (not modal)</td>
+            </tr>
+            <tr>
+              <td>Header/footer links</td>
+              <td>Navigate normally (not modal)</td>
+            </tr>
+            <tr>
+              <td>Non-fragment link</td>
+              <td>Navigate normally</td>
+            </tr>
+            <tr>
+              <td>Body scroll when open</td>
+              <td>Background page doesn't scroll</td>
+            </tr>
+            <tr>
+              <td>Focus management</td>
+              <td>Focus moves to close button on open, returns to link on close</td>
+            </tr>
+            <tr>
+              <td>Fragment with blocks</td>
+              <td>Blocks decorate and function in modal</td>
+            </tr>
+            <tr>
+              <td>Fragment with tabs</td>
+              <td>Tabs work correctly in modal</td>
+            </tr>
+            <tr>
+              <td>Multiple modals</td>
+              <td>Only one modal instance created</td>
+            </tr>
+            <tr>
+              <td>Loading state</td>
+              <td>"Loading..." shown while fragment fetches</td>
+            </tr>
+            <tr>
+              <td>Error state</td>
+              <td>"Unable to load" shown if fetch fails</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="customization">Customization Ideas</h2>
+
+      <h3>1. Animation Effects</h3>
+      <pre><code class="language-css">/* Fade in */
+.modal {
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Slide in from bottom */
+.modal-dialog {
+  animation: modalSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}</code></pre>
+
+      <h3>2. Size Variants</h3>
+      <pre><code class="language-javascript">// Support data-modal-size attribute on links
+eventRoot.addEventListener('click', (e) => {
+  const link = e.target.closest('main a[href*="/fragments/"]');
+  if (!link) return;
+  // ... existing checks
+  const size = link.dataset.modalSize || 'medium';
+  open(path, size);
+});
+
+const open = async (path, size = 'medium') => {
+  // ... existing code
+  dialog.setAttribute('data-size', size);
+};</code></pre>
+
+      <pre><code class="language-css">/* Size variants */
+.modal-dialog[data-size="small"] {
+  max-width: 500px;
+}
+
+.modal-dialog[data-size="large"] {
+  max-width: 1200px;
+}</code></pre>
+
+      <h3>3. Prevent Close on Backdrop Click</h3>
+      <pre><code class="language-javascript">// Add data-modal-persistent attribute to links
+backdrop.addEventListener('click', (e) => {
+  if (dialog.dataset.persistent === 'true') return;
+  close();
+});</code></pre>
+
+      <h3>4. Nested Modals</h3>
+      <pre><code class="language-javascript">// Track modal stack
+const modalStack = [];
+
+const open = async (path) => {
+  modalStack.push({ path, previousFocus, previousOverflow });
+  // ... existing logic
+};
+
+const close = () => {
+  const state = modalStack.pop();
+  if (!state) return;
+  // ... existing logic
+
+  // If there's a previous modal, show it
+  if (modalStack.length > 0) {
+    const prevState = modalStack[modalStack.length - 1];
+    loadFragment(prevState.path);
+  }
+};</code></pre>
+    </section>
+
+    <section>
+      <h2 id="best-practices">Best Practices</h2>
+
+      <h3>Content</h3>
+      <ul>
+        <li><strong>Keep focused:</strong> Modal content should be concise and focused on single topic</li>
+        <li><strong>Avoid deep nesting:</strong> Don't open modals from within modals</li>
+        <li><strong>Clear close affordances:</strong> Multiple ways to close (×, backdrop, Escape)</li>
+        <li><strong>Loading feedback:</strong> Show loading state for slow fragments</li>
+      </ul>
+
+      <h3>Accessibility</h3>
+      <ul>
+        <li><strong>ARIA attributes:</strong> <code>role="dialog"</code>, <code>aria-modal="true"</code>, <code>aria-label</code></li>
+        <li><strong>Focus trap:</strong> Consider trapping focus within modal (advanced)</li>
+        <li><strong>Keyboard navigation:</strong> Close button must be keyboard accessible</li>
+        <li><strong>Screen readers:</strong> Announce modal open/close events</li>
+      </ul>
+
+      <h3>Performance</h3>
+      <ul>
+        <li><strong>Lazy load CSS:</strong> Load modal styles only when first modal opens</li>
+        <li><strong>Clear content on close:</strong> Prevent memory leaks from lingering DOM</li>
+        <li><strong>Cache fragments:</strong> Consider caching frequently-opened fragments</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="resources">Additional Resources</h2>
+      <ul>
+        <li><a href="https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/" target="_blank" style="color: var(--color-rust);">WAI-ARIA: Dialog (Modal) Pattern</a></li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/dialog_role" target="_blank" style="color: var(--color-rust);">MDN: Dialog Role</a></li>
+        <li><a href="https://www.aem.live/developer/block-collection" target="_blank" style="color: var(--color-rust);">AEM Block Collection</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

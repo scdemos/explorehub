@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="../favicon.ico" />
+  <title>How to Build a Fragment Block | AEM Edge Delivery Developer Guides</title>
+  <meta name="description" content="Learn to build a fragment block for content reuse across pages in AEM Edge Delivery Services." />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+  
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Fragment Block</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Fragment Block</h1>
+      <p class="subtitle">Enable content reuse by embedding fragments from other pages dynamically</p>
+
+      <div class="metadata">
+        <span class="tag">Block</span>
+        <span class="tag">Content Reuse</span>
+        <span class="tag">Dynamic Loading</span>
+        <span class="tag">Intermediate</span>
+      </div>
+    </header>
+
+    <section>
+      <h2 id="overview">Overview</h2>
+      <p>
+        The Fragment block allows authors to reuse content across multiple pages by referencing a fragment document.
+        Fragments are standalone pieces of content stored in <code>/fragments</code> that can be embedded anywhere,
+        ensuring consistency and reducing duplication.
+      </p>
+
+      <div class="info-box">
+        <strong>Key Features:</strong>
+        <ul>
+          <li><strong>Content Reuse:</strong> Single source of truth for shared content (headers, footers, callouts)</li>
+          <li><strong>Dynamic Loading:</strong> Fetches and renders fragment content at runtime</li>
+          <li><strong>Media Path Resolution:</strong> Automatically resolves relative media paths to fragment location</li>
+          <li><strong>Full Decoration:</strong> Fragment content goes through complete decoration pipeline (blocks, sections)</li>
+          <li><strong>Dynamic Block Support:</strong> Fragments can contain tabs, modals, and other dynamic blocks</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="authoring">Authoring Structure</h2>
+      <p>Authors insert fragments using a simple link or text reference:</p>
+
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr>
+              <th>Fragment</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="/fragments/callout-retirement">Retirement Callout Fragment</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Or as plain text:</p>
+
+      <div style="overflow-x: auto;">
+        <table class="authoring-table">
+          <thead>
+            <tr>
+              <th>Fragment</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>/fragments/callout-retirement</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="implementation">Implementation</h2>
+
+      <h3>JavaScript Logic</h3>
+      <p>Create <code>blocks/fragment/fragment.js</code>:</p>
+
+      <pre><code class="language-javascript">import {
+  decorateMain,
+} from '../../scripts/scripts.js';
+
+import {
+  loadSections,
+} from '../../scripts/aem.js';
+
+import dynamicBlocks from '../dynamic/index.js';
+
+/**
+ * Loads a fragment.
+ * @param {string} path The path to the fragment
+ * @returns {Promise<HTMLElement>} The root element of the fragment
+ */
+export async function loadFragment(path) {
+  if (path && path.startsWith('/') && !path.startsWith('//')) {
+    const resp = await fetch(`${path}.plain.html`);
+    if (resp.ok) {
+      const main = document.createElement('main');
+      main.innerHTML = await resp.text();
+
+      // Reset base path for media to fragment base
+      const resetAttributeBase = (tag, attr) => {
+        main.querySelectorAll(`${tag}[${attr}^="./media_"]`).forEach((elem) => {
+          elem[attr] = new URL(elem.getAttribute(attr), new URL(path, window.location)).href;
+        });
+      };
+      resetAttributeBase('img', 'src');
+      resetAttributeBase('source', 'srcset');
+
+      decorateMain(main);
+      await loadSections(main);
+      return main;
+    }
+  }
+  return null;
+}
+
+export default async function decorate(block) {
+  const link = block.querySelector('a');
+  const path = link ? link.getAttribute('href') : block.textContent.trim();
+  const fragment = await loadFragment(path);
+  if (fragment) {
+    block.replaceChildren(...fragment.childNodes);
+    const main = block.closest('main');
+    if (main) await dynamicBlocks(main);
+  }
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="how-it-works">How It Works</h2>
+
+      <pre class="mermaid">
+sequenceDiagram
+    participant Block
+    participant Fetch
+    participant Main
+    participant Decorate
+    participant Dynamic
+
+    Block->>Block: Extract path from link or text
+    Block->>Fetch: GET /path.plain.html
+    Fetch-->>Block: HTML content
+    Block->>Main: Create main element
+    Main->>Main: Reset media paths
+    Main->>Decorate: decorateMain()
+    Decorate->>Decorate: Process blocks, sections
+    Decorate->>Main: loadSections()
+    Main-->>Block: Decorated fragment
+    Block->>Block: Replace block content
+    Block->>Dynamic: Load dynamic blocks
+      </pre>
+
+      <h3>Key Steps</h3>
+      <ol>
+        <li><strong>Path Extraction:</strong> Gets fragment path from link href or text content</li>
+        <li><strong>Fetch:</strong> Loads <code>.plain.html</code> version of fragment (undecorated HTML)</li>
+        <li><strong>Media Resolution:</strong> Rewrites relative media paths to absolute URLs based on fragment location</li>
+        <li><strong>Decoration:</strong> Runs full decoration pipeline (blocks, sections, icons, etc.)</li>
+        <li><strong>Section Loading:</strong> Loads sections (images, fonts, lazy resources)</li>
+        <li><strong>Replacement:</strong> Replaces block content with decorated fragment</li>
+        <li><strong>Dynamic Blocks:</strong> Activates dynamic blocks (tabs, modal) if present in fragment</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2 id="media-resolution">Media Path Resolution</h2>
+      <p>Fragments often contain images with relative paths like <code>./media_xyz.png</code>. The block automatically
+      resolves these to the fragment's location:</p>
+
+      <pre><code class="language-javascript">const resetAttributeBase = (tag, attr) => {
+  main.querySelectorAll(`${tag}[${attr}^="./media_"]`).forEach((elem) => {
+    elem[attr] = new URL(elem.getAttribute(attr), new URL(path, window.location)).href;
+  });
+};
+resetAttributeBase('img', 'src');
+resetAttributeBase('source', 'srcset');</code></pre>
+
+      <p><strong>Example:</strong></p>
+      <ul>
+        <li>Fragment path: <code>/fragments/callout</code></li>
+        <li>Image in fragment: <code>./media_abc123.png</code></li>
+        <li>Resolved to: <code>/fragments/media_abc123.png</code></li>
+      </ul>
+
+      <p>This ensures images load correctly regardless of the page embedding the fragment.</p>
+    </section>
+
+    <section>
+      <h2 id="use-cases">Common Use Cases</h2>
+
+      <h3>1. Reusable Callouts</h3>
+      <p>Create a retirement planning callout once, use everywhere:</p>
+      <pre><code class="language-text">/fragments/retirement-callout.html contains:
+- Hero image
+- Heading "Start Planning Your Retirement"
+- CTA button "Use Our Calculator"
+
+Used in multiple articles via Fragment block</code></pre>
+
+      <h3>2. Consistent Headers/Footers</h3>
+      <p>Manage navigation or footer content centrally:</p>
+      <pre><code class="language-text">/fragments/site-footer.html contains:
+- Links to resources
+- Contact information
+- Social media icons
+
+Update once, reflected across all pages</code></pre>
+
+      <h3>3. Dynamic Disclaimers</h3>
+      <p>Legal text that may change based on regulations:</p>
+      <pre><code class="language-text">/fragments/investment-disclaimer.html contains:
+- Regulatory disclaimer text
+- Last updated date
+
+Single source of truth for compliance</code></pre>
+
+      <h3>4. Embedded Content Blocks</h3>
+      <p>Complex blocks like forms, calculators, or interactive widgets:</p>
+      <pre><code class="language-text">/fragments/compound-interest-calc.html contains:
+- Form block with inputs
+- JavaScript-powered calculator
+- Chart visualization
+
+Reused across multiple educational articles</code></pre>
+    </section>
+
+    <section>
+      <h2 id="testing">Testing</h2>
+
+      <h3>Test Checklist</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Test Case</th>
+              <th>Expected Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Fragment with link</td>
+              <td>Fragment content loads and displays</td>
+            </tr>
+            <tr>
+              <td>Fragment with plain text path</td>
+              <td>Fragment content loads from text path</td>
+            </tr>
+            <tr>
+              <td>Fragment with images</td>
+              <td>Images resolve to correct fragment location</td>
+            </tr>
+            <tr>
+              <td>Fragment with blocks</td>
+              <td>Blocks decorate and function correctly</td>
+            </tr>
+            <tr>
+              <td>Fragment with tabs/modal</td>
+              <td>Dynamic blocks activate properly</td>
+            </tr>
+            <tr>
+              <td>Invalid fragment path</td>
+              <td>Block remains empty, no error shown</td>
+            </tr>
+            <tr>
+              <td>Network error</td>
+              <td>Block gracefully handles failed fetch</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="best-practices">Best Practices</h2>
+
+      <h3>Fragment Organization</h3>
+      <ul>
+        <li><strong>Naming:</strong> Use descriptive names like <code>/fragments/callout-retirement</code></li>
+        <li><strong>Categorization:</strong> Group by type: <code>/fragments/callouts/</code>, <code>/fragments/footers/</code></li>
+        <li><strong>Versioning:</strong> Avoid breaking changes; create new fragments for major updates</li>
+      </ul>
+
+      <h3>Content Design</h3>
+      <ul>
+        <li><strong>Self-contained:</strong> Fragments should work standalone without dependencies on parent page</li>
+        <li><strong>Responsive:</strong> Design fragments to work in any context (sidebar, full-width, etc.)</li>
+        <li><strong>Minimal styling:</strong> Let parent page styles apply where possible</li>
+      </ul>
+
+      <h3>Performance</h3>
+      <ul>
+        <li><strong>Lazy load:</strong> Use fragments below-the-fold when possible to avoid blocking LCP</li>
+        <li><strong>Cache:</strong> Fragments are cached like regular pages; updates take effect after cache refresh</li>
+        <li><strong>Keep small:</strong> Large fragments slow page load; split into multiple smaller fragments if needed</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="troubleshooting">Troubleshooting</h2>
+
+      <h3>Fragment not loading</h3>
+      <ul>
+        <li>Verify path is absolute (starts with <code>/</code>)</li>
+        <li>Check fragment exists at <code>/fragments/name.html</code></li>
+        <li>Ensure <code>.plain.html</code> endpoint is accessible</li>
+        <li>Check browser console for fetch errors</li>
+      </ul>
+
+      <h3>Images broken in fragment</h3>
+      <ul>
+        <li>Verify images use relative paths (<code>./media_</code>) in fragment source</li>
+        <li>Check that media path resolution logic is running</li>
+        <li>Inspect resolved URLs in browser DevTools</li>
+      </ul>
+
+      <h3>Blocks not decorating</h3>
+      <ul>
+        <li>Ensure <code>decorateMain()</code> is called before rendering</li>
+        <li>Check that block definitions exist in <code>/blocks</code></li>
+        <li>Verify <code>loadSections()</code> completes before replacement</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="resources">Additional Resources</h2>
+      <ul>
+        <li><a href="https://www.aem.live/developer/block-collection/fragment" target="_blank" style="color: var(--color-rust);">AEM Fragment Block Documentation</a></li>
+        <li><a href="https://www.aem.live/docs/content-fragments" target="_blank" style="color: var(--color-rust);">Content Fragments Best Practices</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

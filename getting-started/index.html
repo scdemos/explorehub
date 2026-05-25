@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Getting Started | EDS Reference Playbook</title>
+  <meta name="description" content="What this is, who it's for, and how to navigate. A reference playbook for AEM Edge Delivery and Document Authoring.">
+  <link rel="stylesheet" href="../styles/styles.css">
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Getting Started</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>Getting Started</h1>
+      <p class="subtitle">Reference playbook for EDS + DA — implementation-first, use-case-led, lightweight.</p>
+    </header>
+
+    <section class="what-this-is">
+      <h2>What this is</h2>
+      <p class="lede">
+        A curated collection of <em>real-world</em> implementation patterns for EDS and DA, grounded in the working
+        <a href="https://github.com/scdemos/demo" target="_blank" rel="noopener">scdemos/demo</a> codebase.
+        It bridges official Getting Started tutorials and the enterprise use cases teams actually ship.
+      </p>
+
+      <div class="is-not-split" role="group" aria-label="What this playbook is and is not">
+        <div class="is-not-panel is-panel">
+          <h3 class="is-not-heading"><span class="is-not-label">Included</span> What you get</h3>
+          <dl class="principle-list">
+            <div class="principle-item">
+              <dt>Reference-first</dt>
+              <dd>The implementation is the artifact — not the prose around it.</dd>
+            </div>
+            <div class="principle-item">
+              <dt>Use-case-led</dt>
+              <dd>Chapters frame business problems, not block APIs.</dd>
+            </div>
+            <div class="principle-item">
+              <dt>Lightweight</dt>
+              <dd>No framework, no build step, no governance overhead.</dd>
+            </div>
+            <div class="principle-item">
+              <dt>Inspectable</dt>
+              <dd>Every snippet links to a specific file in <code>scdemos/demo</code>.</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="is-not-panel not-panel">
+          <h3 class="is-not-heading"><span class="is-not-label">Out of scope</span> What we skip</h3>
+          <dl class="principle-list">
+            <div class="principle-item">
+              <dt>Not a starter kit</dt>
+              <dd>Not another boilerplate, framework, or clone of <code>aem-boilerplate</code>.</dd>
+            </div>
+            <div class="principle-item">
+              <dt>Not blessed architecture</dt>
+              <dd>Assume gray-area patterns — useful reference, not official Adobe doctrine.</dd>
+            </div>
+            <div class="principle-item">
+              <dt>Not a doc portal</dt>
+              <dd>We link to <a href="https://www.aem.live/docs/" target="_blank" rel="noopener">aem.live</a> and
+                <a href="https://docs.da.live/developers" target="_blank" rel="noopener">docs.da.live</a> instead of duplicating them.</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Who it's for</h2>
+      <div class="compact-card-row compact-card-row-4">
+        <article class="guide-card">
+          <h3>Customers</h3>
+          <p>Solving a real use case on EDS/DA. Start with playbooks, then adapt to your project.</p>
+        </article>
+        <article class="guide-card">
+          <h3>Partners</h3>
+          <p>Building for a customer. Playbooks for scope, cookbook for components.</p>
+        </article>
+        <article class="guide-card">
+          <h3>Solution Consultants</h3>
+          <p>Demo what EDS/DA can do — live site plus inspectable code.</p>
+        </article>
+        <article class="guide-card">
+          <h3>Internal teams</h3>
+          <p>Reuse patterns across engagements — shared muscle memory.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>How to navigate</h2>
+      <div class="compact-card-row compact-card-row-5">
+        <a href="../index.html" class="lane-tile">
+          <span class="lane-chip lane-getting-started">Hub</span>
+          <h3>Explore Hub</h3>
+          <p>Search everything or pick a lane.</p>
+        </a>
+        <a href="../playbooks/index.html" class="lane-tile">
+          <span class="lane-chip lane-playbook">Playbooks</span>
+          <h3>Ship a use case</h3>
+          <p>Auth, search, forms, dynamic pages.</p>
+        </a>
+        <a href="../cookbook/index.html" class="lane-tile">
+          <span class="lane-chip lane-cookbook">Cookbook</span>
+          <h3>Build a block</h3>
+          <p>One block or plugin at a time.</p>
+        </a>
+        <a href="../ai-and-aem/index.html" class="lane-tile">
+          <span class="lane-chip lane-ai">AI</span>
+          <h3>Work with AI</h3>
+          <p>Skills, prompts, MCP.</p>
+        </a>
+        <a href="../references/index.html" class="lane-tile">
+          <span class="lane-chip">References</span>
+          <h3>Official docs</h3>
+          <p>aem.live and docs.da.live.</p>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Read next</h2>
+      <div class="card-grid read-next-grid">
+        <article class="guide-card">
+          <h3><a href="boilerplate-vs-author-kit-vs-playbooks.html">Boilerplate vs Author Kit vs Playbooks</a></h3>
+          <p>One-page comparison answering the most common onboarding question.</p>
+        </article>
+        <article class="guide-card">
+          <h3><a href="contributing.html">Contributing &amp; feedback</a></h3>
+          <p>How to propose a new use-case, file feedback, or contribute a playbook.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

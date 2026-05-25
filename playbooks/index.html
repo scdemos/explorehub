@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Playbook chapters | EDS Reference Playbook</title>
+  <meta name="description" content="Seven use-case playbook chapters for AEM Edge Delivery and Document Authoring — implementation-first guides with code citations from scdemos/demo.">
+  <link rel="stylesheet" href="../styles/styles.css">
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Playbook chapters</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>Playbook chapters</h1>
+      <p class="subtitle">Seven use-case guides. Each chapter frames a real-world problem, points at working code in <a href="https://github.com/scdemos/demo" target="_blank" rel="noopener">scdemos/demo</a>, and shows how to adapt it.</p>
+      <div class="metadata">
+        <span class="tag">Use-case first</span>
+        <span class="tag">Implementation-first</span>
+        <span class="tag">Reference-only</span>
+      </div>
+    </header>
+
+    <section id="experience-patterns" class="category-section">
+      <h2>Experience patterns</h2>
+      <p class="category-description">Cross-cutting site experiences customers most often need to ship.</p>
+      <div class="card-grid">
+        <article class="guide-card">
+          <h3><a href="gated-content.html">Gated content</a></h3>
+          <p>Cloudflare Access + CDN HTML rewriting + author-only preview toggle for member-only pages.</p>
+          <div class="card-tags"><span class="card-tag">Auth</span><span class="card-tag">Workers</span><span class="card-tag">CDN</span></div>
+        </article>
+        <article class="guide-card">
+          <h3><a href="search-and-discovery.html">Search &amp; discovery</a></h3>
+          <p>Faceted search and content recommendations powered by query-index.json.</p>
+          <div class="card-tags"><span class="card-tag">Search</span><span class="card-tag">Query Index</span></div>
+        </article>
+        <article class="guide-card">
+          <h3><a href="experimentation-and-personalization.html">Experimentation &amp; personalization</a></h3>
+          <p>Privacy-first A/B + audiences, phased Adobe Target / WebSDK without blocking LCP.</p>
+          <div class="card-tags"><span class="card-tag">A/B</span><span class="card-tag">Target</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="dynamic-content" class="category-section">
+      <h2>Dynamic content &amp; workers</h2>
+      <p class="category-description">Generate pages, feeds, and APIs from structured data and edge workers.</p>
+      <div class="card-grid">
+        <article class="guide-card">
+          <h3><a href="json2html-dynamic-pages.html">Structured JSON → dynamic HTML</a></h3>
+          <p>One JSON source + Mustache template = unlimited list + detail pages. mhast fallback for <code>.json</code>.</p>
+          <div class="card-tags"><span class="card-tag">JSON2HTML</span><span class="card-tag">Templates</span></div>
+        </article>
+        <article class="guide-card">
+          <h3><a href="rss-and-feeds.html">RSS / JSON Feed syndication</a></h3>
+          <p>A worker that turns query-index into RFC-compliant RSS 2.0 + JSON Feed 1.1 endpoints.</p>
+          <div class="card-tags"><span class="card-tag">Workers</span><span class="card-tag">SEO</span></div>
+        </article>
+        <article class="guide-card">
+          <h3><a href="embeddable-eds-content.html">Embeddable EDS content</a></h3>
+          <p>A web component that mounts a Helix page or block inside any external surface.</p>
+          <div class="card-tags"><span class="card-tag">Web Component</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="forms-and-workflows" class="category-section">
+      <h2>Forms &amp; workflows</h2>
+      <p class="category-description">Capture intent and route it to downstream systems.</p>
+      <div class="card-grid">
+        <article class="guide-card">
+          <h3><a href="worker-backed-forms.html">Worker-backed forms</a></h3>
+          <p>JSON form definition → Cloudflare Worker → Slack / n8n / CRM. Hide secrets server-side.</p>
+          <div class="card-tags"><span class="card-tag">Forms</span><span class="card-tag">Workers</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="category-section playbooks-demo-map-cta">
+      <h2>From the hosted demo site</h2>
+      <p class="category-description">
+        Saw a use case on <a href="https://demo.bbird.live/demo-docs/usecase-showcase" target="_blank" rel="noopener">demo.bbird.live</a>?
+        Browse the <a href="hosted-demo-map.html"><strong>Demo Site - Library</strong></a> to connect each walkthrough to a chapter (when available), cookbook blocks, and live demos — without copying SC scripts.
+      </p>
+      <p>
+        <a class="btn btn-secondary" href="hosted-demo-map.html">Open Demo Site - Library</a>
+        <a class="btn btn-secondary" href="https://demo.bbird.live/demo-docs/library" target="_blank" rel="noopener">Hosted block library</a>
+      </p>
+    </section>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

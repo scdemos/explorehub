@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="../favicon.ico" />
+  <title>How to Build a Tags Plugin | AEM Edge Delivery Developer Guides</title>
+  <meta name="description" content="Learn to build a searchable, multi-select tag picker plugin for AEM Document Authoring that helps authors manage content metadata efficiently." />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <link rel="stylesheet" href="../styles/prism-tomorrow.css" />
+  <script src="../scripts/prism-simple.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <!-- Mobile Menu Toggle -->
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    ☰ Menu
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"></aside>
+
+  
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Tags Plugin</span>
+  </nav>
+
+  <main>
+    <header class="guide-header">
+      <h1>How to Build a Tags Plugin</h1>
+      <p class="subtitle">Create a searchable, multi-select tag picker for efficient content metadata management</p>
+
+      <div class="metadata">
+        <span class="tag">Sidekick Plugin</span>
+        <span class="tag">Metadata Management</span>
+        <span class="tag">DA SDK</span>
+        <span class="tag">Intermediate</span>
+      </div>
+    </header>
+
+    <section>
+      <h2 id="overview">Overview</h2>
+      <p>
+        The Tags Plugin provides authors with an intuitive interface to select and apply multiple tags to their content.
+        It features a searchable list of predefined tags, bulk selection capabilities, and seamless integration with
+        AEM Document Authoring. Tags are commonly used for categorization, SEO, content discovery, and filtering.
+      </p>
+
+      <div class="info-box">
+        <strong>What You'll Build:</strong>
+        <ul>
+          <li><strong>Searchable Tag List:</strong> Filter tags by value, key, or description in real-time</li>
+          <li><strong>Multi-Select Interface:</strong> Select multiple tags using checkboxes</li>
+          <li><strong>Bulk Actions:</strong> Select all, deselect all, and batch send functionality</li>
+          <li><strong>Accessible UI:</strong> Keyboard-friendly, screen reader compatible interface</li>
+          <li><strong>Dynamic Tagging Data:</strong> Fetches tag taxonomy from JSON configuration file</li>
+        </ul>
+      </div>
+
+      <div class="info-box warning">
+        <strong>Prerequisites:</strong>
+        <ul>
+          <li>Understanding of <a href="https://www.aem.live/docs/sidekick-library" target="_blank" style="color: var(--color-rust);">Sidekick plugin architecture</a></li>
+          <li>Familiarity with DA SDK actions (<code>daFetch</code>, <code>sendText</code>, <code>closeLibrary</code>)</li>
+          <li>Knowledge of Set data structure for managing selections</li>
+          <li>Experience with DOM manipulation and event handling</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="architecture">Architecture</h2>
+      <p>
+        The Tags Plugin uses a centralized tagging taxonomy stored in JSON, combined with a dynamic UI
+        for searching, selecting, and applying tags to documents:
+      </p>
+
+      <pre class="mermaid">
+graph TB
+    A[Plugin Init] --> B[DA SDK Load]
+    B --> C[Fetch Tagging JSON]
+    C --> D[Parse Tag Data]
+    D --> E[Render Tag List]
+    E --> F[User Interaction]
+
+    F --> G{Action Type}
+    G -->|Search| H[Filter Tags]
+    G -->|Select Tag| I[Update Selection Set]
+    G -->|Select All| J[Add All to Set]
+    G -->|Deselect All| K[Clear Set]
+    G -->|Send Selected| L[Join Keys + Send Text]
+
+    H --> M[Re-render Filtered]
+    I --> N[Update Button Count]
+    J --> N
+    K --> N
+    L --> O[Close Library]
+
+    style A fill:#e1f5ff
+    style C fill:#fff4e1
+    style E fill:#ffe1f5
+    style L fill:#e1ffe1
+      </pre>
+
+      <h3>Key Components</h3>
+      <ul>
+        <li><strong>Data Fetcher:</strong> Fetches tagging taxonomy from <code>/docs/library/tagging.json</code> using <code>daFetch()</code></li>
+        <li><strong>Tag Renderer:</strong> Dynamically creates checkbox-based tag items with value, key, and comments</li>
+        <li><strong>Selection Manager:</strong> Uses a Set to track selected tag keys</li>
+        <li><strong>Search Filter:</strong> Filters tags across multiple fields (value, key, comments)</li>
+        <li><strong>Bulk Action Handler:</strong> Select all, deselect all, and send selected tags</li>
+        <li><strong>UI Updater:</strong> Updates send button count and state based on selection</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="file-structure">File Structure</h2>
+      <p>Create the following structure in your project:</p>
+
+      <pre><code class="language-text">tools/plugins/tags/
+├── tags.js            # Main plugin logic (fetch, render, search, select, send)
+├── tags.css           # UI styles (tag list, search, buttons, action bar)
+├── tags.html          # Minimal HTML shell (loads SDK and scripts)
+└── classification.svg # Icon for Sidekick button
+
+docs/library/
+└── tagging.json       # Tag taxonomy configuration (data, key, value, comments)</code></pre>
+
+      <div class="info-box">
+        <strong>Why This Structure:</strong>
+        <ul>
+          <li><strong>tags.js:</strong> Contains all logic - fetch, render, search, selection management, send</li>
+          <li><strong>tags.css:</strong> Defines complete UI styling with responsive design</li>
+          <li><strong>tags.html:</strong> Minimal shell that loads DA SDK and plugin scripts</li>
+          <li><strong>tagging.json:</strong> Centralized tag taxonomy - single source of truth for all tags</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="implementation">Implementation</h2>
+
+      <h3>Step 1: Create the Tagging Taxonomy</h3>
+      <p>Create <code>docs/library/tagging.json</code> with your tag definitions:</p>
+
+      <pre><code class="language-json">{
+  "data": [
+    {
+      "key": "finance",
+      "value": "Finance",
+      "comments": "Financial services and banking content"
+    },
+    {
+      "key": "retirement",
+      "value": "Retirement Planning",
+      "comments": "Retirement accounts, strategies, calculators"
+    },
+    {
+      "key": "investing",
+      "value": "Investing",
+      "comments": "Investment strategies, market analysis, portfolios"
+    },
+    {
+      "key": "budgeting",
+      "value": "Budgeting",
+      "comments": "Budget planning, expense tracking, savings goals"
+    },
+    {
+      "key": "insurance",
+      "value": "Insurance",
+      "comments": "Life, health, auto, and property insurance"
+    },
+    {
+      "key": "taxes",
+      "value": "Tax Planning",
+      "comments": "Tax strategies, deductions, filing tips"
+    },
+    {
+      "key": "real-estate",
+      "value": "Real Estate",
+      "comments": "Home buying, mortgages, property investment"
+    },
+    {
+      "key": "credit",
+      "value": "Credit & Debt",
+      "comments": "Credit scores, debt management, loans"
+    }
+  ],
+  "limit": 100
+}</code></pre>
+
+      <div class="info-box">
+        <strong>Taxonomy Design:</strong>
+        <ul>
+          <li><strong>key:</strong> Machine-readable identifier (used in metadata, sent to document)</li>
+          <li><strong>value:</strong> Human-readable label (displayed in UI)</li>
+          <li><strong>comments:</strong> Optional description/context (helps authors choose correct tag)</li>
+          <li><strong>limit:</strong> Pagination limit (not used in current implementation, reserved for future)</li>
+        </ul>
+      </div>
+
+      <h3>Step 2: Create the HTML Shell</h3>
+      <p>Create <code>tools/plugins/tags/tags.html</code>:</p>
+
+      <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;Tag List&lt;/title&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"/&gt;
+  &lt;link rel="icon" href="data:,"&gt;
+  &lt;link rel="stylesheet" href="/tools/plugins/tags/tags.css"&gt;
+  &lt;!-- Import DA App SDK --&gt;
+  &lt;script src="https://da.live/nx/utils/sdk.js" type="module"&gt;&lt;/script&gt;
+  &lt;!-- Project App Logic --&gt;
+  &lt;script src="/tools/plugins/tags/tags.js" type="module"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+      <h3>Step 3: Implement Plugin Logic</h3>
+      <p>Create <code>tools/plugins/tags/tags.js</code> with the complete plugin implementation:</p>
+
+      <pre><code class="language-javascript">import DA_SDK from 'https://da.live/nx/utils/sdk.js';
+import { DA_ORIGIN } from 'https://da.live/nx/public/utils/constants.js';
+
+/**
+ * Fetches the tagging JSON data from the specified endpoint
+ * @param {string} token - Authentication token
+ * @param {Object} actions - DA actions object
+ * @param {string} org - Organization name
+ * @param {string} repo - Repository name
+ * @returns {Promise<Object>} The tagging JSON data
+ */
+async function fetchTaggingData(token, actions, org, repo) {
+  try {
+    const taggingUrl = `${DA_ORIGIN}/source/${org}/${repo}/docs/library/tagging.json`;
+
+    const response = await actions.daFetch(taggingUrl);
+
+    if (!response.ok) {
+      console.error(`Failed to fetch tagging data: ${response.status} ${response.statusText}`);
+      return null;
+    }
+
+    const taggingData = await response.json();
+    return taggingData;
+  } catch (error) {
+    console.error('Error fetching tagging data:', error);
+    return null;
+  }
+}
+
+/**
+ * Displays the tagging data as a multi-selectable searchable interface
+ * @param {Object} taggingData - The tagging JSON data
+ * @param {Object} actions - DA actions object
+ */
+function displayTaggingData(taggingData, actions) {
+  if (!taggingData) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.textContent = '❌ Failed to load tagging data';
+    document.body.appendChild(errorDiv);
+    return;
+  }
+
+  // Create container for tagging data
+  const container = document.createElement('div');
+  container.className = 'tags-container';
+
+  // Create header
+  const header = document.createElement('h2');
+  header.textContent = 'TAGGER';
+  header.className = 'tags-header';
+  container.appendChild(header);
+
+  // Check if data array exists
+  if (!taggingData.data || !Array.isArray(taggingData.data)) {
+    const noDataDiv = document.createElement('div');
+    noDataDiv.className = 'warning-message';
+    noDataDiv.textContent = '⚠️ No tagging data found';
+    container.appendChild(noDataDiv);
+    document.body.appendChild(container);
+    return;
+  }
+
+  // Create search container
+  const searchContainer = document.createElement('div');
+  searchContainer.className = 'search-container';
+
+  // Create search input
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text';
+  searchInput.placeholder = 'Search tags...';
+  searchInput.className = 'search-input';
+
+  searchContainer.appendChild(searchInput);
+  container.appendChild(searchContainer);
+
+  // Create results container
+  const resultsContainer = document.createElement('div');
+  resultsContainer.className = 'results-container';
+  container.appendChild(resultsContainer);
+
+  // Track selected tags
+  const selectedTags = new Set();
+
+  // Create select all button
+  const selectAllBtn = document.createElement('button');
+  selectAllBtn.textContent = 'Select All';
+  selectAllBtn.className = 'btn btn-secondary';
+
+  // Create deselect all button
+  const deselectAllBtn = document.createElement('button');
+  deselectAllBtn.textContent = 'Deselect All';
+  deselectAllBtn.className = 'btn btn-secondary';
+
+  // Create send selected button
+  const sendSelectedBtn = document.createElement('button');
+  sendSelectedBtn.textContent = 'Send Selected (0)';
+  sendSelectedBtn.className = 'btn btn-primary';
+
+  /**
+   * Updates send button text and state based on selection count
+   */
+  function updateSendButton() {
+    const count = selectedTags.size;
+    sendSelectedBtn.textContent = `Send Selected (${count})`;
+
+    if (count > 0) {
+      sendSelectedBtn.className = 'btn btn-primary';
+      sendSelectedBtn.disabled = false;
+    } else {
+      sendSelectedBtn.className = 'btn btn-secondary';
+      sendSelectedBtn.disabled = true;
+    }
+  }
+
+  /**
+   * Renders tag list with checkboxes
+   * @param {Array} filteredData - Filtered tag data to render
+   */
+  function renderTagList(filteredData) {
+    resultsContainer.innerHTML = '';
+
+    if (filteredData.length === 0) {
+      const noResultsDiv = document.createElement('div');
+      noResultsDiv.className = 'no-results';
+      noResultsDiv.textContent = 'No tags found matching your search';
+      resultsContainer.appendChild(noResultsDiv);
+      return;
+    }
+
+    filteredData.forEach((item) => {
+      if (item.value) {
+        const tagItem = document.createElement('div');
+        tagItem.className = 'tag-item';
+
+        // Create checkbox
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'tag-checkbox';
+        checkbox.checked = selectedTags.has(item.key);
+
+        checkbox.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            selectedTags.add(item.key);
+          } else {
+            selectedTags.delete(item.key);
+          }
+          updateSendButton();
+        });
+
+        // Create tag info
+        const tagInfo = document.createElement('div');
+        tagInfo.className = 'tag-info';
+
+        const tagValue = document.createElement('div');
+        tagValue.textContent = item.value;
+        tagValue.className = 'tag-value';
+
+        const tagKey = document.createElement('div');
+        tagKey.textContent = `Key: ${item.key}`;
+        tagKey.className = 'tag-key';
+
+        if (item.comments) {
+          const tagComments = document.createElement('div');
+          tagComments.textContent = item.comments;
+          tagComments.className = 'tag-comments';
+          tagInfo.appendChild(tagComments);
+        }
+
+        tagInfo.appendChild(tagValue);
+        tagInfo.appendChild(tagKey);
+
+        // Make entire tag info clickable to toggle checkbox
+        tagInfo.addEventListener('click', () => {
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event('change'));
+        });
+
+        tagItem.appendChild(checkbox);
+        tagItem.appendChild(tagInfo);
+
+        resultsContainer.appendChild(tagItem);
+      }
+    });
+  }
+
+  // Add search functionality
+  searchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    const filteredData = taggingData.data.filter((item) => item.value && (
+      item.value.toLowerCase().includes(searchTerm)
+        || item.key.toLowerCase().includes(searchTerm)
+        || (item.comments && item.comments.toLowerCase().includes(searchTerm))
+    ));
+    renderTagList(filteredData);
+  });
+
+  // Create action buttons container
+  const actionContainer = document.createElement('div');
+  actionContainer.className = 'action-container';
+  container.appendChild(actionContainer);
+
+  selectAllBtn.addEventListener('click', () => {
+    const visibleItems = taggingData.data.filter((item) => item.value);
+    visibleItems.forEach((item) => selectedTags.add(item.key));
+    renderTagList(taggingData.data.filter((item) => item.value));
+    updateSendButton();
+  });
+
+  deselectAllBtn.addEventListener('click', () => {
+    selectedTags.clear();
+    renderTagList(taggingData.data.filter((item) => item.value));
+    updateSendButton();
+  });
+
+  sendSelectedBtn.addEventListener('click', async () => {
+    if (selectedTags.size === 0) return;
+
+    try {
+      // Send all selected tags
+      const selectedTagsArray = Array.from(selectedTags);
+      const tagsText = selectedTagsArray.join(', ');
+
+      await actions.sendText(tagsText);
+      await actions.closeLibrary();
+
+      console.log('Selected tags sent to document:', selectedTagsArray);
+    } catch (error) {
+      console.error('Error sending selected tags to document:', error);
+
+      // Show error feedback
+      const originalText = sendSelectedBtn.textContent;
+
+      sendSelectedBtn.textContent = '✗ Error';
+      sendSelectedBtn.className = 'btn btn-error';
+      sendSelectedBtn.disabled = true;
+
+      setTimeout(() => {
+        sendSelectedBtn.textContent = originalText;
+        sendSelectedBtn.className = 'btn btn-primary';
+        sendSelectedBtn.disabled = false;
+      }, 2000);
+    }
+  });
+
+  actionContainer.appendChild(selectAllBtn);
+  actionContainer.appendChild(deselectAllBtn);
+  actionContainer.appendChild(sendSelectedBtn);
+
+  // Initial render
+  renderTagList(taggingData.data.filter((item) => item.value));
+  updateSendButton();
+
+  document.body.appendChild(container);
+}
+
+/**
+ * Initializes the tags tool
+ */
+async function init() {
+  try {
+    const { context, token, actions } = await DA_SDK;
+
+    // Fetch tagging data
+    const taggingData = await fetchTaggingData(token, actions, context.org, context.repo);
+
+    // Display tagging data
+    displayTaggingData(taggingData, actions);
+  } catch (error) {
+    console.error('Error initializing tags tool:', error);
+
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.textContent = '❌ Error initializing tags tool';
+    document.body.appendChild(errorDiv);
+  }
+}
+
+init();</code></pre>
+
+      <h3>Step 4: Add Styles</h3>
+      <p>Create <code>tools/plugins/tags/tags.css</code>:</p>
+
+      <pre><code class="language-css">/* Main container */
+.tags-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: Arial, sans-serif;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Header */
+.tags-header {
+  margin: 5px 20px 5px 20px;
+  text-align: center;
+  flex-shrink: 0;
+  font-style: oblique;
+}
+
+/* Error message */
+.error-message {
+  color: #721c24;
+  background-color: #f8d7da;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #f5c6cb;
+  margin-bottom: 20px;
+}
+
+/* Warning message */
+.warning-message {
+  color: #856404;
+  background-color: #fff3cd;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #ffeaa7;
+}
+
+/* Search container */
+.search-container {
+  margin: 0 20px 20px 20px;
+  flex-shrink: 0;
+}
+
+/* Search input */
+.search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* Results container */
+.results-container {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  margin: 0 20px;
+}
+
+/* No results message */
+.no-results {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+}
+
+/* Tag item */
+.tag-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f8f9fa;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tag-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* Checkbox */
+.tag-checkbox {
+  margin: 0;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+/* Tag info */
+.tag-info {
+  flex: 1;
+  cursor: pointer;
+}
+
+.tag-value {
+  font-weight: bold;
+  color: #212529;
+  margin-bottom: 4px;
+}
+
+.tag-key {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.tag-comments {
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* Action buttons container */
+.action-container {
+  display: flex;
+  gap: 10px;
+  margin: 20px;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 20px 0;
+  border-top: 1px solid #dee2e6;
+  background-color: white;
+}
+
+/* Button base styles */
+.btn {
+  padding: 10px 20px;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+/* Secondary button */
+.btn-secondary {
+  background-color: #6c757d;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+/* Primary button */
+.btn-primary {
+  background-color: #007bff;
+  font-weight: bold;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+/* Disabled button */
+.btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Error button state */
+.btn-error {
+  background-color: #dc3545;
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="how-it-works">How It Works</h2>
+
+      <h3>1. Plugin Initialization Flow</h3>
+      <pre class="mermaid">
+sequenceDiagram
+    participant Plugin
+    participant DA_SDK
+    participant DA_API
+    participant UI
+    participant User
+
+    Plugin->>DA_SDK: await DA_SDK
+    DA_SDK-->>Plugin: {context, token, actions}
+    Plugin->>DA_API: daFetch(tagging.json)
+    DA_API-->>Plugin: tagging data
+    Plugin->>UI: displayTaggingData()
+    UI->>UI: Render header
+    UI->>UI: Render search input
+    UI->>UI: Render tag list
+    UI->>UI: Render action buttons
+    UI-->>User: Show interface
+      </pre>
+
+      <h3>2. Search and Filter Logic</h3>
+      <p>The search filter works across three fields:</p>
+      <pre><code class="language-javascript">const searchTerm = e.target.value.toLowerCase();
+const filteredData = taggingData.data.filter((item) => item.value && (
+  item.value.toLowerCase().includes(searchTerm)     // Search in display label
+    || item.key.toLowerCase().includes(searchTerm)   // Search in key
+    || (item.comments && item.comments.toLowerCase().includes(searchTerm)) // Search in description
+));</code></pre>
+      <p>This ensures authors can find tags by any identifier, making discovery intuitive.</p>
+
+      <h3>3. Selection Management with Set</h3>
+      <p>The plugin uses a JavaScript Set to track selected tag keys:</p>
+      <ul>
+        <li><strong>Add:</strong> <code>selectedTags.add(item.key)</code> when checkbox checked</li>
+        <li><strong>Remove:</strong> <code>selectedTags.delete(item.key)</code> when checkbox unchecked</li>
+        <li><strong>Clear:</strong> <code>selectedTags.clear()</code> on "Deselect All"</li>
+        <li><strong>Bulk Add:</strong> <code>visibleItems.forEach((item) => selectedTags.add(item.key))</code> on "Select All"</li>
+      </ul>
+      <p>Set provides O(1) lookups and automatic deduplication.</p>
+
+      <h3>4. Send Selected Tags</h3>
+      <p>When authors click "Send Selected", the plugin:</p>
+      <ol>
+        <li>Converts Set to Array: <code>Array.from(selectedTags)</code></li>
+        <li>Joins keys with commas: <code>selectedTagsArray.join(', ')</code></li>
+        <li>Sends to document: <code>actions.sendText(tagsText)</code></li>
+        <li>Closes library: <code>actions.closeLibrary()</code></li>
+      </ol>
+      <p>Result: <code>"finance, retirement, investing"</code> inserted at cursor position.</p>
+    </section>
+
+    <section>
+      <h2 id="authoring">Authoring Experience</h2>
+
+      <h3>For Authors</h3>
+      <ol>
+        <li><strong>Open Tags Plugin:</strong> Click "Tags" button in Sidekick library</li>
+        <li><strong>Search Tags:</strong> Type in search box to filter by name, key, or description</li>
+        <li><strong>Select Tags:</strong> Click checkboxes or click anywhere on tag info area to select</li>
+        <li><strong>Use Bulk Actions:</strong>
+          <ul>
+            <li>Click "Select All" to select all visible tags (respects search filter)</li>
+            <li>Click "Deselect All" to clear all selections</li>
+          </ul>
+        </li>
+        <li><strong>Send to Document:</strong> Click "Send Selected (N)" to insert tags as comma-separated text</li>
+      </ol>
+
+      <div class="info-box">
+        <strong>Author Tips:</strong>
+        <ul>
+          <li>Search across multiple fields - try typing part of the description to find relevant tags</li>
+          <li>The selection count in "Send Selected (N)" updates in real-time as you select/deselect</li>
+          <li>You can click anywhere on the tag card (not just checkbox) to toggle selection</li>
+          <li>Selected tags persist during search - clearing search shows your selections highlighted</li>
+        </ul>
+      </div>
+
+      <h3>Common Use Cases</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Use Case</th>
+              <th>Workflow</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Article Categorization</td>
+              <td>Select 2-3 category tags → Send</td>
+              <td>Tags added to metadata block for categorization</td>
+            </tr>
+            <tr>
+              <td>SEO Keywords</td>
+              <td>Search "finance" → Select related tags → Send</td>
+              <td>Targeted keyword tags for search optimization</td>
+            </tr>
+            <tr>
+              <td>Content Filtering</td>
+              <td>Select audience/topic tags → Send</td>
+              <td>Tags enable frontend filtering in search/browse UIs</td>
+            </tr>
+            <tr>
+              <td>Taxonomy Exploration</td>
+              <td>Browse full list → Read descriptions → Select</td>
+              <td>Discover appropriate tags via descriptive comments</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="configuration">Configuration & Customization</h2>
+
+      <h3>Changing the Data Source</h3>
+      <p>If your tagging data is stored elsewhere, update the fetch URL:</p>
+
+      <pre><code class="language-javascript">async function fetchTaggingData(token, actions, org, repo) {
+  try {
+    // Option 1: Different path in same repo
+    const taggingUrl = `${DA_ORIGIN}/source/${org}/${repo}/content/taxonomies/tags.json`;
+
+    // Option 2: External API endpoint
+    const taggingUrl = 'https://api.example.com/taxonomies/tags';
+
+    // Option 3: Different repo
+    const taggingUrl = `${DA_ORIGIN}/source/${org}/shared-taxonomies/library/tags.json`;
+
+    const response = await actions.daFetch(taggingUrl);
+    // ... rest of function
+  }
+}</code></pre>
+
+      <h3>Custom Tag Formatting</h3>
+      <p>Change how selected tags are formatted before sending:</p>
+
+      <pre><code class="language-javascript">sendSelectedBtn.addEventListener('click', async () => {
+  if (selectedTags.size === 0) return;
+
+  try {
+    const selectedTagsArray = Array.from(selectedTags);
+
+    // Option 1: JSON array
+    const tagsText = JSON.stringify(selectedTagsArray);
+
+    // Option 2: Newline-separated
+    const tagsText = selectedTagsArray.join('\\n');
+
+    // Option 3: Hash-prefixed (for metadata blocks)
+    const tagsText = selectedTagsArray.map(tag => `#${tag}`).join(', ');
+
+    // Option 4: Full metadata format
+    const tagsText = `Tags\\n${selectedTagsArray.join(', ')}`;
+
+    await actions.sendText(tagsText);
+    await actions.closeLibrary();
+  } catch (error) {
+    console.error('Error sending tags:', error);
+  }
+});</code></pre>
+
+      <h3>Localization</h3>
+      <p>Make the UI multilingual by externalizing strings:</p>
+
+      <pre><code class="language-javascript">const STRINGS = {
+  en: {
+    header: 'TAGGER',
+    searchPlaceholder: 'Search tags...',
+    selectAll: 'Select All',
+    deselectAll: 'Deselect All',
+    sendSelected: 'Send Selected',
+    noResults: 'No tags found matching your search',
+    errorLoading: '❌ Failed to load tagging data',
+  },
+  es: {
+    header: 'ETIQUETADOR',
+    searchPlaceholder: 'Buscar etiquetas...',
+    selectAll: 'Seleccionar todo',
+    deselectAll: 'Deseleccionar todo',
+    sendSelected: 'Enviar seleccionados',
+    noResults: 'No se encontraron etiquetas que coincidan con su búsqueda',
+    errorLoading: '❌ Error al cargar datos de etiquetado',
+  },
+};
+
+const locale = navigator.language.startsWith('es') ? 'es' : 'en';
+header.textContent = STRINGS[locale].header;
+searchInput.placeholder = STRINGS[locale].searchPlaceholder;</code></pre>
+
+      <h3>Adding Tag Counts</h3>
+      <p>Show how many times each tag is used across your content:</p>
+
+      <pre><code class="language-javascript">// Fetch usage counts from analytics or query-index
+async function fetchTagUsageCounts(org, repo, actions) {
+  const response = await actions.daFetch(`${DA_ORIGIN}/source/${org}/${repo}/query-index.json`);
+  const data = await response.json();
+
+  const counts = {};
+  data.data.forEach((item) => {
+    if (item.tags) {
+      item.tags.split(',').forEach((tag) => {
+        counts[tag.trim()] = (counts[tag.trim()] || 0) + 1;
+      });
+    }
+  });
+
+  return counts;
+}
+
+// In renderTagList, add count badge
+const tagUsageCounts = await fetchTagUsageCounts(context.org, context.repo, actions);
+
+const countBadge = document.createElement('span');
+countBadge.className = 'tag-count-badge';
+countBadge.textContent = tagUsageCounts[item.key] || 0;
+tagValue.appendChild(countBadge);</code></pre>
+    </section>
+
+    <section>
+      <h2 id="integration">Integration with Sidekick</h2>
+      <div class="info-box warning">
+        <strong>Status in <code>scdemos/demo</code>:</strong> the plugin files exist at <code>tools/plugins/tags/</code> but are <strong>not</strong> currently registered in <a href="https://github.com/scdemos/demo/blob/main/tools/sidekick/config.json" target="_blank"><code>tools/sidekick/config.json</code></a>. Only the experimentation plugin is wired there. Use one of the integration paths below to surface it.
+      </div>
+      <p>Add the Tags plugin to your Sidekick library configuration:</p>
+
+      <h3>DA Config (Excel Sheet)</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>title</th>
+              <th>path</th>
+              <th>icon</th>
+              <th>experience</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Tags</td>
+              <td>/tools/plugins/tags/tags.html</td>
+              <td>https://main--{repo}--{org}.aem.page/tools/plugins/tags/classification.svg</td>
+              <td>dialog</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>JSON Config (if using library.json)</h3>
+      <pre><code class="language-json">{
+  "data": [
+    {
+      "name": "Tags",
+      "path": "https://content.da.live/{org}/{repo}/tools/plugins/tags/tags.html",
+      "icon": "https://main--{repo}--{org}.aem.page/tools/plugins/tags/classification.svg",
+      "experience": "dialog"
+    }
+  ]
+}</code></pre>
+
+      <div class="info-box">
+        <strong>Configuration Options:</strong>
+        <ul>
+          <li><strong>experience:</strong> Set to <code>"dialog"</code> to open in modal overlay</li>
+          <li><strong>icon:</strong> Use the included SVG icon or provide your own</li>
+          <li><strong>path:</strong> Must be absolute path to tags.html</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="testing">Testing</h2>
+
+      <h3>Manual Testing Checklist</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Test Case</th>
+              <th>Steps</th>
+              <th>Expected Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Plugin Load</td>
+              <td>Open Tags from Sidekick</td>
+              <td>Plugin loads, displays all tags from tagging.json</td>
+            </tr>
+            <tr>
+              <td>Search by Value</td>
+              <td>Type "Finance" in search</td>
+              <td>Only tags with "Finance" in value shown</td>
+            </tr>
+            <tr>
+              <td>Search by Key</td>
+              <td>Type "retirement" in search</td>
+              <td>Tags with "retirement" in key shown</td>
+            </tr>
+            <tr>
+              <td>Search by Comment</td>
+              <td>Type "calculator" in search</td>
+              <td>Tags with "calculator" in comments shown</td>
+            </tr>
+            <tr>
+              <td>Clear Search</td>
+              <td>Clear search input</td>
+              <td>All tags redisplayed, selections preserved</td>
+            </tr>
+            <tr>
+              <td>Select Tag</td>
+              <td>Click checkbox</td>
+              <td>Checkbox checked, count updates: "Send Selected (1)"</td>
+            </tr>
+            <tr>
+              <td>Click Tag Info</td>
+              <td>Click anywhere on tag card</td>
+              <td>Checkbox toggles, count updates</td>
+            </tr>
+            <tr>
+              <td>Select All</td>
+              <td>Click "Select All"</td>
+              <td>All visible tags selected, count shows total</td>
+            </tr>
+            <tr>
+              <td>Deselect All</td>
+              <td>Click "Deselect All"</td>
+              <td>All selections cleared, "Send Selected (0)" disabled</td>
+            </tr>
+            <tr>
+              <td>Send Selected</td>
+              <td>Select 3 tags, click Send</td>
+              <td>Tags inserted as "tag1, tag2, tag3", library closes</td>
+            </tr>
+            <tr>
+              <td>Send with No Selection</td>
+              <td>Click Send with 0 selected</td>
+              <td>Button is disabled, no action</td>
+            </tr>
+            <tr>
+              <td>Error Handling</td>
+              <td>Simulate fetch failure</td>
+              <td>Error message displayed: "❌ Failed to load tagging data"</td>
+            </tr>
+            <tr>
+              <td>Empty Taxonomy</td>
+              <td>Use tagging.json with empty data array</td>
+              <td>Warning message: "⚠️ No tagging data found"</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="troubleshooting">Troubleshooting</h2>
+
+      <h3>Common Issues</h3>
+
+      <h4>Tags not loading</h4>
+      <ul>
+        <li><strong>Check file location:</strong> Verify <code>/docs/library/tagging.json</code> exists and is accessible</li>
+        <li><strong>Check JSON format:</strong> Ensure valid JSON with <code>data</code> array</li>
+        <li><strong>Check console:</strong> Look for fetch errors or CORS issues</li>
+        <li><strong>Verify permissions:</strong> Ensure user has read access to tagging.json</li>
+      </ul>
+
+      <h4>Search not working</h4>
+      <ul>
+        <li><strong>Check search fields:</strong> Ensure <code>value</code>, <code>key</code>, and <code>comments</code> exist in data</li>
+        <li><strong>Check case sensitivity:</strong> Search is case-insensitive, but verify <code>toLowerCase()</code> is applied</li>
+        <li><strong>Check re-render:</strong> Ensure <code>renderTagList()</code> is called on input event</li>
+      </ul>
+
+      <h4>Send not inserting tags</h4>
+        <ul>
+        <li><strong>Check DA SDK:</strong> Verify <code>actions.sendText()</code> is available</li>
+        <li><strong>Check selection:</strong> Log <code>selectedTags</code> to verify it contains expected keys</li>
+        <li><strong>Check format:</strong> Verify <code>join(', ')</code> produces correct comma-separated string</li>
+        <li><strong>Check error handling:</strong> Look for errors in console during send operation</li>
+      </ul>
+
+      <h3>Debugging Tips</h3>
+      <pre><code class="language-javascript">// Add logging to track data flow
+async function fetchTaggingData(token, actions, org, repo) {
+  console.log('Fetching tagging data for:', org, repo);
+  const taggingUrl = `${DA_ORIGIN}/source/${org}/${repo}/docs/library/tagging.json`;
+  console.log('Fetch URL:', taggingUrl);
+
+  const response = await actions.daFetch(taggingUrl);
+  console.log('Response status:', response.status);
+
+  const taggingData = await response.json();
+  console.log('Tagging data loaded:', taggingData.data.length, 'tags');
+
+  return taggingData;
+}
+
+// Log selection state
+function updateSendButton() {
+  const count = selectedTags.size;
+  console.log('Selection updated. Count:', count, 'Keys:', Array.from(selectedTags));
+  sendSelectedBtn.textContent = `Send Selected (${count})`;
+}</code></pre>
+    </section>
+
+    <section>
+      <h2 id="advanced">Advanced Enhancements</h2>
+
+      <h3>1. Hierarchical Tag Taxonomy</h3>
+      <p>Support nested tag categories with expandable groups:</p>
+
+      <pre><code class="language-json">{
+  "data": [
+    {
+      "category": "Finance",
+      "tags": [
+        {"key": "budgeting", "value": "Budgeting"},
+        {"key": "investing", "value": "Investing"}
+      ]
+    },
+    {
+      "category": "Lifestyle",
+      "tags": [
+        {"key": "wellness", "value": "Wellness"},
+        {"key": "travel", "value": "Travel"}
+      ]
+    }
+  ]
+}</code></pre>
+
+      <h3>2. Recently Used Tags</h3>
+      <p>Track and display recently selected tags for quick reuse:</p>
+
+      <pre><code class="language-javascript">const RECENT_TAGS_KEY = 'recent-tags';
+const MAX_RECENT = 5;
+
+function addToRecentTags(tagKeys) {
+  let recent = JSON.parse(localStorage.getItem(RECENT_TAGS_KEY) || '[]');
+  tagKeys.forEach((key) => {
+    recent = recent.filter((k) => k !== key); // Remove if exists
+    recent.unshift(key); // Add to front
+  });
+  recent = recent.slice(0, MAX_RECENT); // Keep only MAX_RECENT
+  localStorage.setItem(RECENT_TAGS_KEY, JSON.stringify(recent));
+}
+
+// Display recent tags section before main list
+function renderRecentTags(taggingData) {
+  const recent = JSON.parse(localStorage.getItem(RECENT_TAGS_KEY) || '[]');
+  if (recent.length === 0) return;
+
+  const recentSection = document.createElement('div');
+  recentSection.className = 'recent-tags-section';
+  recentSection.innerHTML = '<h3>Recently Used</h3>';
+
+  recent.forEach((key) => {
+    const tag = taggingData.data.find((item) => item.key === key);
+    if (tag) {
+      // Render tag chip for quick selection
+    }
+  });
+
+  container.insertBefore(recentSection, searchContainer);
+}</code></pre>
+
+      <h3>3. Tag Validation</h3>
+      <p>Validate tags before insertion based on rules:</p>
+
+      <pre><code class="language-javascript">const TAG_LIMITS = {
+  min: 1,
+  max: 5,
+};
+
+sendSelectedBtn.addEventListener('click', async () => {
+  const count = selectedTags.size;
+
+  if (count < TAG_LIMITS.min) {
+    alert(`Please select at least ${TAG_LIMITS.min} tag(s)`);
+    return;
+  }
+
+  if (count > TAG_LIMITS.max) {
+    alert(`You can select a maximum of ${TAG_LIMITS.max} tags`);
+    return;
+  }
+
+  // Proceed with send
+});</code></pre>
+
+      <h3>4. Tag Preview</h3>
+      <p>Show live preview of how tags will appear in metadata:</p>
+
+      <pre><code class="language-javascript">const previewContainer = document.createElement('div');
+previewContainer.className = 'tags-preview';
+
+function updatePreview() {
+  const selectedArray = Array.from(selectedTags);
+  const tagsText = selectedArray.join(', ');
+
+  previewContainer.innerHTML = `
+    <h4>Preview</h4>
+    <pre>Tags
+${tagsText}</pre>
+  `;
+}
+
+// Call updatePreview() whenever selection changes
+checkbox.addEventListener('change', () => {
+  // ... existing code
+  updatePreview();
+});</code></pre>
+    </section>
+
+    <section>
+      <h2 id="best-practices">Best Practices</h2>
+
+      <h3>Taxonomy Design</h3>
+      <ul>
+        <li><strong>Controlled vocabulary:</strong> Maintain centralized tagging.json to prevent tag sprawl</li>
+        <li><strong>Descriptive keys:</strong> Use kebab-case, descriptive keys (e.g., "retirement-planning", not "rp")</li>
+        <li><strong>Clear values:</strong> Use human-readable labels that authors understand</li>
+        <li><strong>Helpful comments:</strong> Add context in comments to guide authors' tag selection</li>
+        <li><strong>Limit tags:</strong> Keep taxonomy focused - too many tags reduces discoverability</li>
+      </ul>
+
+      <h3>User Experience</h3>
+      <ul>
+        <li><strong>Sticky action bar:</strong> Keep send button visible during scrolling</li>
+        <li><strong>Selection persistence:</strong> Preserve selections during search/filter</li>
+        <li><strong>Visual feedback:</strong> Update button count immediately on selection change</li>
+        <li><strong>Clickable cards:</strong> Make entire tag card clickable, not just checkbox</li>
+      </ul>
+
+      <h3>Performance</h3>
+      <ul>
+        <li><strong>Efficient filtering:</strong> Filter data array, not DOM</li>
+        <li><strong>Use Set:</strong> O(1) lookups for selection state</li>
+        <li><strong>Batch DOM updates:</strong> Build DOM tree, append once</li>
+        <li><strong>Debounce search:</strong> For very large taxonomies (100s of tags), debounce search input</li>
+      </ul>
+
+      <h3>Governance</h3>
+      <ul>
+        <li><strong>Version control:</strong> Track tagging.json changes in Git</li>
+        <li><strong>Review process:</strong> Require approval for taxonomy changes</li>
+        <li><strong>Documentation:</strong> Document tag meanings and usage guidelines</li>
+        <li><strong>Audit tags:</strong> Periodically review unused tags and deprecate</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="resources">Additional Resources</h2>
+      <ul>
+        <li>
+          <a href="https://www.aem.live/docs/sidekick-library" target="_blank" style="color: var(--color-rust);">
+            AEM Sidekick Library Documentation
+          </a>
+        </li>
+        <li>
+          <a href="https://www.aem.live/docs/metadata" target="_blank" style="color: var(--color-rust);">
+            AEM Metadata Best Practices
+          </a>
+        </li>
+        <li>
+          <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set" target="_blank" style="color: var(--color-rust);">
+            MDN: JavaScript Set
+          </a>
+        </li>
+        <li>
+          <a href="https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/" target="_blank" style="color: var(--color-rust);">
+            ARIA Checkbox Pattern
+          </a>
+        </li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 AEM Edge Delivery Developer Guides. Built for the developer community.</p>
+  </footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>
