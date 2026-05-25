@@ -51,6 +51,7 @@ const NAVIGATION_DATA = {
       items: [
         { title: 'Experience Patterns', href: 'playbooks/hosted-demo-map.html#experience-patterns' },
         { title: 'Cookbook', href: 'cookbook/index.html' },
+        { title: 'Create your Demo Playground', href: 'aem-playground/index.html' },
       ],
     },
     {
@@ -119,13 +120,13 @@ function isActivePage(href) {
 
 function getBasePath() {
   const path = window.location.pathname;
-  const knownDirs = ['/use-cases/', '/playbooks/', '/cookbook/', '/case-studies/', '/ai-and-aem/', '/getting-started/', '/references/'];
+  const knownDirs = ['/use-cases/', '/playbooks/', '/cookbook/', '/case-studies/', '/ai-and-aem/', '/getting-started/', '/references/', '/aem-playground/'];
   if (knownDirs.some((d) => path.includes(d))) return '../';
   return './';
 }
 
 function knownPathInDeepDir() {
-  return ['/use-cases/', '/playbooks/', '/cookbook/', '/case-studies/', '/ai-and-aem/', '/getting-started/', '/references/']
+  return ['/use-cases/', '/playbooks/', '/cookbook/', '/case-studies/', '/ai-and-aem/', '/getting-started/', '/references/', '/aem-playground/']
     .some((d) => window.location.pathname.includes(d));
 }
 
@@ -329,6 +330,7 @@ const FOOTER_NOTES = {
   'ai-and-aem/mcp.html': 'MCP APIs and config formats are evolving. See <a href="https://github.com/adobe/da-mcp" target="_blank" rel="noopener">adobe/da-mcp</a> for current install steps; scope agent permissions before production tenants.',
   'ai-and-aem/modernization.html': 'Treat AI-driven migration as a force multiplier, not autopilot. Sample-review every batch and reserve architect time for edge cases.',
   'cookbook/index.html': 'Block guides are samples — adapt schemas, security model, performance budget, and integrations.',
+  'aem-playground/index.html': 'Provisioning is automated behind this form — internal pilot. Do not share outside approved audiences without checking access policy.',
 };
 
 function getFooterNoteKey() {

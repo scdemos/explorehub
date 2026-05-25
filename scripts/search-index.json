@@ -3,6 +3,14 @@
   "generated": "2026-05-26",
   "entries": [
     {
+      "lane": "cookbook",
+      "category": "demo-library",
+      "title": "Create your Demo Playground",
+      "description": "Request a personal EDS + DA demo sandbox — forked reference site, GitHub repo, and safe experimentation.",
+      "path": "aem-playground/index.html",
+      "tags": ["playground", "provisioning", "sandbox", "aem-playgrounds", "demo"]
+    },
+    {
       "lane": "getting-started",
       "category": "hub",
       "title": "Explore Hub",
@@ -13,7 +21,7 @@
     {
       "lane": "playbook",
       "category": "catalog",
-      "title": "Playbook chapters",
+      "title": "Playbooks & Recipes",
       "description": "Index of use-case playbooks — gated content, search, JSON2HTML, forms, feeds, embed.",
       "path": "playbooks/index.html",
       "tags": ["playbooks", "index", "recipes"]

@@ -7,7 +7,7 @@ if (window.PlaybookSearch) {
 } else {
   const base = (() => {
     const path = window.location.pathname;
-    const knownDirs = ['/use-cases/', '/playbooks/', '/cookbook/', '/ai-and-aem/', '/getting-started/', '/references/'];
+    const knownDirs = ['/use-cases/', '/playbooks/', '/cookbook/', '/case-studies/', '/ai-and-aem/', '/getting-started/', '/references/', '/aem-playground/'];
     return knownDirs.some((d) => path.includes(d)) ? '../' : './';
   })();
   const script = document.createElement('script');

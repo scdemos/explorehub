@@ -1973,20 +1973,6 @@ body.has-sidebar > footer > p {
   }
 }
 
-/* Edit on GitHub footer link */
-.edit-on-github {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: var(--body-font-size-s);
-  color: var(--color-text-secondary);
-  margin: var(--space-xl) 0;
-}
-
-.edit-on-github:hover {
-  color: var(--color-rust);
-}
-
 /* Demo Site - Library (pattern entries) */
 .pattern-entry {
   position: relative;
@@ -2135,4 +2121,267 @@ body.has-sidebar > footer > p {
 .pattern-tier strong {
   display: block;
   margin-bottom: var(--space-xs);
+}
+
+/* Create your Demo Playground landing */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.lane-chip.lane-playground {
+  background: light-dark(rgb(107 127 93 / 12%), rgb(107 127 93 / 22%));
+  border-color: light-dark(var(--color-sage), rgb(107 127 93 / 50%));
+  color: light-dark(#4a5c40, #b8c9a8);
+}
+
+.playground-page .playground-header {
+  max-width: var(--content-column-width);
+  margin-inline: auto;
+  padding-inline: var(--content-gutter);
+}
+
+.playground-audience {
+  font-size: var(--body-font-size-s);
+  color: var(--color-muted);
+  margin-top: var(--space-s);
+}
+
+.playground-form-panel {
+  max-width: var(--content-column-width);
+  margin: var(--space-2xl) auto var(--space-3xl);
+  padding-inline: var(--content-gutter);
+}
+
+.playground-caution {
+  margin-top: 0;
+}
+
+.playground-caution p {
+  margin: 0;
+}
+
+.playground-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+.playground-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-m);
+}
+
+@media (width < 600px) {
+  .playground-field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.playground-field label,
+.playground-domain-field legend {
+  display: block;
+  font-size: var(--body-font-size-s);
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+}
+
+.playground-field input[type='text'],
+.playground-field input[type='email'] {
+  width: 100%;
+  padding: 12px 14px;
+  font: inherit;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-input, 8px);
+  background: light-dark(var(--color-light), var(--color-card-dark));
+  color: var(--color-text);
+}
+
+.playground-field input:focus {
+  outline: 2px solid light-dark(var(--color-rust), var(--color-gold));
+  outline-offset: 2px;
+}
+
+.required-mark {
+  color: var(--color-rust);
+}
+
+.field-optional {
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.field-hint {
+  font-size: var(--body-font-size-xs);
+  color: var(--color-muted);
+  margin: var(--space-xs) 0 0;
+}
+
+.playground-domain-field {
+  border: none;
+  padding: 0;
+  margin: var(--space-s) 0 0;
+}
+
+.domain-options {
+  display: grid;
+  gap: var(--space-s);
+  margin-top: var(--space-s);
+}
+
+.domain-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-m);
+  padding: var(--space-m);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-s, 8px);
+  background: light-dark(var(--color-light), var(--color-card-dark));
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.domain-card:has(input:focus-visible) {
+  outline: 2px solid light-dark(var(--color-rust), var(--color-gold));
+  outline-offset: 2px;
+}
+
+.domain-card.is-selected,
+.domain-card:has(input:checked) {
+  border-color: light-dark(var(--color-rust), var(--color-gold));
+  box-shadow: 0 0 0 1px light-dark(var(--color-rust), var(--color-gold));
+}
+
+.domain-card input {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.domain-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--body-font-size-s);
+}
+
+.domain-card-body strong {
+  font-size: var(--body-font-size-m);
+}
+
+.domain-card-body span:last-child {
+  color: var(--color-muted);
+}
+
+.playground-checkbox-field label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-s);
+  font-weight: 400;
+  font-size: var(--body-font-size-s);
+  cursor: pointer;
+}
+
+.playground-checkbox-field input {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.playground-submit {
+  width: 100%;
+  margin-top: var(--space-s);
+}
+
+.form-status {
+  min-height: 1.5em;
+  font-size: var(--body-font-size-s);
+  color: var(--color-muted);
+}
+
+.form-status.is-error {
+  color: #b42318;
+}
+
+.playground-process {
+  margin-top: var(--space-xl);
+  font-size: var(--body-font-size-s);
+  color: var(--color-muted);
+}
+
+.playground-process summary {
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.playground-process ol {
+  margin: var(--space-m) 0 0;
+  padding-left: 1.25rem;
+}
+
+.playground-aside-inner {
+  padding: var(--space-xl);
+  border-radius: var(--border-radius-heritage, 12px);
+  background: var(--color-background-alt);
+  border: var(--border-heritage);
+}
+
+.playground-aside-logo {
+  margin-bottom: var(--space-m);
+}
+
+.playground-aside h2 {
+  font-size: var(--heading-font-size-m);
+  margin: 0 0 var(--space-m);
+}
+
+.playground-benefits {
+  margin: var(--space-m) 0;
+  padding-left: 1.25rem;
+}
+
+.playground-benefits li {
+  margin-bottom: var(--space-s);
+}
+
+.playground-lifecycle {
+  margin: var(--space-l) 0 var(--space-m);
+  padding-top: var(--space-m);
+  border-top: 1px solid var(--color-border);
+}
+
+.playground-prereq {
+  font-size: var(--body-font-size-xs);
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.playground-outcomes {
+  max-width: var(--content-column-width);
+  margin: 0 auto var(--space-3xl);
+  padding-inline: var(--content-gutter);
+}
+
+.playground-adoption-note {
+  font-size: var(--body-font-size-s);
+  color: var(--color-muted);
+  margin-top: var(--space-l);
+}
+
+.playground-success {
+  padding: var(--space-xl);
+  border: var(--border-heritage);
+  border-radius: var(--border-radius-heritage);
+  background: light-dark(var(--color-light), var(--color-card-dark));
+}
+
+.playground-success h2 {
+  margin-top: 0;
 }

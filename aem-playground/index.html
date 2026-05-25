@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Create your Demo Playground | EDS Reference Playbook</title>
+  <meta name="description" content="Request a personal Edge Delivery + Document Authoring demo sandbox forked from the reference site.">
+  <meta property="og:title" content="Create your Demo Playground | EDS Reference Playbook">
+  <meta property="og:description" content="Request a personal EDS + DA sandbox with GitHub access.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <link rel="stylesheet" href="../styles/styles.css">
+</head>
+<body class="has-sidebar playground-page">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="../playbooks/hosted-demo-map.html">Demo Site Library</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Create your Demo Playground</span>
+  </nav>
+
+  <main class="playground-main">
+    <header class="guide-header playground-header">
+      <span class="lane-chip lane-cookbook">Demo Site Library</span>
+      <h1>Create your Demo Playground</h1>
+      <p class="subtitle">Get a personal Edge Delivery + Document Authoring sandbox forked from the reference site — configured, published, and ready to demo in minutes.</p>
+      <p class="playground-audience">For customers, partners, and internal Adobe field teams (SCs, ACS, PMs).</p>
+    </header>
+
+    <section class="playground-form-panel" aria-labelledby="playground-form-heading">
+      <h2 id="playground-form-heading" class="visually-hidden">Provisioning request</h2>
+
+      <form id="playground-form" class="playground-form" novalidate
+        data-action="https://demo.bbird.live/playground-request">
+        <div class="playground-field-row">
+          <div class="playground-field">
+            <label for="firstName">First name <span class="required-mark" aria-hidden="true">*</span></label>
+            <input type="text" id="firstName" name="firstName" autocomplete="given-name" required />
+          </div>
+          <div class="playground-field">
+            <label for="lastName">Last name <span class="required-mark" aria-hidden="true">*</span></label>
+            <input type="text" id="lastName" name="lastName" autocomplete="family-name" required />
+          </div>
+        </div>
+
+        <div class="playground-field">
+          <label for="company">Company <span class="required-mark" aria-hidden="true">*</span></label>
+          <input type="text" id="company" name="company" autocomplete="organization" required />
+        </div>
+
+        <div class="playground-field">
+          <label for="email">Work email <span class="required-mark" aria-hidden="true">*</span></label>
+          <input type="email" id="email" name="email" autocomplete="email" required />
+        </div>
+
+        <div class="playground-field">
+          <label for="githubHandle">GitHub handle <span class="required-mark" aria-hidden="true">*</span></label>
+          <input type="text" id="githubHandle" name="githubHandle" autocomplete="username"
+            pattern="^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$"
+            title="GitHub username (letters, numbers, hyphens)" required />
+          <p class="field-hint">You will be added as admin on the new repository.</p>
+        </div>
+
+        <div class="info-box warning playground-caution" role="note">
+          <strong>Caution</strong>
+          <p>Make sure you provide the correct work email and GitHub handle — provisioning cannot complete successfully if either is wrong.</p>
+        </div>
+
+        <div class="playground-field playground-checkbox-field">
+          <label>
+            <input type="checkbox" name="terms" value="accepted" required />
+            <span>I have read and accept the <a href="https://www.adobe.com/legal/terms.html" target="_blank" rel="noopener">Terms of Use</a> for this pilot program.</span>
+          </label>
+        </div>
+
+        <p class="form-status" role="status" aria-live="polite"></p>
+
+        <button type="submit" class="btn btn-primary playground-submit">Create demo playground</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; AEM Edge Delivery Reference Playbook.</p>
+  </footer>
+
+  <script src="../scripts/navigation.js"></script>
+  <script src="playground.js" type="module"></script>
+</body>
+</html>

@@ -17,7 +17,7 @@
 
   function getBasePath() {
     const path = global.location.pathname;
-    const dirs = ['/use-cases/', '/playbooks/', '/cookbook/', '/case-studies/', '/ai-and-aem/', '/getting-started/', '/references/'];
+    const dirs = ['/use-cases/', '/playbooks/', '/cookbook/', '/case-studies/', '/ai-and-aem/', '/getting-started/', '/references/', '/aem-playground/'];
     return dirs.some((d) => path.includes(d)) ? '../' : './';
   }
 
