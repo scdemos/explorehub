@@ -15,6 +15,7 @@
   <meta name="twitter:card" content="summary">
 
   <link rel="stylesheet" href="../styles/styles.css">
+  <script src="../scripts/theme-bootstrap.js"></script>
   <link rel="stylesheet" href="../styles/prism-tomorrow.css">
   <script src="../scripts/prism-simple.js"></script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
@@ -32,7 +33,8 @@
   </nav>
 
   <main>
-    <header class="guide-header">
+    <header class="guide-header guide-header--with-media hero-tone-playbook">
+      <div class="guide-header-body">
       <span class="lane-chip lane-playbook">Playbook</span>
       <h1>Structured JSON → dynamic HTML experiences</h1>
       <p class="subtitle">Author a single JSON source (events, articles, products), bind it to a Mustache template, and let EDS render N pages with shared structure. The CDN worker's <code>mhast</code> fallback handles <code>.json</code> 404s so headless consumers keep working.</p>
@@ -41,6 +43,7 @@
         <span class="tag">Templates</span>
         <span class="tag">mhast</span>
         <span class="tag">html2json</span>
+      </div>
       </div>
     </header>
 

@@ -13,6 +13,7 @@
   <meta name="twitter:card" content="summary">
 
   <link rel="stylesheet" href="../styles/styles.css">
+  <script src="../scripts/theme-bootstrap.js"></script>
   <link rel="stylesheet" href="../styles/prism-tomorrow.css">
   <script src="../scripts/prism-simple.js"></script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
@@ -30,7 +31,8 @@
   </nav>
 
   <main>
-    <header class="guide-header">
+    <header class="guide-header guide-header--with-media hero-tone-playbook">
+      <div class="guide-header-body">
       <span class="lane-chip lane-playbook">Playbook</span>
       <h1>RSS &amp; JSON Feed syndication</h1>
       <p class="subtitle">A single Cloudflare Worker reads <code>query-index.json</code>, filters, sorts, and emits RSS 2.0 + JSON Feed 1.1. Cached at the edge for two hours, refreshed on demand by re-publishing.</p>
@@ -40,6 +42,7 @@
         <span class="tag">query-index</span>
         <span class="tag">Cloudflare Worker</span>
         <span class="tag">Edge cache</span>
+      </div>
       </div>
     </header>
 

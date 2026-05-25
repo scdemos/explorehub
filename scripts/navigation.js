@@ -260,6 +260,9 @@ function renderNavigation() {
   nav.className = 'sidebar-nav';
   nav.setAttribute('aria-label', 'Main navigation');
 
+  const homeRow = document.createElement('div');
+  homeRow.className = 'nav-home-row';
+
   const homeLink = document.createElement('a');
   homeLink.href = `${basePath}index.html`;
   homeLink.className = `nav-home${isHub ? ' active' : ''}`;
@@ -274,7 +277,26 @@ function renderNavigation() {
   homeLabel.className = 'nav-home-label';
   homeLabel.textContent = 'Explore Hub';
   homeLink.append(homeLogo, homeLabel);
-  nav.appendChild(homeLink);
+
+  const themeBtn = document.createElement('button');
+  themeBtn.type = 'button';
+  themeBtn.className = 'theme-toggle';
+  themeBtn.setAttribute('aria-live', 'polite');
+
+  homeRow.append(homeLink, themeBtn);
+  nav.appendChild(homeRow);
+
+  function initThemeToggleWhenReady() {
+    if (window.ExploreHubTheme?.initThemeToggle) {
+      window.ExploreHubTheme.initThemeToggle(themeBtn);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = `${basePath}scripts/theme.js`;
+    script.onload = () => window.ExploreHubTheme?.initThemeToggle(themeBtn);
+    document.head.appendChild(script);
+  }
+  initThemeToggleWhenReady();
 
   const searchWrap = document.createElement('div');
   searchWrap.className = 'nav-search';
@@ -433,10 +455,20 @@ function initNavigation() {
   });
 }
 
+function loadHeroMedia() {
+  const nav = document.querySelector('script[src*="navigation.js"]');
+  if (!nav || document.querySelector('script[src*="hero-media.js"]')) return;
+  const script = document.createElement('script');
+  script.src = new URL('hero-media.js', nav.src).href;
+  script.defer = true;
+  document.head.appendChild(script);
+}
+
 function initPlaybookChrome() {
   initSiteFooter();
   initClickableGuideCards();
   initNavigation();
+  loadHeroMedia();
 }
 
 if (document.readyState === 'loading') {

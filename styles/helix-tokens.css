@@ -1,0 +1,273 @@
+/**
+ * Design tokens from helix-website (www.aem.live) — Adobe Spectrum + Consonant type scale.
+ * Source: helix-website/styles/styles.css :root
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --body-font-family: "Adobe Clean", adobe-clean, "Trebuchet MS", sans-serif;
+  --code-font-family:
+    "Source Code Pro",
+    source-code-pro,
+    "Courier New",
+    monospace;
+
+  --type-heading-all-weight: 700;
+  --type-heading-xxxl-size: 44px;
+  --type-heading-xxxl-lh: 1;
+  --type-heading-xxl-size: 36px;
+  --type-heading-xxl-lh: 1;
+  --type-heading-xl-size: 28px;
+  --type-heading-xl-lh: 35px;
+  --type-heading-l-size: 24px;
+  --type-heading-l-lh: 30px;
+  --type-heading-m-size: 20px;
+  --type-heading-m-lh: 25px;
+  --type-heading-s-size: 16px;
+  --type-heading-s-lh: 20px;
+  --type-heading-xs-size: 18px;
+  --type-heading-xs-lh: 22px;
+  --type-heading-xxs-size: var(--type-body-s-size);
+  --type-heading-xxs-lh: var(--type-body-s-lh);
+
+  --type-body-l-size: 20px;
+  --type-body-l-lh: 30px;
+  --type-body-m-size: 18px;
+  --type-body-m-lh: 27px;
+  --type-body-s-size: 16px;
+  --type-body-s-lh: 1.5;
+  --type-body-xs-size: 14px;
+  --type-body-xs-lh: 21px;
+  --type-body-xxs-size: 12px;
+  --type-body-xxs-lh: 1.5;
+  --type-body-xxxs-lh: 15px;
+
+  --type-detail-all-weight: 700;
+  --type-detail-m-transform: uppercase;
+  --type-detail-xl-size: 20px;
+  --type-detail-xl-lh: 1.75;
+  --type-detail-l-size: 16px;
+  --type-detail-l-lh: 1.5;
+  --type-detail-m-size: 12px;
+  --type-detail-m-lh: 15px;
+
+  --body-line-height: 1.6875;
+
+  --spacing-xxxs: 4px;
+  --spacing-xxs: 8px;
+  --spacing-xs: 16px;
+  --spacing-s: 24px;
+  --spacing-m: 32px;
+  --spacing-ml: 40px;
+  --spacing-l: 48px;
+  --spacing-xl: 56px;
+  --spacing-xxl: 80px;
+  --spacing-xxxl: 104px;
+
+  --dark-spectrum-blue: #0463d6;
+  --spectrum-blue: #1473e6;
+  --brand-color-purple: #8a8df3;
+  --brand-color-dark-purple: #7473e4;
+  --brand-color-pink: #f1bce7;
+  --brand-color-green-yellow: #ebf3a4;
+  --highlight-gradient: linear-gradient(75deg, #db3278, #ee732f);
+
+  --color-black: light-dark(#000, #fff);
+  --color-white: light-dark(#fff, #000);
+
+  --color-gray-50: light-dark(#fff, #1e1e1e);
+  --color-gray-100: light-dark(#f5f5f5, #2c2c2c);
+  --color-gray-200: light-dark(#e1e1e1, #3e3e3e);
+  --color-gray-300: light-dark(#d6d6d6, #4a4a4a);
+  --color-gray-400: light-dark(#b3b3b3, #6e6e6e);
+  --color-gray-500: light-dark(#8e8e8e, #909090);
+  --color-gray-600: light-dark(#686868, #b3b3b3);
+  --color-gray-700: light-dark(#4b4b4b, #d4d4d4);
+  --color-gray-800: light-dark(#2c2c2c, #e1e1e1);
+  --color-gray-900: light-dark(#1e1e1e, #f5f5f5);
+
+  --color-info-accent: light-dark(#1473e6, #378ef0);
+  --color-info-accent-hover: light-dark(#0d66d0, #4b9cf5);
+  --color-info-accent-down: light-dark(#095aba, #2680eb);
+  --color-info-primary: light-dark(#1473e6, #378ef0);
+  --color-info-primary-hover: light-dark(#0d66d0, #4b9cf5);
+  --color-info-primary-down: light-dark(#095aba, #2680eb);
+  --color-info-secondary: light-dark(#f5f5f5, #2c2c2c);
+  --color-info-secondary-hover: light-dark(#e1e1e1, #3e3e3e);
+  --color-info-secondary-down: light-dark(#d6d6d6, #4a4a4a);
+  --color-info-accent-reverse: light-dark(#e3f2fd, #1a2332);
+  --color-info-accent-reverse-down: light-dark(#c8e4fb, #0d1824);
+
+  --color-font-grey: light-dark(#2c2c2c, #e1e1e1);
+  --color-light-grey-600: light-dark(#686868, #b3b3b3);
+  --color-eyebrow-light-grey: light-dark(#444, #d4d4d4);
+  --color-eyebrow-highlight: #6870ec;
+
+  --color-accent-blue: light-dark(#6870ec, #8b92ff);
+  --color-accent-highlight-yellow: light-dark(#e3fa8c, #c5dc6e);
+  --color-accent-pink-bg: light-dark(#f0b2f2, #7d2d7f);
+  --color-accent-pink-content: light-dark(#88008d, #fff);
+  --color-accent-purple-bg: light-dark(#474eb8, #4a52c4);
+  --color-accent-purple-content: light-dark(#e2e4ff, #fff);
+  --color-accent-lightgreen-bg: light-dark(#e1fa82, #8fa940);
+  --color-accent-lightgreen-content: light-dark(#3b5700, #fff);
+  --color-accent-yellow-bg: light-dark(#f5e66b, #a89a2f);
+  --color-accent-yellow-content: light-dark(#7f6000, #fff);
+
+  --bg-color-lightgrey: light-dark(#f8f8f8, #1e1e1e);
+  --bg-color-grey: light-dark(#e8e8e8, #2c2c2c);
+  --bg-color-grey-2: light-dark(#d6d6d6, #3e3e3e);
+  --overlay-curtain-bg-color: light-dark(rgb(0 0 0 / 60%), rgb(0 0 0 / 80%));
+  --overlay-curtain-bg-filter: blur(0.05em);
+  --code-bg-color: light-dark(#f1f1f1, #2c2c2c);
+
+  --shadow-color-5: rgb(0 0 0 / 5%);
+  --shadow-color-7: rgb(0 0 0 / 7%);
+  --shadow-color-10: rgb(0 0 0 / 10%);
+  --shadow-color-15: rgb(0 0 0 / 15%);
+  --shadow-color-20: rgb(0 0 0 / 20%);
+  --shadow-color-25: rgb(0 0 0 / 25%);
+  --shadow-color-30: rgb(0 0 0 / 30%);
+  --shadow-color-33: rgb(0 0 0 / 33%);
+  --shadow-color-40: rgb(0 0 0 / 40%);
+  --shadow-color-50: rgb(0 0 0 / 50%);
+  --shadow-color-60: rgb(0 0 0 / 60%);
+  --shadow-color-70: rgb(0 0 0 / 70%);
+  --shadow-color-80: rgb(0 0 0 / 80%);
+  --shadow-color-90: rgb(0 0 0 / 90%);
+  --shadow-color-100: rgb(0 0 0 / 100%);
+
+  --border-color-light: light-dark(#eaeaea, #3a3a3a);
+  --border-color-medium: light-dark(#d6d6d6, #4a4a4a);
+  --border-color-dark: light-dark(#ccc, #555);
+
+  --color-brand-red: #d31510;
+  --color-brand-pink: #e6118a;
+  --color-brand-orange: #fe833f;
+  --color-brand-deep-blue: #2a2f8f;
+
+  --color-warning: light-dark(#ffc107, #ffca28);
+  --color-error: light-dark(#d31510, #ff5252);
+  --color-success: light-dark(#2e7d32, #66bb6a);
+
+  --color-search-highlight: light-dark(rgb(255 208 0 / 30%), rgb(255 208 0 / 75%));
+
+  --color-release-blue: light-dark(#d4e8ff, #1a3352);
+  --color-release-pink: light-dark(#ffd4f1, #3d1a33);
+  --color-release-green: light-dark(#d1ffed, #1a3d2e);
+  --color-release-gray: light-dark(#e8e8e8, #3a3a3a);
+  --color-release-lime: light-dark(#e4e8bf, #2e3318);
+  --color-release-yellow: light-dark(#f4f8cf, #33301a);
+  --color-release-orange: light-dark(#ffebd4, #3d2a1a);
+  --color-release-cyan: light-dark(#cfebf8, #1a2e3d);
+  --color-release-purple: light-dark(#edd1ff, #2e1a3d);
+  --color-release-peach: light-dark(#ffe4d4, #3d261a);
+
+  --grid-mobile-container-width: 88%;
+  --grid-tablet-container-width: 83%;
+  --grid-laptop-container-width: 90%;
+  --grid-desktop-container-width: 1200px;
+
+  --header-container-width: 1440px;
+  --header-container-tablet-x-padding: 24px;
+  --header-container-desktop-x-padding: 20px;
+
+  --input-border-radius: 4px;
+  --image-border-radius-m: 8px;
+  --image-border-radius-l: 16px;
+  --image-border-radius-xl: 24px;
+  --image-border-radius-xxl: 30px;
+  --card-border-radius-l: 12px;
+
+  --nav-height: 65px;
+  --breadcrumb-height: 1px;
+
+  --color-checkerboard-bg-border: rgb(214 213 213 / 40%);
+  --color-checkerboard-bg-fill: transparent;
+  --checkerboard-background:
+    linear-gradient(
+      var(--color-checkerboard-bg-border) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      var(--color-checkerboard-bg-border) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      45deg,
+      var(--color-checkerboard-bg-fill) 50%,
+      var(--color-checkerboard-bg-fill) 51%
+    );
+  --checkerboard-background-size: clamp(15px, 3vw, 25px) clamp(15px, 3vw, 25px);
+
+  --sidebar-z-index: 9998;
+  --nav-z-index: 9999;
+
+  --circular-icon-tag-size: 30px;
+  --circular-number-tag-size: 60px;
+
+  --image-filter-drop-shadow-small:
+    drop-shadow(
+      10px 25px 50px rgb(0 0 0 / 10%)
+    );
+
+  --side-navigation-bar-gap: var(--spacing-s);
+
+  --cubic-bezier-1: cubic-bezier(0.802, 0, 0.2, 1);
+  --cubic-bezier-2: cubic-bezier(0.23, 1, 0.32, 1);
+  --transition-cubic-bezier-1: all 0.4s var(--cubic-bezier-2);
+  --transition-ease-in-out: all 0.4s ease-in-out;
+  --fade-transition: all 0.6s var(--cubic-bezier-1);
+  --slide-text-transition: all 0.8s var(--cubic-bezier-1);
+  --slide-reveal-transition-slow: all 1s var(--cubic-bezier-1);
+
+  --circular-1-clip-path-init: circle(50% at 0 50%);
+  --circular-1-clip-path-full: circle(120% at 0 50%);
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+:where(html[data-theme="dark"]) {
+  color-scheme: dark;
+}
+
+@media (width >= 600px) {
+  :root {
+    --breadcrumb-height: 47px;
+  }
+}
+
+@media (width >= 900px) {
+  :root {
+    --type-heading-all-weight: 700;
+    --type-heading-xxxl-size: clamp(60px, 4.2vw, 80px);
+    --type-heading-xxxl-lh: 0.9;
+    --type-heading-xxl-size: 44px;
+    --type-heading-xxl-lh: 1;
+    --type-heading-xl-size: 36px;
+    --type-heading-xl-lh: 45px;
+    --type-heading-l-size: 28px;
+    --type-heading-l-lh: 35px;
+    --type-heading-m-size: 24px;
+    --type-heading-m-lh: 30px;
+    --type-heading-s-size: 20px;
+    --type-heading-s-lh: 25px;
+    --type-heading-xs-size: 18px;
+    --type-heading-xs-lh: 22px;
+
+    --circular-icon-tag-size: 50px;
+    --circular-number-tag-size: 60px;
+    --card-border-radius-l: 24px;
+
+    --side-navigation-bar-gap:
+      clamp(
+        var(--spacing-m),
+        3.2vw,
+        var(--spacing-ml)
+      );
+  }
+}

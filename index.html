@@ -3,17 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="assets/hub-logo.svg">
   <title>Explore Hub — EDS Reference Playbook</title>
   <meta name="description" content="Search and browse use-case playbooks, block cookbook, and AI guides for AEM Edge Delivery Services.">
   <link rel="stylesheet" href="styles/styles.css">
+  <script src="scripts/theme-bootstrap.js"></script>
 </head>
 <body class="has-sidebar">
   <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
   <aside id="sidebar"></aside>
 
   <main>
-    <section class="hub-hero">
+    <section class="hub-hero hub-hero--with-media hero-tone-hub">
+      <div class="hub-hero-body">
       <div class="hub-brand">
         <img src="assets/hub-logo.svg" alt="" width="56" height="56" class="hub-logo" decoding="async" />
         <h1>Explore Hub</h1>
@@ -31,6 +33,7 @@
         <button type="button" class="lane-chip lane-filter" data-lane="cookbook" role="tab" aria-selected="false">Cookbook</button>
         <button type="button" class="lane-chip lane-filter" data-lane="ai" role="tab" aria-selected="false">AI and AEM</button>
         <button type="button" class="lane-chip lane-filter" data-lane="case-study" role="tab" aria-selected="false">Case studies</button>
+      </div>
       </div>
     </section>
 
