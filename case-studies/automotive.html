@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Automotive | Case studies | EDS Reference Playbook</title>
+  <meta name="description" content="How a global automotive brand consolidated market sites on AEM Edge Delivery — localization, imagery, and campaign velocity.">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <script src="../scripts/theme-bootstrap.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Case studies</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Automotive</span>
+  </nav>
+
+  <main>
+    <header class="guide-header guide-header--with-media hero-tone-case-study">
+      <div class="guide-header-body">
+      <span class="lane-chip lane-case-study">Case study</span>
+      <h1>Automotive</h1>
+      <p class="subtitle">Unifying a multi-market brand experience on Edge Delivery — one block library, many locales, and campaign landings that do not fork the codebase per region.</p>
+      <div class="metadata">
+        <span class="tag">Automotive</span>
+        <span class="tag">Global</span>
+        <span class="tag">Migration</span>
+      </div>
+      </div>
+    </header>
+
+    <div class="info-box">
+      <strong>Anonymous case study.</strong> A composite migration narrative for this industry — useful for planning your own EDS program, not a named customer endorsement.
+    </div>
+
+    <section id="overview" class="chapter-section">
+      <h2>Overview</h2>
+      <p>A global automotive brand operated dozens of market sites with overlapping templates but diverging code paths. Model-year campaigns needed rich imagery and video; configurators and dealer tools lived elsewhere; every region wanted local nuance without a separate fork.</p>
+      <p>The migration to EDS centered on a <strong>single delivery codebase</strong>, locale-aware content trees in DA, and fragments for global chrome — so marketing ships campaigns from blocks while engineering owns one decoration pipeline.</p>
+    </section>
+
+    <section id="starting-point" class="chapter-section">
+      <h2>Where the program started</h2>
+      <ul>
+        <li>Regional microsites on different release cadences and component versions.</li>
+        <li>Image-heavy heroes and galleries dominating LCP on mobile.</li>
+        <li>Model storytelling pages rebuilt from scratch for each launch.</li>
+        <li>CTAs deep-linking to configurators and dealer finders outside the CMS.</li>
+      </ul>
+    </section>
+
+    <section id="journey" class="chapter-section">
+      <h2>Migration journey</h2>
+      <ol>
+        <li><strong>Define global vs local.</strong> Agreed which blocks are universal (hero, columns, cards) vs market-specific (legal footnotes, offer disclaimers).</li>
+        <li><strong>Structure locales in Git.</strong> Folder conventions per market; fallback content for shared assets; authors trained on copy-out not copy-paste code.</li>
+        <li><strong>Build the model hub pattern.</strong> Repeatable section rhythm: hero → specs → gallery → CTA to configurator — all blocks.</li>
+        <li><strong>Optimize imagery pipeline.</strong> Priority hints on hero images, responsive sources, lazy below-the-fold galleries.</li>
+        <li><strong>Fragment the chrome.</strong> Header, footer, and legal strips as fragments referenced across markets.</li>
+        <li><strong>Pilot one region, then scale.</strong> First market cut over validated block library; subsequent markets migrated content, not code.</li>
+      </ol>
+    </section>
+
+    <section id="shipped" class="chapter-section">
+      <h2>What landed on EDS</h2>
+      <ul>
+        <li>Shared block library across markets with locale-specific content only.</li>
+        <li>Model-year campaign landings authored in days, not sprints.</li>
+        <li>Consistent brand chrome via fragments.</li>
+        <li>Clear hand-off CTAs to configurators and dealer systems (outside Helix).</li>
+      </ul>
+    </section>
+
+    <section id="highlights" class="chapter-section">
+      <h2>Technical highlights</h2>
+      <div class="case-study-highlights">
+        <article class="case-study-highlight">
+          <h3>Hero LCP discipline</h3>
+          <p>Dual-image heroes and fetch priority — <a href="../use-cases/how-to-build-hero-block.html">Hero block</a>.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Model storytelling</h3>
+          <p>Columns + cards for specs and features — <a href="../use-cases/how-to-build-columns-block.html">Columns</a>, <a href="../use-cases/how-to-build-cards-block.html">Cards</a>.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Fragment chrome</h3>
+          <p>One header/footer source — <a href="../use-cases/how-to-build-fragment-block.html">Fragment block</a>.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Locale content trees</h3>
+          <p>Git folder strategy and guardrailed block palettes per market.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>Target architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Regional[Regional authors] --> DA[Document Authoring]
+  DA --> EDS[EDS delivery]
+  EDS --> CDN[CDN]
+  CDN --> Visitor[Visitors]
+  EDS --> Config[External configurator / dealer tools]
+      </pre>
+      <p>Marketing and storytelling on EDS; transactional flows stay in specialized apps linked from authored CTAs.</p>
+    </section>
+
+    <section id="lessons" class="chapter-section">
+      <h2>Lessons from the journey</h2>
+      <ul>
+        <li><strong>One repo, many trees.</strong> Localization is a content problem — not a reason to fork block code per country.</li>
+        <li><strong>Campaign speed needs templates-as-blocks.</strong> Model launches reuse section sequences; only media and copy change.</li>
+        <li><strong>Respect the LCP budget.</strong> Full-bleed video heroes are the exception, not the default template.</li>
+        <li><strong>Know the system boundary.</strong> EDS owns story; inventory and pricing live where they belong.</li>
+      </ul>
+    </section>
+
+    <section id="related" class="chapter-section">
+      <h2>Related playbook &amp; cookbook</h2>
+      <ul>
+        <li><a href="../use-cases/how-to-build-hero-block.html">Hero block</a></li>
+        <li><a href="../use-cases/how-to-build-fragment-block.html">Fragment block</a></li>
+        <li><a href="../use-cases/how-to-build-cards-block.html">Cards block</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

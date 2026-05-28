@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <title>Case studies | EDS Reference Playbook</title>
-  <meta name="description" content="Production AEM Edge Delivery Services sites — patterns, scale, and what to inspect when adapting similar experiences.">
+  <meta name="description" content="Anonymous industry case studies — how teams moved to AEM Edge Delivery, organized by vertical without naming customers.">
   <link rel="stylesheet" href="../styles/styles.css">
   <script src="../scripts/theme-bootstrap.js"></script>
 </head>
@@ -24,69 +24,66 @@
       <div class="guide-header-body">
       <span class="lane-chip lane-case-study">Case studies</span>
       <h1>Case studies</h1>
-      <p class="subtitle">Live production sites on AEM Edge Delivery Services. Use these pages to orient before diving into playbooks and cookbook — each entry links the public site and notes what to look for when inspecting or scoping similar work.</p>
+      <p class="subtitle">How teams in each industry moved to Edge Delivery — starting point, migration phases, what shipped, and lessons learned. Organized by domain, not customer name.</p>
       <div class="metadata">
-        <span class="tag">Reference</span>
+        <span class="tag">Migration</span>
+        <span class="tag">By industry</span>
       </div>
       </div>
     </header>
 
     <section class="category-section">
-      <h2>Sites</h2>
+      <h2>By industry</h2>
       <div class="card-grid">
         <article class="guide-card">
-          <h3><a href="cmegroup.html">cmegroup.com</a></h3>
-          <p>Financial markets — complex navigation, DA Sheets plugins, performance-sensitive publishing.</p>
+          <h3><a href="financial-markets.html">Financial markets</a></h3>
+          <p>From legacy CMS and scattered plugins to DA Sheets, query-index search, and governed block libraries.</p>
         </article>
         <article class="guide-card">
-          <h3><a href="revolt.html">revolt.tv</a></h3>
-          <p>Media / entertainment — content-rich pages and brand-led experience patterns.</p>
+          <h3><a href="media-entertainment.html">Media &amp; entertainment</a></h3>
+          <p>Editorial velocity — heroes, deferred video, and homepage swaps without deploys.</p>
         </article>
         <article class="guide-card">
-          <h3><a href="volvo.html">volvo</a></h3>
-          <p>Automotive — global brand site on EDS; multi-market content and component depth.</p>
+          <h3><a href="automotive.html">Automotive</a></h3>
+          <p>One block library across markets — model campaigns, fragments, and configurator hand-offs.</p>
         </article>
         <article class="guide-card">
-          <h3><a href="crn.html">crn.com</a></h3>
-          <p>B2B publishing — editorial velocity, search, and multi-property theming.</p>
+          <h3><a href="b2b-publishing.html">B2B publishing</a></h3>
+          <p>Daily homepage assembly, metadata-driven search, and sibling brands on one platform.</p>
         </article>
         <article class="guide-card">
-          <h3><a href="run-disney.html">run disney</a></h3>
-          <p>Events / registration — campaign pages, forms, and seasonal content cadence.</p>
+          <h3><a href="events-registration.html">Events &amp; registration</a></h3>
+          <p>Seasonal campaigns, worker-backed forms, and peak-day traffic on the CDN.</p>
         </article>
         <article class="guide-card">
-          <h3><a href="jet2.html">jet2</a></h3>
-          <p>Travel — high-traffic consumer journeys, merchandising blocks, and conversion paths.</p>
+          <h3><a href="travel-consumer.html">Travel &amp; consumer retail</a></h3>
+          <p>Deal merchandising, dual-brand navigation, and booking deep links outside Helix.</p>
         </article>
       </div>
     </section>
 
     <section class="chapter-section">
-      <h2>Page structure</h2>
-      <p>Each case study follows the same scaffold (see <code>case-studies/_template.html</code> for the canonical outline):</p>
+      <h2>What each case study covers</h2>
+      <p>Every page follows the same journey scaffold (see <code>case-studies/_template.html</code>):</p>
       <ol>
-        <li>Overview</li>
-        <li>Customer snapshot</li>
-        <li>Business challenge</li>
-        <li>Solution on EDS</li>
-        <li>Technical highlights</li>
-        <li>Architecture</li>
-        <li>Outcomes (sample metrics until verified)</li>
-        <li>Lessons &amp; what to inspect</li>
-        <li>Related playbook &amp; cookbook</li>
-        <li>Resources</li>
+        <li>Overview — why EDS for this industry</li>
+        <li>Where the program started — legacy pain</li>
+        <li>Migration journey — phased steps to Edge Delivery</li>
+        <li>What landed on EDS — concrete outcomes</li>
+        <li>Technical highlights — patterns and playbook links</li>
+        <li>Target architecture</li>
+        <li>Lessons from the journey</li>
       </ol>
-      <p>Pages marked with a draft banner use <strong>sample content</strong> — safe to replace in a later polish pass.</p>
     </section>
 
     <section class="chapter-section">
       <h2>How to use these pages</h2>
       <ul>
-        <li>Open the <strong>live site</strong> and compare against relevant <a href="../playbooks/index.html">playbook chapters</a> or <a href="../cookbook/index.html">cookbook</a> blocks.</li>
-        <li>Use browser devtools + RUM to see real-world block decoration and third-party integrations.</li>
-        <li>When scoping your own project, treat these as <em>orientation</em> — not copy-paste implementations.</li>
+        <li>Walk stakeholders through a <strong>believable migration arc</strong> before you commit to block scope.</li>
+        <li>Map each phase to <a href="../playbooks/index.html">playbooks</a> and <a href="../cookbook/index.html">cookbook</a> chapters for implementation.</li>
+        <li>Pair with <a href="../ai-and-aem/modernization.html">Modernization</a> when planning content and code migration.</li>
       </ul>
-      <p>Want another site listed? <a href="../getting-started/contributing.html">Contributing &amp; feedback</a>.</p>
+      <p>Suggest another industry? <a href="../getting-started/contributing.html">Contributing &amp; feedback</a>.</p>
     </section>
   </main>
 

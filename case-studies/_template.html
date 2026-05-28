@@ -3,26 +3,24 @@
   Case study page template — copy to case-studies/<slug>.html and replace placeholders.
 
   Schema (keep section order):
-    1. Overview
-    2. Customer snapshot (.case-study-facts)
-    3. Business challenge
-    4. Solution on EDS
+    1. Overview — why EDS for this industry
+    2. Where the program started — legacy pain
+    3. Migration journey — phased steps (ordered list)
+    4. What landed on EDS — concrete deliverables
     5. Technical highlights (.case-study-highlights)
-    6. Architecture (Mermaid, ≤8 nodes)
-    7. Outcomes (.case-study-metrics) — replace sample numbers when verified
-    8. Lessons & what to inspect
-    9. Related playbook & cookbook links
-    10. Resources
+    6. Target architecture (Mermaid, ≤8 nodes)
+    7. Lessons from the journey
+    8. Related playbook & cookbook links
 
-  Remove .case-study-draft banner when content is production-ready.
+  Do not include customer names, live production URLs, or named endorsements.
 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
-  <title>[Site name] | Case studies | EDS Reference Playbook</title>
-  <meta name="description" content="[1-sentence case study summary.]">
+  <title>[Industry] | Case studies | EDS Reference Playbook</title>
+  <meta name="description" content="How a [industry] program moved to AEM Edge Delivery — migration journey and lessons.">
   <link rel="stylesheet" href="../styles/styles.css">
   <script src="../scripts/theme-bootstrap.js"></script>
   <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
@@ -36,55 +34,52 @@
     <span aria-hidden="true">›</span>
     <a href="index.html">Case studies</a>
     <span aria-hidden="true">›</span>
-    <span aria-current="page">[Site name]</span>
+    <span aria-current="page">[Industry]</span>
   </nav>
 
   <main>
     <header class="guide-header guide-header--with-media hero-tone-case-study">
       <div class="guide-header-body">
       <span class="lane-chip lane-case-study">Case study</span>
-      <h1>[Site name]</h1>
-      <p class="subtitle">[One-line customer + industry on EDS.]</p>
+      <h1>[Industry]</h1>
+      <p class="subtitle">[One-line summary of the migration outcome on EDS.]</p>
       <div class="metadata">
-        <span class="tag">[Industry]</span>
-        <span class="tag">[Region]</span>
+        <span class="tag">[Tag 1]</span>
+        <span class="tag">Migration</span>
       </div>
-      <p>
-        <a class="btn btn-primary" href="[live-url]" target="_blank" rel="noopener">Visit live site</a>
-      </p>
       </div>
     </header>
 
-    <p class="case-study-draft"><strong>Draft / sample content.</strong> Structure is in place for a full case study — replace placeholders with verified customer details, metrics, and repo links.</p>
+    <div class="info-box">
+      <strong>Anonymous case study.</strong> A composite migration narrative for this industry — useful for planning your own EDS program, not a named customer endorsement.
+    </div>
 
     <section id="overview" class="chapter-section">
       <h2>Overview</h2>
-      <p>[2-3 sentences: who they are, what they shipped on EDS, why it matters as a reference.]</p>
+      <p>[2-3 sentences: industry context, legacy pain, why EDS.]</p>
     </section>
 
-    <section id="snapshot" class="chapter-section">
-      <h2>Customer snapshot</h2>
-      <dl class="case-study-facts">
-        <dt>Industry</dt><dd>[…]</dd>
-        <dt>Primary domain</dt><dd>[…]</dd>
-        <dt>EDS scope</dt><dd>[Marketing site / microsites / …]</dd>
-        <dt>Authoring</dt><dd>[DA / Universal Editor / …]</dd>
-        <dt>Scale signal</dt><dd>[Pages, locales, authors — sample]</dd>
-      </dl>
-    </section>
-
-    <section id="challenge" class="chapter-section">
-      <h2>Business challenge</h2>
-      <p>[Problem framing.]</p>
+    <section id="starting-point" class="chapter-section">
+      <h2>Where the program started</h2>
       <ul>
-        <li>[Constraint 1]</li>
-        <li>[Constraint 2]</li>
+        <li>[Legacy constraint 1]</li>
+        <li>[Legacy constraint 2]</li>
       </ul>
     </section>
 
-    <section id="solution" class="chapter-section">
-      <h2>Solution on EDS</h2>
-      <p>[What they built — blocks, workers, integrations.]</p>
+    <section id="journey" class="chapter-section">
+      <h2>Migration journey</h2>
+      <ol>
+        <li><strong>[Phase 1].</strong> [Description.]</li>
+        <li><strong>[Phase 2].</strong> [Description.]</li>
+      </ol>
+    </section>
+
+    <section id="shipped" class="chapter-section">
+      <h2>What landed on EDS</h2>
+      <ul>
+        <li>[Deliverable 1]</li>
+      </ul>
     </section>
 
     <section id="highlights" class="chapter-section">
@@ -92,13 +87,13 @@
       <div class="case-study-highlights">
         <article class="case-study-highlight">
           <h3>[Highlight 1]</h3>
-          <p>[Description.]</p>
+          <p>[Description with playbook/cookbook links.]</p>
         </article>
       </div>
     </section>
 
     <section id="architecture" class="chapter-section">
-      <h2>Architecture</h2>
+      <h2>Target architecture</h2>
       <pre class="mermaid">
 flowchart LR
   Author[Authors] --> DA[Document Authoring]
@@ -109,18 +104,10 @@ flowchart LR
       <p>[Interpret the diagram.]</p>
     </section>
 
-    <section id="outcomes" class="chapter-section">
-      <h2>Outcomes</h2>
-      <p><em>Sample metrics below — replace with customer-approved figures.</em></p>
-      <div class="case-study-metrics">
-        <div class="case-study-metric"><strong>—</strong><span>[Metric label]</span></div>
-      </div>
-    </section>
-
     <section id="lessons" class="chapter-section">
-      <h2>Lessons &amp; what to inspect</h2>
+      <h2>Lessons from the journey</h2>
       <ul>
-        <li>[Inspectable pattern on live site]</li>
+        <li><strong>[Lesson headline].</strong> [Detail.]</li>
       </ul>
     </section>
 
@@ -128,13 +115,6 @@ flowchart LR
       <h2>Related playbook &amp; cookbook</h2>
       <ul>
         <li><a href="../playbooks/index.html">Playbooks</a></li>
-      </ul>
-    </section>
-
-    <section id="resources" class="chapter-section">
-      <h2>Resources</h2>
-      <ul>
-        <li><a href="[live-url]" target="_blank" rel="noopener">Production site</a></li>
       </ul>
     </section>
   </main>

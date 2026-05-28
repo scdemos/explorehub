@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>B2B publishing | Case studies | EDS Reference Playbook</title>
+  <meta name="description" content="How a B2B publisher moved editorial properties to AEM Edge Delivery — homepage velocity, search, and multi-brand theming.">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <script src="../scripts/theme-bootstrap.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Case studies</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">B2B publishing</span>
+  </nav>
+
+  <main>
+    <header class="guide-header guide-header--with-media hero-tone-case-study">
+      <div class="guide-header-body">
+      <span class="lane-chip lane-case-study">Case study</span>
+      <h1>B2B publishing</h1>
+      <p class="subtitle">From deploy-to-change homepages to daily editorial on Edge Delivery — taxonomy-driven rails, search at scale, and sibling brands on one platform.</p>
+      <div class="metadata">
+        <span class="tag">Publishing</span>
+        <span class="tag">B2B</span>
+        <span class="tag">Migration</span>
+      </div>
+      </div>
+    </header>
+
+    <div class="info-box">
+      <strong>Anonymous case study.</strong> A composite migration narrative for this industry — useful for planning your own EDS program, not a named customer endorsement.
+    </div>
+
+    <section id="overview" class="chapter-section">
+      <h2>Overview</h2>
+      <p>A channel-industry publisher ran multiple editorial brands with high article volume. Homepages were rebuilt through CMS workflows that still required engineering for layout changes. Search across archives was slow to evolve; sibling properties duplicated effort on templates and integrations.</p>
+      <p>The move to EDS made the <strong>homepage a composable document</strong>: editors arrange rails from blocks, articles publish through standard templates, and query-index powers search and related content across the portfolio.</p>
+    </section>
+
+    <section id="starting-point" class="chapter-section">
+      <h2>Where the program started</h2>
+      <ul>
+        <li>Homepage composition locked in monolithic templates — news cycles waited on deploys.</li>
+        <li>Article metadata inconsistent — related content and facets unreliable.</li>
+        <li>Separate theme implementations per brand property.</li>
+        <li>Syndication and partner feeds bolted on outside the main stack.</li>
+      </ul>
+    </section>
+
+    <section id="journey" class="chapter-section">
+      <h2>Migration journey</h2>
+      <ol>
+        <li><strong>Model the article.</strong> Standard block table for body content; required metadata (topic, author, date, brand) for index generation.</li>
+        <li><strong>Rebuild the homepage as sections.</strong> Each zone (lead story, trending, sponsored rail) mapped to cards or related-articles blocks.</li>
+        <li><strong>Generate query-index at publish.</strong> Search UI and listing blocks read JSON indexes — no server-side CMS query layer.</li>
+        <li><strong>Theme sibling brands.</strong> Shared block code; section metadata and design tokens differentiate properties.</li>
+        <li><strong>Add feeds.</strong> RSS/JSON outputs from the same content bus — <a href="../playbooks/rss-and-feeds.html">RSS &amp; feeds</a> playbook.</li>
+        <li><strong>Migrate archives in batches.</strong> High-traffic sections first; long tail articles followed with redirect maps.</li>
+      </ol>
+    </section>
+
+    <section id="shipped" class="chapter-section">
+      <h2>What landed on EDS</h2>
+      <ul>
+        <li>Editors refresh homepages multiple times daily without developer involvement.</li>
+        <li>Faceted search and related-articles rails driven by metadata.</li>
+        <li>Multiple brands on shared delivery code with distinct theming.</li>
+        <li>Partner and syndication feeds generated from authored content.</li>
+      </ul>
+    </section>
+
+    <section id="highlights" class="chapter-section">
+      <h2>Technical highlights</h2>
+      <div class="case-study-highlights">
+        <article class="case-study-highlight">
+          <h3>Homepage assembly</h3>
+          <p>Section-metadata zones and card rails — authors swap stories, not templates.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Related content</h3>
+          <p>Metadata-driven rails — <a href="../use-cases/how-to-build-related-articles.html">Related articles</a> cookbook.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Search at scale</h3>
+          <p>Client-side search over query-index — <a href="../playbooks/search-and-discovery.html">Search &amp; discovery</a>.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Multi-brand theming</h3>
+          <p>One repo, token and fragment differences per property.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>Target architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Editors[Editorial authors] --> DA[Document Authoring]
+  DA --> EDS[EDS delivery]
+  EDS --> Index[query-index.json]
+  Index --> Search[Search / listing blocks]
+  EDS --> Feeds[RSS / JSON feeds]
+      </pre>
+      <p>Publishing generates indexes and feeds at build time; reader experiences are static-fast at the edge.</p>
+    </section>
+
+    <section id="lessons" class="chapter-section">
+      <h2>Lessons from the journey</h2>
+      <ul>
+        <li><strong>Metadata is the editorial product.</strong> Facets and related rails only work when tags are mandatory, not optional.</li>
+        <li><strong>Homepage is a living document.</strong> Treat it like a dashboard of blocks, not a quarterly redesign project.</li>
+        <li><strong>Shared platform, distinct brands.</strong> Theming belongs in tokens and fragments — not duplicate block forks.</li>
+        <li><strong>Plan for archive scale.</strong> Index size and client search limits matter at tens of thousands of articles.</li>
+      </ul>
+    </section>
+
+    <section id="related" class="chapter-section">
+      <h2>Related playbook &amp; cookbook</h2>
+      <ul>
+        <li><a href="../playbooks/search-and-discovery.html">Search &amp; discovery</a></li>
+        <li><a href="../playbooks/rss-and-feeds.html">RSS &amp; feeds</a></li>
+        <li><a href="../use-cases/how-to-build-related-articles.html">Related articles</a></li>
+        <li><a href="../use-cases/how-to-author-search-page.html">Search page</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

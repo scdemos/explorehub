@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Travel &amp; consumer retail | Case studies | EDS Reference Playbook</title>
+  <meta name="description" content="How a travel retailer moved consumer marketing to AEM Edge Delivery — deals, destinations, and hand-off to booking.">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <script src="../scripts/theme-bootstrap.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Case studies</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Travel &amp; consumer retail</span>
+  </nav>
+
+  <main>
+    <header class="guide-header guide-header--with-media hero-tone-case-study">
+      <div class="guide-header-body">
+      <span class="lane-chip lane-case-study">Case study</span>
+      <h1>Travel &amp; consumer retail</h1>
+      <p class="subtitle">High-traffic consumer marketing on Edge Delivery — weekly deal swaps, dual product lines, and clear paths into booking engines the stack does not own.</p>
+      <div class="metadata">
+        <span class="tag">Travel</span>
+        <span class="tag">Consumer</span>
+        <span class="tag">Migration</span>
+      </div>
+      </div>
+    </header>
+
+    <div class="info-box">
+      <strong>Anonymous case study.</strong> A composite migration narrative for this industry — useful for planning your own EDS program, not a named customer endorsement.
+    </div>
+
+    <section id="overview" class="chapter-section">
+      <h2>Overview</h2>
+      <p>A travel group operated separate consumer brands for flights and package holidays. Marketing rotated deals weekly; destination guides needed rich imagery; conversion happened in booking apps outside the CMS. Legacy templates slowed merchandising; mobile performance suffered on promo-heavy pages.</p>
+      <p>EDS unified the <strong>merchandising layer</strong>: authors maintain deal grids and hero offers as blocks, indexes surface offers and destinations, fragments link the brands — while booking stays in specialized systems.</p>
+    </section>
+
+    <section id="starting-point" class="chapter-section">
+      <h2>Where the program started</h2>
+      <ul>
+        <li>Deal pages rebuilt from templates each sale window — engineering bottleneck.</li>
+        <li>Two brands with overlapping components but separate codebases.</li>
+        <li>Offer data sometimes authored manually, sometimes fed from external systems — inconsistent.</li>
+        <li>Heavy imagery and countdown modules on mobile without a performance budget.</li>
+      </ul>
+    </section>
+
+    <section id="journey" class="chapter-section">
+      <h2>Migration journey</h2>
+      <ol>
+        <li><strong>Unify blocks across brands.</strong> Shared cards, product grids, and heroes; brand differentiation via fragments and tokens.</li>
+        <li><strong>Model offers as authored tables + index.</strong> Metadata for route, price band, and season feeds query-index for search and grids.</li>
+        <li><strong>Wire CTAs to booking.</strong> Every promo block ends in a deep link pattern authors understand — no fake “checkout” on EDS.</li>
+        <li><strong>Experiment on heroes.</strong> Sale windows use experimentation on hero CTAs and featured deals.</li>
+        <li><strong>Migrate destination content first.</strong> Evergreen guides moved to EDS; volatile deal pages followed once grids were stable.</li>
+        <li><strong>Align analytics.</strong> Consistent campaign parameters on outbound booking links for measurement across properties.</li>
+      </ol>
+    </section>
+
+    <section id="shipped" class="chapter-section">
+      <h2>What landed on EDS</h2>
+      <ul>
+        <li>Weekly deal and destination updates without template redeploys.</li>
+        <li>Shared block library across flights and holidays brands.</li>
+        <li>Search and filter UI over offer metadata.</li>
+        <li>Mobile-friendly promo pages with disciplined image loading.</li>
+      </ul>
+    </section>
+
+    <section id="highlights" class="chapter-section">
+      <h2>Technical highlights</h2>
+      <div class="case-study-highlights">
+        <article class="case-study-highlight">
+          <h3>Deal grids</h3>
+          <p>Dense merchandising layouts — <a href="../use-cases/how-to-build-cards-block.html">Cards</a>, <a href="../use-cases/how-to-build-product-grid.html">Product grid</a>.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Cross-brand chrome</h3>
+          <p>Fragments linking related consumer properties in header/footer.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Search-led discovery</h3>
+          <p>Index-backed finders — <a href="../playbooks/search-and-discovery.html">Search &amp; discovery</a>.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Promo experimentation</h3>
+          <p>Hero offer tests during sales — <a href="../playbooks/experimentation-and-personalization.html">Experimentation</a>.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>Target architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Marketing[Marketing authors] --> DA[Document Authoring]
+  DA --> EDS[EDS marketing pages]
+  EDS --> Index[Offer / destination index]
+  Index --> UI[Search / grid blocks]
+  EDS --> Booking[External booking apps]
+      </pre>
+      <p>EDS owns storytelling and merchandising; inventory and payment stay in booking systems of record.</p>
+    </section>
+
+    <section id="lessons" class="chapter-section">
+      <h2>Lessons from the journey</h2>
+      <ul>
+        <li><strong>Do not replicate booking on EDS.</strong> Marketing’s job is to qualify and hand off — not to own carts.</li>
+        <li><strong>Indexes need a source of truth.</strong> Decide what is authored vs fed — hybrid models need clear rules.</li>
+        <li><strong>Two brands, one library.</strong> Fragment and token differences beat forked codebases.</li>
+        <li><strong>Seasonality is the roadmap.</strong> Migrate before peak sale windows, not during them.</li>
+      </ul>
+    </section>
+
+    <section id="related" class="chapter-section">
+      <h2>Related playbook &amp; cookbook</h2>
+      <ul>
+        <li><a href="../playbooks/search-and-discovery.html">Search &amp; discovery</a></li>
+        <li><a href="../playbooks/experimentation-and-personalization.html">Experimentation</a></li>
+        <li><a href="../use-cases/how-to-build-product-grid.html">Product grid</a></li>
+        <li><a href="../use-cases/how-to-build-cards-block.html">Cards block</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Financial markets | Case studies | EDS Reference Playbook</title>
+  <meta name="description" content="How a regulated financial marketing program moved to AEM Edge Delivery — authoring, search, plugins, and performance.">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <script src="../scripts/theme-bootstrap.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Case studies</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Financial markets</span>
+  </nav>
+
+  <main>
+    <header class="guide-header guide-header--with-media hero-tone-case-study">
+      <div class="guide-header-body">
+      <span class="lane-chip lane-case-study">Case study</span>
+      <h1>Financial markets</h1>
+      <p class="subtitle">Moving a compliance-sensitive marketing and education estate to Edge Delivery — without authors touching production HTML or bypassing review.</p>
+      <div class="metadata">
+        <span class="tag">Financial services</span>
+        <span class="tag">Enterprise</span>
+        <span class="tag">Migration</span>
+      </div>
+      </div>
+    </header>
+
+    <div class="info-box">
+      <strong>Anonymous case study.</strong> A composite migration narrative for this industry — useful for planning your own EDS program, not a named customer endorsement.
+    </div>
+
+    <section id="overview" class="chapter-section">
+      <h2>Overview</h2>
+      <p>A global financial institution ran public marketing, product education, and event content on a legacy stack where every layout change routed through development. Review cycles for regulated copy were long, regional teams drifted on tooling, and performance suffered when market news drove traffic spikes.</p>
+      <p>The program moved to <strong>Document Authoring + Edge Delivery</strong> so authors compose from approved blocks, plugins are configured centrally, and the delivery layer stays fast and predictable at the edge.</p>
+    </section>
+
+    <section id="starting-point" class="chapter-section">
+      <h2>Where the program started</h2>
+      <ul>
+        <li>Page builds tied to release trains — marketing could not swap hubs or education modules quickly.</li>
+        <li>Plugin and integration settings scattered across environments; regional teams configured Sidekick differently.</li>
+        <li>Search and product discovery lived in bespoke apps, disconnected from authored metadata.</li>
+        <li>External links, PDFs, and disclosures needed explicit policy — hard to enforce in ad hoc templates.</li>
+      </ul>
+    </section>
+
+    <section id="journey" class="chapter-section">
+      <h2>Migration journey</h2>
+      <ol>
+        <li><strong>Align on content model.</strong> Mapped product hubs, education articles, and event pages to sections + blocks instead of page templates. Agreed metadata for search facets early.</li>
+        <li><strong>Stand up DA + Git.</strong> Authors moved into Document Authoring; content bus became the single source of truth. Preview matched delivery semantics.</li>
+        <li><strong>Centralize plugins in Sheets.</strong> Library lists, plugin allowlists, and environment-specific settings moved to DA Sheets so changes are traceable and auditable.</li>
+        <li><strong>Build the block library.</strong> Hero, cards, columns, and listing blocks covered 80% of templates. Deep navigation (header/footer) authored as fragments.</li>
+        <li><strong>Wire search to query-index.</strong> Published pages generated <code>query-index.json</code>; search UI blocks read structured metadata instead of scraping HTML.</li>
+        <li><strong>Harden core scripts.</strong> External link rules, phased loading (eager / lazy / delayed), and section metadata landed in <code>scripts.js</code> once — not per page.</li>
+        <li><strong>Cut over in waves.</strong> Product lines migrated by hub, not big-bang. Legacy URLs redirected; authors trained on block palettes per section type.</li>
+      </ol>
+    </section>
+
+    <section id="shipped" class="chapter-section">
+      <h2>What landed on EDS</h2>
+      <ul>
+        <li>Composable product education and market commentary hubs built from shared blocks.</li>
+        <li>Faceted search over authored tags, products, and content types.</li>
+        <li>Consistent mega-menu and footer fragments across properties.</li>
+        <li>Performance budgets enforced through block discipline and delayed third-party loads.</li>
+      </ul>
+    </section>
+
+    <section id="highlights" class="chapter-section">
+      <h2>Technical highlights</h2>
+      <div class="case-study-highlights">
+        <article class="case-study-highlight">
+          <h3>Sheets-driven plugins</h3>
+          <p>One configuration surface for Sidekick plugins — regional admins inherit policy instead of inventing local setups.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Query-index search</h3>
+          <p>Listing and search blocks consume publish-time indexes — see <a href="../playbooks/search-and-discovery.html">Search &amp; discovery</a>.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Core scripts as policy layer</h3>
+          <p>Link treatment, decoration order, and load phases centralized — <a href="../use-cases/how-to-page-load-scripts-js.html">Page load &amp; scripts.js</a>.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Fragment-based chrome</h3>
+          <p>Navigation and footer owned once, referenced everywhere — reduces drift during IA changes.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>Target architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Authors[Marketing authors] --> DA[Document Authoring]
+  DA --> Git[Content bus / Git]
+  Git --> EDS[EDS pipeline]
+  EDS --> CDN[CDN]
+  CDN --> Users[Visitors]
+  EDS --> Index[query-index.json]
+  Index --> Search[Search UI blocks]
+      </pre>
+      <p>Authors never deploy HTML. Search and listings are generated from metadata at publish time; the edge serves decorated blocks.</p>
+    </section>
+
+    <section id="lessons" class="chapter-section">
+      <h2>Lessons from the journey</h2>
+      <ul>
+        <li><strong>Governance and speed.</strong> Block palettes and metadata schemas are how compliance scales — not fewer authors.</li>
+        <li><strong>Search is a content model problem.</strong> Facets only work if authors fill metadata consistently from day one.</li>
+        <li><strong>Plugins need owners.</strong> Sheets configuration only helps when a central team curates what regions can enable.</li>
+        <li><strong>Performance is architectural.</strong> Market-moving traffic spikes expose every blocking script left in the eager phase.</li>
+      </ul>
+    </section>
+
+    <section id="related" class="chapter-section">
+      <h2>Related playbook &amp; cookbook</h2>
+      <ul>
+        <li><a href="../playbooks/search-and-discovery.html">Search &amp; discovery</a></li>
+        <li><a href="../use-cases/how-to-page-load-scripts-js.html">Page load &amp; scripts.js</a></li>
+        <li><a href="../use-cases/how-to-author-search-page.html">Search page (cookbook)</a></li>
+        <li><a href="../ai-and-aem/modernization.html">Modernization</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

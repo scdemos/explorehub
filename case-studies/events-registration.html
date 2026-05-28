@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Events &amp; registration | Case studies | EDS Reference Playbook</title>
+  <meta name="description" content="How an events program moved campaign and registration marketing to AEM Edge Delivery — forms, peaks, and seasonal cadence.">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <script src="../scripts/theme-bootstrap.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Case studies</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Events &amp; registration</span>
+  </nav>
+
+  <main>
+    <header class="guide-header guide-header--with-media hero-tone-case-study">
+      <div class="guide-header-body">
+      <span class="lane-chip lane-case-study">Case study</span>
+      <h1>Events &amp; registration</h1>
+      <p class="subtitle">Campaign microsites and registration marketing on Edge Delivery — inspirational storytelling, reliable forms, and traffic that spikes on race day.</p>
+      <div class="metadata">
+        <span class="tag">Events</span>
+        <span class="tag">Registration</span>
+        <span class="tag">Migration</span>
+      </div>
+      </div>
+    </header>
+
+    <div class="info-box">
+      <strong>Anonymous case study.</strong> A composite migration narrative for this industry — useful for planning your own EDS program, not a named customer endorsement.
+    </div>
+
+    <section id="overview" class="chapter-section">
+      <h2>Overview</h2>
+      <p>A major events program promoted marathons and experiences tied to park destinations. Marketing rotated seasonal campaigns; registration opened in waves; traffic spiked when calendars published. Legacy microsites were brittle, forms leaked secrets into page source, and authors could not preview sold-out states.</p>
+      <p>EDS became the <strong>campaign layer</strong>: heroes and story blocks in DA, forms proxied through workers, registration completion in systems built for PII — with marketing pages that survive peak load at the CDN.</p>
+    </section>
+
+    <section id="starting-point" class="chapter-section">
+      <h2>Where the program started</h2>
+      <ul>
+        <li>One-off microsites per event — duplicated code and inconsistent branding.</li>
+        <li>Form endpoints and keys exposed in client-side markup.</li>
+        <li>Homepage takeovers required agency or dev cycles before each season.</li>
+        <li>No author preview for waitlist, sold-out, or members-only messaging.</li>
+      </ul>
+    </section>
+
+    <section id="journey" class="chapter-section">
+      <h2>Migration journey</h2>
+      <ol>
+        <li><strong>Standardize the campaign template.</strong> Hero + story sections + FAQ + form block — reused every season with new media and copy.</li>
+        <li><strong>Move forms to workers.</strong> JSON form definitions in content; submissions proxied to CRM/automation — secrets stay off the client.</li>
+        <li><strong>Author in DA year-round.</strong> Marketing updates dates, pricing copy, and imagery without redeploying front-end code.</li>
+        <li><strong>Deep-link registration.</strong> Primary conversion stays in the registration platform; EDS pages drive qualified traffic with clear CTAs.</li>
+        <li><strong>Load-test peak windows.</strong> CDN caching on static marketing shells; rate limits and bot protection on worker endpoints.</li>
+        <li><strong>Retire microsite sprawl.</strong> Consolidated paths under one EDS project; redirects from legacy campaign URLs.</li>
+      </ol>
+    </section>
+
+    <section id="shipped" class="chapter-section">
+      <h2>What landed on EDS</h2>
+      <ul>
+        <li>Seasonal homepage and event landings updated by marketing in hours.</li>
+        <li>Worker-backed interest and newsletter forms without secrets in the browser.</li>
+        <li>FAQ and tabs blocks for logistics, policies, and schedules.</li>
+        <li>Stable performance during registration opening days.</li>
+      </ul>
+    </section>
+
+    <section id="highlights" class="chapter-section">
+      <h2>Technical highlights</h2>
+      <div class="case-study-highlights">
+        <article class="case-study-highlight">
+          <h3>Campaign heroes</h3>
+          <p>Fast creative swaps — <a href="../use-cases/how-to-build-hero-block.html">Hero block</a> and section metadata.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Worker-backed forms</h3>
+          <p>Proxy submissions to downstream systems — <a href="../playbooks/worker-backed-forms.html">Worker-backed forms</a>.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>FAQ &amp; logistics</h3>
+          <p>Author-maintained policies — <a href="../use-cases/how-to-build-faq.html">FAQ block</a>, tabs for schedules.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Peak-traffic readiness</h3>
+          <p>Cache strategy on marketing pages; observability on form workers.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>Target architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Marketing[Marketing authors] --> DA[Document Authoring]
+  DA --> EDS[EDS pages]
+  EDS --> Visitor[Visitors]
+  Visitor --> Form[Form block]
+  Form --> Worker[Edge worker]
+  Worker --> CRM[CRM / automation]
+      </pre>
+      <p>Storytelling on EDS; PII and registration completion in dedicated systems behind workers or deep links.</p>
+    </section>
+
+    <section id="lessons" class="chapter-section">
+      <h2>Lessons from the journey</h2>
+      <ul>
+        <li><strong>Marketing ≠ registration stack.</strong> EDS should not become the system of record for participant data.</li>
+        <li><strong>Forms need workers.</strong> Any secret in page source is a future incident.</li>
+        <li><strong>Reuse beats microsites.</strong> One campaign pattern, many seasons — authors change media, not architecture.</li>
+        <li><strong>Plan for spike day.</strong> Registration opens are load tests — cache and rate limits are part of the story.</li>
+      </ul>
+    </section>
+
+    <section id="related" class="chapter-section">
+      <h2>Related playbook &amp; cookbook</h2>
+      <ul>
+        <li><a href="../playbooks/worker-backed-forms.html">Worker-backed forms</a></li>
+        <li><a href="../use-cases/how-to-forms.html">Forms (cookbook)</a></li>
+        <li><a href="../use-cases/how-to-build-faq.html">FAQ block</a></li>
+        <li><a href="../playbooks/experimentation-and-personalization.html">Experimentation</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

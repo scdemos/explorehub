@@ -54,57 +54,57 @@
       "lane": "case-study",
       "category": "catalog",
       "title": "Case studies",
-      "description": "Production EDS sites — cmegroup, revolt, volvo, crn, run disney, jet2.",
+      "description": "How teams moved to EDS by industry — migration journeys without naming customers.",
       "path": "case-studies/index.html",
-      "tags": ["case-study", "production", "customers", "live-sites"]
+      "tags": ["case-study", "domain", "industry", "patterns"]
     },
     {
       "lane": "case-study",
-      "category": "sites",
-      "title": "cmegroup.com",
-      "description": "CME Group financial markets site on AEM Edge Delivery Services.",
-      "path": "case-studies/cmegroup.html",
-      "tags": ["cmegroup", "finance", "enterprise"]
+      "category": "domains",
+      "title": "Financial markets",
+      "description": "Migration journey — from legacy CMS to DA Sheets, query-index search, and governed blocks.",
+      "path": "case-studies/financial-markets.html",
+      "tags": ["finance", "enterprise", "regulated"]
     },
     {
       "lane": "case-study",
-      "category": "sites",
-      "title": "revolt.tv",
-      "description": "Revolt media brand on AEM Edge Delivery Services.",
-      "path": "case-studies/revolt.html",
-      "tags": ["revolt", "media", "entertainment"]
+      "category": "domains",
+      "title": "Media & entertainment",
+      "description": "Migration journey — editorial heroes, deferred video, and homepage swaps without deploys.",
+      "path": "case-studies/media-entertainment.html",
+      "tags": ["media", "entertainment", "editorial"]
     },
     {
       "lane": "case-study",
-      "category": "sites",
-      "title": "volvo",
-      "description": "Volvo Cars global brand site on AEM Edge Delivery Services.",
-      "path": "case-studies/volvo.html",
-      "tags": ["volvo", "automotive", "volvocars"]
+      "category": "domains",
+      "title": "Automotive",
+      "description": "Migration journey — one block library across markets, fragments, and configurator hand-offs.",
+      "path": "case-studies/automotive.html",
+      "tags": ["automotive", "consumer", "localization"]
     },
     {
       "lane": "case-study",
-      "category": "sites",
-      "title": "crn.com",
-      "description": "CRN B2B publishing on AEM Edge Delivery Services.",
-      "path": "case-studies/crn.html",
-      "tags": ["crn", "publishing", "b2b", "editorial"]
+      "category": "domains",
+      "title": "B2B publishing",
+      "description": "Migration journey — daily homepage assembly, metadata search, and sibling brands on EDS.",
+      "path": "case-studies/b2b-publishing.html",
+      "tags": ["publishing", "b2b", "editorial"]
     },
     {
       "lane": "case-study",
-      "category": "sites",
-      "title": "run disney",
-      "description": "runDisney events and registration on AEM Edge Delivery Services.",
-      "path": "case-studies/run-disney.html",
-      "tags": ["rundisney", "disney", "events", "forms"]
+      "category": "domains",
+      "title": "Events & registration",
+      "description": "Migration journey — seasonal campaigns, worker-backed forms, and peak traffic on the CDN.",
+      "path": "case-studies/events-registration.html",
+      "tags": ["events", "registration", "forms"]
     },
     {
       "lane": "case-study",
-      "category": "sites",
-      "title": "jet2",
-      "description": "Jet2 travel and holidays on AEM Edge Delivery Services.",
-      "path": "case-studies/jet2.html",
-      "tags": ["jet2", "travel", "holidays", "airline"]
+      "category": "domains",
+      "title": "Travel & consumer retail",
+      "description": "Migration journey — deal merchandising, dual-brand nav, and booking deep links outside Helix.",
+      "path": "case-studies/travel-consumer.html",
+      "tags": ["travel", "consumer", "merchandising"]
     },
     {
       "lane": "playbook",

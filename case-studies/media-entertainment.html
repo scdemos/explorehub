@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Media &amp; entertainment | Case studies | EDS Reference Playbook</title>
+  <meta name="description" content="How a media brand moved editorial and campaign sites to AEM Edge Delivery — heroes, video, and homepage velocity.">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <script src="../scripts/theme-bootstrap.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+</head>
+<body class="has-sidebar">
+  <button id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">☰ Menu</button>
+  <aside id="sidebar"></aside>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Explore Hub</a>
+    <span aria-hidden="true">›</span>
+    <a href="index.html">Case studies</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Media &amp; entertainment</span>
+  </nav>
+
+  <main>
+    <header class="guide-header guide-header--with-media hero-tone-case-study">
+      <div class="guide-header-body">
+      <span class="lane-chip lane-case-study">Case study</span>
+      <h1>Media &amp; entertainment</h1>
+      <p class="subtitle">From template-heavy releases to same-day homepage and show-hub updates — without sacrificing brand or LCP on media-heavy pages.</p>
+      <div class="metadata">
+        <span class="tag">Media</span>
+        <span class="tag">Entertainment</span>
+        <span class="tag">Migration</span>
+      </div>
+      </div>
+    </header>
+
+    <div class="info-box">
+      <strong>Anonymous case study.</strong> A composite migration narrative for this industry — useful for planning your own EDS program, not a named customer endorsement.
+    </div>
+
+    <section id="overview" class="chapter-section">
+      <h2>Overview</h2>
+      <p>A culture and entertainment brand lived on a CMS where homepage takeovers, show launches, and promo swaps required developer deploys. Editorial teams missed moments; video and image-heavy templates hurt Core Web Vitals; every new campaign meant cloning templates.</p>
+      <p>Moving to EDS shifted the model: authors assemble heroes, rails, and embeds from a shared library; media loads in the delayed phase; experiments run on promotional modules without redeploying the site.</p>
+    </section>
+
+    <section id="starting-point" class="chapter-section">
+      <h2>Where the program started</h2>
+      <ul>
+        <li>Homepage and hub refreshes queued behind engineering sprints.</li>
+        <li>Duplicate block implementations for similar layouts (hero v1, hero v2, hero “campaign”).</li>
+        <li>Autoplay video and third-party players in the critical path — poor LCP scores.</li>
+        <li>Promo testing required code changes or opaque CMS experiments.</li>
+      </ul>
+    </section>
+
+    <section id="journey" class="chapter-section">
+      <h2>Migration journey</h2>
+      <ol>
+        <li><strong>Inventory the editorial rhythm.</strong> Mapped weekly homepage changes, show hubs, and article templates to a small set of block sequences.</li>
+        <li><strong>Design the hero and rail system.</strong> Standardized hero, cards, and carousel variants with section metadata for spacing and background treatments.</li>
+        <li><strong>Defer heavy media.</strong> Moved video embeds and social players to lazy / delayed initialization in core scripts.</li>
+        <li><strong>Train authors on blocks, not pages.</strong> Editorial leads compose hubs from approved palettes; developers own block code only.</li>
+        <li><strong>Add experimentation hooks.</strong> Connected promo modules to the experimentation playbook for A/B on featured rails.</li>
+        <li><strong>Migrate show-by-show.</strong> Legacy article URLs preserved; new hubs launched on EDS first, then backfilled archives.</li>
+      </ol>
+    </section>
+
+    <section id="shipped" class="chapter-section">
+      <h2>What landed on EDS</h2>
+      <ul>
+        <li>Same-day homepage and show-hub updates authored in DA.</li>
+        <li>Reusable hero and card rails across culture, music, and video hubs.</li>
+        <li>Deferred embed blocks for YouTube and social without blocking first paint.</li>
+        <li>Experimentation on promotional modules during major launches.</li>
+      </ul>
+    </section>
+
+    <section id="highlights" class="chapter-section">
+      <h2>Technical highlights</h2>
+      <div class="case-study-highlights">
+        <article class="case-study-highlight">
+          <h3>Hero-first storytelling</h3>
+          <p>Dual-image heroes and gradient overlays — <a href="../use-cases/how-to-build-hero-block.html">Hero block</a> cookbook patterns.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Editorial rails</h3>
+          <p>Cards and carousels as the unit of reuse — one variant set, many hubs.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Deferred embeds</h3>
+          <p>Players initialize after LCP — <a href="../playbooks/embeddable-eds-content.html">Embeddable EDS content</a>.</p>
+        </article>
+        <article class="case-study-highlight">
+          <h3>Phased loading</h3>
+          <p>Eager decoration for above-the-fold text; delayed for analytics and heavy widgets.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="chapter-section">
+      <h2>Target architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+  Editorial[Editorial authors] --> DA[Document Authoring]
+  DA --> EDS[EDS delivery]
+  EDS --> CDN[CDN]
+  CDN --> Visitor[Visitors]
+  EDS --> Media[Deferred embeds / players]
+      </pre>
+      <p>Critical path stays text-first; media and third parties load after the hero is painted.</p>
+    </section>
+
+    <section id="lessons" class="chapter-section">
+      <h2>Lessons from the journey</h2>
+      <ul>
+        <li><strong>Variant discipline beats freedom.</strong> Fewer hero/card variants shipped faster than a dozen “almost the same” blocks.</li>
+        <li><strong>LCP is an editorial constraint.</strong> Not every template gets autoplay video — policy matters as much as code.</li>
+        <li><strong>Blocks match the news cycle.</strong> When marketing can swap rails without a deploy, EDS pays for itself in moments, not quarters.</li>
+        <li><strong>Experiment on modules, not pages.</strong> Test promos and heroes as blocks, not whole-home redeploys.</li>
+      </ul>
+    </section>
+
+    <section id="related" class="chapter-section">
+      <h2>Related playbook &amp; cookbook</h2>
+      <ul>
+        <li><a href="../use-cases/how-to-build-hero-block.html">Hero block</a></li>
+        <li><a href="../use-cases/how-to-build-cards-block.html">Cards block</a></li>
+        <li><a href="../playbooks/embeddable-eds-content.html">Embeddable EDS content</a></li>
+        <li><a href="../playbooks/experimentation-and-personalization.html">Experimentation</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer><p>&copy; AEM Edge Delivery Reference Playbook.</p></footer>
+  <script src="../scripts/navigation.js"></script>
+</body>
+</html>

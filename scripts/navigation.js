@@ -14,12 +14,12 @@ const PLAYBOOK_CHAPTERS = [
 ];
 
 const CASE_STUDIES = [
-  { title: 'cmegroup.com', href: 'case-studies/cmegroup.html' },
-  { title: 'revolt.tv', href: 'case-studies/revolt.html' },
-  { title: 'volvo', href: 'case-studies/volvo.html' },
-  { title: 'crn.com', href: 'case-studies/crn.html' },
-  { title: 'run disney', href: 'case-studies/run-disney.html' },
-  { title: 'jet2', href: 'case-studies/jet2.html' },
+  { title: 'Financial markets', href: 'case-studies/financial-markets.html' },
+  { title: 'Media & entertainment', href: 'case-studies/media-entertainment.html' },
+  { title: 'Automotive', href: 'case-studies/automotive.html' },
+  { title: 'B2B publishing', href: 'case-studies/b2b-publishing.html' },
+  { title: 'Events & registration', href: 'case-studies/events-registration.html' },
+  { title: 'Travel & consumer retail', href: 'case-studies/travel-consumer.html' },
 ];
 
 const NAV_ITEMS_SCROLL_THRESHOLD = 10;
@@ -339,8 +339,8 @@ const FOOTER_NOTES = {
   'playbooks/embeddable-eds-content.html': 'Test image-path rewrites, CORS, and auth-gated content. Adapt <code>connectedCallback</code> if your host site has its own initialization.',
   'playbooks/rss-and-feeds.html': 'Validate feeds on launch. Tune cache TTL for your editorial cadence; production newsrooms often want 60–300s.',
   'playbooks/hosted-demo-map.html': 'Hosted demo scripts are for demonstration. Adoption paths point at <code>scdemos/demo</code> — verify security, scale, and compliance for your tenant.',
-  'case-studies/index.html': 'Live customer sites for orientation — inspect UX and adopt patterns via playbooks.',
-  'case-studies/cmegroup.html': 'Customer-managed implementation — details vary by environment; use playbooks for adoptable patterns.',
+  'case-studies/index.html': 'Anonymous migration journeys by industry — how teams moved to EDS, without naming customers.',
+  'case-studies/financial-markets.html': 'Adapt compliance, link policy, and search metadata to your regulatory environment.',
   'getting-started/contributing.html': 'Contributions remain curated reference material, not Adobe-blessed architecture.',
   'getting-started/boilerplate-vs-author-kit-vs-playbooks.html': 'Start new projects from <code>aem-boilerplate</code>. Use this playbook as a pattern library, not a starting point.',
   'ai-and-aem/index.html': '<strong>Experimental.</strong> AI tooling on AEM evolves quickly. Links below are starting points, not stable API commitments.',
@@ -433,6 +433,15 @@ function loadGlobalSearch() {
   document.head.appendChild(script);
 }
 
+function setMobileNavOpen(sidebar, mobileToggle, open) {
+  sidebar.classList.toggle('open', open);
+  document.body.classList.toggle('sidebar-open', open);
+  if (mobileToggle) {
+    mobileToggle.setAttribute('aria-expanded', String(open));
+    mobileToggle.textContent = open ? '✕ Close' : '☰ Menu';
+  }
+}
+
 function initNavigation() {
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
@@ -442,15 +451,20 @@ function initNavigation() {
   const mobileToggle = document.getElementById('mobile-menu-toggle');
   if (mobileToggle) {
     mobileToggle.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
-      mobileToggle.setAttribute('aria-expanded', String(sidebar.classList.contains('open')));
+      setMobileNavOpen(sidebar, mobileToggle, !sidebar.classList.contains('open'));
     });
   }
 
   document.addEventListener('click', (e) => {
+    if (!sidebar.classList.contains('open')) return;
     if (!sidebar.contains(e.target) && e.target !== mobileToggle) {
-      sidebar.classList.remove('open');
-      if (mobileToggle) mobileToggle.setAttribute('aria-expanded', 'false');
+      setMobileNavOpen(sidebar, mobileToggle, false);
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+      setMobileNavOpen(sidebar, mobileToggle, false);
     }
   });
 }

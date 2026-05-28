@@ -30,7 +30,7 @@ A bridge between the official "Getting Started" tutorials on [aem.live](https://
 | [**Getting Started**](./getting-started/index.html) | What this is and how to navigate |
 | [**Playbooks**](./playbooks/index.html) | [Chapters](./playbooks/index.html) (7 guides) + [Demo Site - Library](./playbooks/hosted-demo-map.html) |
 | [**Cookbook**](./cookbook/index.html) | Block and plugin reference (26 guides) |
-| [**Case studies**](./case-studies/index.html) | Production EDS sites (cmegroup, revolt, volvo, crn, run disney, jet2) |
+| [**Case studies**](./case-studies/index.html) | Anonymous migration journeys by industry — how teams moved to EDS |
 | [**AI and AEM**](./ai-and-aem/index.html) | Meta skill + 17 task skills, prompts, MCP |
 | [**References**](./references/index.html) | Official doc links |
 
@@ -111,7 +111,7 @@ demo-playground/
 │   └── ...
 ├── cookbook/
 │   └── index.html              # Lands users into use-cases/ (block-by-block reference)
-├── case-studies/               # Production EDS customer sites
+├── case-studies/               # Anonymous EDS migration journeys (by industry)
 │   └── ...
 ├── use-cases/                  # 26 audit-fixed block / plugin / tool guides
 │   └── ...
